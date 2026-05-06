@@ -1,0 +1,30 @@
+{
+  "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/ContentView.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ContentView.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ContentView.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Presentation/Shared/PrivionyxTheme.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/PrivionyxTheme.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/PrivionyxTheme.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/PrivionyxTheme.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/PrivionyxTheme.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/PrivionyxTheme.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/privionyxApp.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/privionyxApp.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/privionyxApp.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/privionyxApp.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/privionyxApp.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/privionyxApp.swiftdeps"
+  }
+}

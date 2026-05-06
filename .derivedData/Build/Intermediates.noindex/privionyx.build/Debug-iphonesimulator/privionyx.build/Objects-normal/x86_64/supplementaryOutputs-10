@@ -1,0 +1,23 @@
+{
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Domain/UseCases/DeleteReceiptUseCase.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/DeleteReceiptUseCase.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/DeleteReceiptUseCase.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/DeleteReceiptUseCase.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/DeleteReceiptUseCase.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/DeleteReceiptUseCase.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Domain/UseCases/FetchReceiptsUseCase.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/FetchReceiptsUseCase.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/FetchReceiptsUseCase.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/FetchReceiptsUseCase.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/FetchReceiptsUseCase.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/FetchReceiptsUseCase.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Domain/UseCases/SaveReceiptUseCase.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/SaveReceiptUseCase.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/SaveReceiptUseCase.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/SaveReceiptUseCase.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/SaveReceiptUseCase.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/SaveReceiptUseCase.swiftdeps"
+  }
+}

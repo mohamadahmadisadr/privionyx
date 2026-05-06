@@ -1,0 +1,30 @@
+{
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/MerchantRuleService.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/MerchantRuleService.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/MerchantRuleService.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/MerchantRuleService.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/MerchantRuleService.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/MerchantRuleService.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/OnDeviceModel.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/OnDeviceModel.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/OnDeviceModel.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/OnDeviceModel.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/OnDeviceModel.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/OnDeviceModel.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/ReceiptContextBuilder.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptContextBuilder.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptContextBuilder.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptContextBuilder.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptContextBuilder.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptContextBuilder.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/ReceiptFileStorage.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptFileStorage.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptFileStorage.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptFileStorage.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptFileStorage.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/arm64/ReceiptFileStorage.swiftdeps"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Persistence/ReceiptManagedObject.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/ReceiptManagedObject.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/ReceiptManagedObject.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/ReceiptManagedObject.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/ReceiptManagedObject.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/ReceiptManagedObject.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Repositories/CoreDataReceiptRepository.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreDataReceiptRepository.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreDataReceiptRepository.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreDataReceiptRepository.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreDataReceiptRepository.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreDataReceiptRepository.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/AIResponseService.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/AIResponseService.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/AIResponseService.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/AIResponseService.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/AIResponseService.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/AIResponseService.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/CoreMLReceiptExtractionService.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreMLReceiptExtractionService.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreMLReceiptExtractionService.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreMLReceiptExtractionService.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreMLReceiptExtractionService.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/CoreMLReceiptExtractionService.swiftdeps"
+  }
+}

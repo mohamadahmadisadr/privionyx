@@ -1,0 +1,30 @@
+{
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/GemmaAIService.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaAIService.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaAIService.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaAIService.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaAIService.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaAIService.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/GemmaReceiptService.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaReceiptService.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaReceiptService.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaReceiptService.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaReceiptService.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/GemmaReceiptService.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/IntentParserService.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/IntentParserService.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/IntentParserService.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/IntentParserService.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/IntentParserService.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/IntentParserService.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyx/Data/Services/InternalMCPServer.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/InternalMCPServer.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/InternalMCPServer.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/InternalMCPServer.dia",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/InternalMCPServer.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyx.build/Objects-normal/x86_64/InternalMCPServer.swiftdeps"
+  }
+}

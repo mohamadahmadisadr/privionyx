@@ -1,0 +1,40 @@
+{
+  "source": "/Users/mohamad/Code/ios/privionyx/privionyx/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Privionyx",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "Privionyx",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 56
+        }
+      },
+      {
+        "comment": "",
+        "key": "Private receipt intelligence, prepared on device.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 60
+        }
+      }
+    ]
+  },
+  "version": 1
+}

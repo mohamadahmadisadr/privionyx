@@ -1,0 +1,48 @@
+{
+  "source": "/Users/mohamad/Code/ios/privionyx/privionyx/Presentation/Receipts/ReceiptListView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Search merchant or note",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 28
+        }
+      },
+      {
+        "comment": "",
+        "key": "Clear",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 71
+        }
+      },
+      {
+        "comment": "",
+        "key": "No receipts found.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 86
+        }
+      },
+      {
+        "comment": "",
+        "key": "No min",
+        "location": {
+          "startingColumn": 40,
+          "startingLine": 165
+        }
+      },
+      {
+        "comment": "",
+        "key": "No max",
+        "location": {
+          "startingColumn": 51,
+          "startingLine": 165
+        }
+      }
+    ]
+  },
+  "version": 1
+}

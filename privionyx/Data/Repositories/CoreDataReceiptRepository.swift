@@ -1,0 +1,234 @@
+import CoreData
+import Foundation
+
+final class CoreDataReceiptRepository: ReceiptRepository {
+    private let stack: CoreDataStack
+    private let fileStorage: ReceiptFileStorage
+
+    init(stack: CoreDataStack, fileStorage: ReceiptFileStorage = ReceiptFileStorage()) {
+        self.stack = stack
+        self.fileStorage = fileStorage
+    }
+
+    func fetchReceipts(matching query: SpendingQuery?) async throws -> [ReceiptItem] {
+        try await stack.container.performBackgroundTask { context in
+            let request = ReceiptManagedObject.fetchRequest()
+            request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
+            request.predicate = Self.makePredicate(for: query)
+            let objects = try context.fetch(request)
+            var migratedLegacyBlob = false
+
+            let items = try objects.map { object in
+                if object.imagePath == nil, let legacyData = object.imageData, legacyData.isEmpty == false {
+                    object.imagePath = try self.fileStorage.saveImageData(legacyData, for: object.id, replacing: nil)
+                    object.imageData = nil
+                    migratedLegacyBlob = true
+                }
+
+                return Self.map(object, fileStorage: self.fileStorage)
+            }
+
+            if migratedLegacyBlob {
+                try context.save()
+            }
+
+            return items
+        }
+    }
+
+    func upsertReceipt(_ receipt: ReceiptDraft) async throws {
+        try await stack.container.performBackgroundTask { context in
+            let request = ReceiptManagedObject.fetchRequest()
+            request.fetchLimit = 1
+            request.predicate = NSPredicate(format: "id == %@", receipt.id as CVarArg)
+
+            let existingObject = try context.fetch(request).first
+            let object = existingObject ?? ReceiptManagedObject(context: context)
+            let storedImagePath: String?
+
+            if let imageData = receipt.imageData, imageData.isEmpty == false {
+                storedImagePath = try self.fileStorage.saveImageData(imageData, for: receipt.id, replacing: existingObject?.imagePath)
+            } else {
+                storedImagePath = existingObject?.imagePath ?? receipt.imagePath
+            }
+
+            object.id = receipt.id
+            object.merchant = receipt.merchant
+            object.amount = receipt.amount
+            object.subtotal = receipt.subtotal.map(NSNumber.init(value:))
+            object.tax = receipt.tax.map(NSNumber.init(value:))
+            object.tip = receipt.tip.map(NSNumber.init(value:))
+            object.date = receipt.date
+            object.category = receipt.category.rawValue
+            object.customCategoryName = receipt.customCategoryName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            object.tagsText = receipt.tags.isEmpty ? nil : receipt.tags.joined(separator: "\n")
+            object.imagePath = storedImagePath
+            object.imageData = nil
+            object.rawText = receipt.rawText
+            object.lineItemsText = Self.encodeLineItems(receipt.lineItems)
+            object.notes = receipt.notes
+            object.status = receipt.status.rawValue
+            if existingObject == nil {
+                object.createdAt = .now
+            }
+
+            try context.save()
+        }
+    }
+
+    func deleteReceipt(id: UUID) async throws {
+        try await stack.container.performBackgroundTask { context in
+            let request = ReceiptManagedObject.fetchRequest()
+            request.fetchLimit = 1
+            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+
+            guard let object = try context.fetch(request).first else { return }
+            let imagePath = object.imagePath
+
+            context.delete(object)
+            try context.save()
+            try self.fileStorage.deleteImage(at: imagePath)
+        }
+    }
+
+    func purgeLegacySeedData() async throws {
+        let legacyMerchants = [
+            "Shell Downtown",
+            "Whole Foods Market",
+            "Blue Bottle Coffee",
+            "City Power & Water",
+            "Target"
+        ]
+        let legacyNotes = [
+            "OCR confidence 96%",
+            "Receipt fields reviewed",
+            "Tip included",
+            "Billing period matched",
+            "Category can be refined"
+        ]
+        let placeholderMerchants = [
+            "LOREM IPSUM DOLOR SIT AMET",
+            "Lorem Ipsum Dolor Sit Amet"
+        ]
+
+        try await stack.container.performBackgroundTask { context in
+            let request = ReceiptManagedObject.fetchRequest()
+            request.predicate = NSCompoundPredicate(
+                orPredicateWithSubpredicates: [
+                    NSPredicate(format: "merchant IN %@", legacyMerchants),
+                    NSPredicate(format: "notes IN %@", legacyNotes),
+                    NSPredicate(format: "merchant IN %@", placeholderMerchants),
+                    NSPredicate(format: "merchant CONTAINS[cd] %@", "lorem ipsum")
+                ]
+            )
+
+            let matches = try context.fetch(request)
+            matches.forEach(context.delete)
+
+            if context.hasChanges {
+                try context.save()
+            }
+        }
+    }
+
+    private static func makePredicate(for query: SpendingQuery?) -> NSPredicate? {
+        guard let query else { return nil }
+
+        var predicates: [NSPredicate] = []
+
+        if let category = query.category {
+            predicates.append(NSPredicate(format: "category == %@", category.rawValue))
+        }
+
+        if let searchText = query.searchText, searchText.isEmpty == false {
+            predicates.append(
+                NSCompoundPredicate(
+                    orPredicateWithSubpredicates: [
+                        NSPredicate(format: "merchant CONTAINS[cd] %@", searchText),
+                        NSPredicate(format: "notes CONTAINS[cd] %@", searchText),
+                        NSPredicate(format: "customCategoryName CONTAINS[cd] %@", searchText),
+                        NSPredicate(format: "tagsText CONTAINS[cd] %@", searchText),
+                        NSPredicate(format: "rawText CONTAINS[cd] %@", searchText)
+                    ]
+                )
+            )
+        }
+
+        if let dateInterval = query.dateInterval {
+            predicates.append(NSPredicate(format: "date >= %@ AND date < %@", dateInterval.start as NSDate, dateInterval.end as NSDate))
+        }
+
+        if let minimumAmount = query.minimumAmount {
+            predicates.append(NSPredicate(format: "amount >= %lf", minimumAmount))
+        }
+
+        if let maximumAmount = query.maximumAmount {
+            predicates.append(NSPredicate(format: "amount <= %lf", maximumAmount))
+        }
+
+        if predicates.isEmpty {
+            return nil
+        }
+
+        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
+    }
+
+    private static func map(_ object: ReceiptManagedObject, fileStorage: ReceiptFileStorage) -> ReceiptItem {
+        ReceiptItem(
+            id: object.id,
+            merchant: object.merchant,
+            amount: object.amount,
+            subtotal: object.subtotal?.doubleValue,
+            tax: object.tax?.doubleValue,
+            tip: object.tip?.doubleValue,
+            date: object.date,
+            category: ReceiptCategory(rawValue: object.category) ?? .shopping,
+            customCategoryName: object.customCategoryName,
+            tags: object.tagsText?
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { $0.isEmpty == false } ?? [],
+            imagePath: object.imagePath,
+            imageData: fileStorage.loadImageData(at: object.imagePath) ?? object.imageData,
+            rawText: object.rawText,
+            lineItems: decodeLineItems(from: object.lineItemsText),
+            notes: object.notes,
+            status: ReceiptProcessingStatus(rawValue: object.status) ?? .scanned
+        )
+    }
+
+    private static func encodeLineItems(_ items: [ReceiptLineItem]) -> String? {
+        guard items.isEmpty == false,
+              let data = try? JSONEncoder().encode(items),
+              let text = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return text
+    }
+
+    private static func decodeLineItems(from text: String?) -> [ReceiptLineItem] {
+        guard let text,
+              let data = text.data(using: .utf8),
+              let items = try? JSONDecoder().decode([ReceiptLineItem].self, from: data) else {
+            return []
+        }
+
+        return items
+    }
+}
+
+private extension NSPersistentContainer {
+    func performBackgroundTask<T>(_ work: @escaping (NSManagedObjectContext) throws -> T) async throws -> T {
+        try await withCheckedThrowingContinuation { continuation in
+            performBackgroundTask { context in
+                do {
+                    let result = try work(context)
+                    continuation.resume(returning: result)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+}

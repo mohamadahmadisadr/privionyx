@@ -1,0 +1,200 @@
+{
+  "source": "/Users/mohamad/Code/ios/privionyx/privionyx/Presentation/AddReceipt/AddReceiptView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Close",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Update receipt",
+        "location": {
+          "startingColumn": 48,
+          "startingLine": 95
+        }
+      },
+      {
+        "comment": "",
+        "key": "Add a receipt",
+        "location": {
+          "startingColumn": 67,
+          "startingLine": 95
+        }
+      },
+      {
+        "comment": "",
+        "key": "Replace the image or adjust the extracted fields, then save the updated version.",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 100
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan a paper receipt or import a photo. Privionyx extracts the key fields and lets you review them before saving.",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "Merchant, amount, date, category, and note will appear here after capture.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 139
+        }
+      },
+      {
+        "comment": "",
+        "key": "Review details",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 211
+        }
+      },
+      {
+        "comment": "",
+        "key": "No amount detected",
+        "location": {
+          "startingColumn": 53,
+          "startingLine": 200
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ %@",
+        "location": {
+          "startingColumn": 76,
+          "startingLine": 200
+        }
+      },
+      {
+        "comment": "",
+        "key": "Check the detected fields and fix anything before saving.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 213
+        }
+      },
+      {
+        "comment": "",
+        "key": "Future receipts from this merchant will use the selected category.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 249
+        }
+      },
+      {
+        "comment": "",
+        "key": "Date",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 226
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 230
+        }
+      },
+      {
+        "comment": "",
+        "key": "Note",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 318
+        }
+      },
+      {
+        "comment": "",
+        "key": "Add a note",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 322
+        }
+      },
+      {
+        "comment": "",
+        "key": "Items",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 333
+        }
+      },
+      {
+        "comment": "",
+        "key": "Qty %lld",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 345
+        }
+      },
+      {
+        "comment": "",
+        "key": "Receipt saved",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 725
+        }
+      },
+      {
+        "comment": "",
+        "key": "Analyzing receipt",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 748
+        }
+      },
+      {
+        "comment": "",
+        "key": "Privionyx is extracting the merchant, amount, and date.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 756
+        }
+      },
+      {
+        "comment": "",
+        "key": "Adjust Crop",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 805
+        }
+      },
+      {
+        "comment": "",
+        "key": "Detecting receipt edges",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 795
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 809
+        }
+      },
+      {
+        "comment": "",
+        "key": "Use Crop",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 814
+        }
+      }
+    ]
+  },
+  "version": 1
+}

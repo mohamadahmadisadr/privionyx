@@ -1,0 +1,64 @@
+{
+  "source": "/Users/mohamad/Code/ios/privionyx/privionyx/Presentation/Receipts/ReceiptDetailView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Delete Receipt?",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "Delete",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 44
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 50
+        }
+      },
+      {
+        "comment": "",
+        "key": "This receipt will be removed from local storage.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 52
+        }
+      },
+      {
+        "comment": "",
+        "key": "No receipt image available",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 108
+        }
+      },
+      {
+        "comment": "",
+        "key": "Items",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 144
+        }
+      },
+      {
+        "comment": "",
+        "key": "Qty %lld",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 155
+        }
+      }
+    ]
+  },
+  "version": 1
+}

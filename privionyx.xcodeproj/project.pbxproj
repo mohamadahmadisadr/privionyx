@@ -64,8 +64,6 @@
 				D158BCA12F8365A7009C004D /* privionyx */,
 			);
 			name = privionyx;
-			packageProductDependencies = (
-			);
 			productName = privionyx;
 			productReference = D158BC9F2F8365A7009C004D /* privionyx.app */;
 			productType = "com.apple.product-type.application";
@@ -256,6 +254,12 @@
 				DEVELOPMENT_TEAM = 2HYGFUHN65;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/privionyx",
+				);
+				INFOPLIST_KEY_NSCameraUsageDescription = "Privionyx uses the camera to scan paper receipts entirely on your device.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Privionyx accesses your photo library so you can import receipt images for on-device processing.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +292,12 @@
 				DEVELOPMENT_TEAM = 2HYGFUHN65;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/privionyx",
+				);
+				INFOPLIST_KEY_NSCameraUsageDescription = "Privionyx uses the camera to scan paper receipts entirely on your device.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Privionyx accesses your photo library so you can import receipt images for on-device processing.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
