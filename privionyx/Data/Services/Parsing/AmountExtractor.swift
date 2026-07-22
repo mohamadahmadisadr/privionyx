@@ -54,7 +54,11 @@ struct AmountExtractor {
                 options: .regularExpression
             )
             .replacingOccurrences(of: #"(?<=\d)\s*[\.,]\s*(?=\d{2}\b)"#, with: ".", options: .regularExpression)
-        let pattern = #"\$?\s*\d+(?:[,\s]\d{3})*(?:[.,]\d{2})"#
+        // A figure fused to letters is an identifier, not a price. The footer of an LCBO
+        // receipt prints a version string that recognition returned as "V124.03", which is
+        // indistinguishable from currency by shape alone and won the total on a receipt
+        // whose real total is 33.25.
+        let pattern = #"(?<![A-Za-z0-9])\$?\s*\d+(?:[,\s]\d{3})*(?:[.,]\d{2})"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(normalizedLine.startIndex..<normalizedLine.endIndex, in: normalizedLine)
         return regex.matches(in: normalizedLine, range: range).compactMap { match in

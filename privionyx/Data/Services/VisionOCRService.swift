@@ -162,7 +162,9 @@ struct VisionOCRService {
 
     private static func joinRow(_ row: [RecognizedFragment]) -> OCRTextLine? {
         let ordered = row.sorted { $0.minX < $1.minX }
-        let text = Self.cleanedOCRText(ordered.map(\.text).joined(separator: " "))
+        let text = ReceiptLabelRepair.repaired(
+            Self.cleanedOCRText(ordered.map(\.text).joined(separator: " "))
+        )
         guard text.isEmpty == false, Self.isLikelyUsefulOCRLine(text) else { return nil }
 
         return OCRTextLine(

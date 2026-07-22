@@ -1,7 +1,49 @@
 import Foundation
 
 struct DateExtractor {
+    /// Labels marking a date that is not the transaction's own. On an LCBO receipt the
+    /// return-by date is printed lower and larger than the purchase timestamp, and a plain
+    /// top-down scan reaches it first.
+    private static let futureDateMarkers = [
+        "return", "retour", "valid", "valide", "limite", "expir",
+        "warranty", "garantie", "best before", "use by"
+    ]
+
+    /// A time beside a date is the strongest available signal that it is the moment of
+    /// purchase rather than a deadline printed near it.
+    private static let timePattern = #"\d{1,2}:\d{2}"#
+
     func extractDate(from lines: [String]) -> Date? {
+        // Any date accompanied by a clock time wins outright, whatever its position.
+        if let stamped = firstDate(in: lines, restrictedToLinesWithTime: true) {
+            return stamped
+        }
+        return firstDate(in: lines, restrictedToLinesWithTime: false)
+    }
+
+    private func firstDate(in lines: [String], restrictedToLinesWithTime: Bool) -> Date? {
+        let usable = lines.enumerated().filter { index, line in
+            if restrictedToLinesWithTime,
+               line.range(of: Self.timePattern, options: .regularExpression) == nil {
+                return false
+            }
+            // A clock time settles it on its own: deadlines are printed as bare dates. The
+            // LCBO receipt puts "Date limite pour retour" two rows above its purchase
+            // timestamp, so applying the deadline check here discarded the right answer
+            // along with the wrong one.
+            if restrictedToLinesWithTime { return true }
+
+            // Without a time, fall back to context — a deadline's label often sits a row or
+            // two above the date it introduces, so the neighbourhood is checked.
+            let context = lines[max(0, index - 2)...index].joined(separator: " ").lowercased()
+            return Self.futureDateMarkers.contains(where: context.contains) == false
+        }
+        .map(\.element)
+
+        return scanForDate(in: usable)
+    }
+
+    private func scanForDate(in lines: [String]) -> Date? {
         let patterns = [
             "MM/dd/yyyy", "MM/dd/yy", "yyyy-MM-dd", "dd/MM/yyyy", "dd/MM/yy",
             "MM-dd-yyyy", "MM-dd-yy", "dd-MM-yyyy", "dd-MM-yy",

@@ -1,0 +1,14 @@
+{
+  "notes": "Reported by the user as extracting wrong data. The receipt lies SIDEWAYS in the frame - the paper runs left to right while its text reads bottom to top, so the content is rotated 90 degrees inside an otherwise upright photo. EXIF orientation does not help here because the photo itself is the right way up. Two traps beyond that: the footer prints 'V124 03', which the space-to-decimal rule turns into a 124.03 currency value, and 'Last Valid Date for Return of Product Is: 01 DEC 2026' is a later, more prominent date than the transaction's own '01 NOV 2025 03:18PM'. HST is included in the price rather than added, so no tax line carries an amount.",
+  "image": "lcbo-rotated.heic",
+  "expected": {
+    "merchant": "LCBO",
+    "date": "2025-11-01",
+    "total": 33.25,
+    "subtotal": null,
+    "tax": null,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}
