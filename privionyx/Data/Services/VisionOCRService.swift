@@ -32,7 +32,10 @@ struct VisionOCRService {
     /// receipt came back as 175 rows carrying seven spellings of its own header. One pass
     /// over a well-prepared image is both cleaner and six times cheaper.
     func recognizeText(in image: UIImage) async throws -> OCRResult {
-        let normalizedImage = imageProcessor.normalizedImage(image)
+        // Downscale before anything else so every later copy is of the smaller image.
+        let normalizedImage = imageProcessor.normalizedImage(
+            imageProcessor.downscaledForRecognition(image)
+        )
 
         var fragments = try await Self.recognizedFragments(in: normalizedImage)
         if Self.assembleRows(fragments).count < Self.sparseRowThreshold {
