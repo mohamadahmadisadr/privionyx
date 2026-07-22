@@ -45,10 +45,11 @@ struct AmountExtractor {
 
     func extractAmounts(in line: String) -> [Double] {
         let normalizedLine = line
-            // Receipts print "12 34" for 12.34, but "2026 05:43PM" is a timestamp, not a
-            // price. Without the guard the year and hour became a 2026.05 total.
+            // Receipts print "12 34" for 12.34, but a run of digits followed by a date or
+            // time separator is an identifier, not a price. "2026 05:43PM" became a 2026.05
+            // total; "TAXINV:001-1541798 03/03/18" became 1541798.03.
             .replacingOccurrences(
-                of: #"(?<=\d)\s+(?=\d{2}\b)(?!\d{2}\s*[:.]\d)"#,
+                of: #"(?<=\d)\s+(?=\d{2}\b)(?!\d{2}\s*[:./-]\d)"#,
                 with: ".",
                 options: .regularExpression
             )

@@ -131,6 +131,17 @@ struct ReceiptTotalsReconcilerTests {
         #expect(result.tip == 10.08)
     }
 
+    /// Generalises the crumpled-receipt repair: equality was only the special case. Here a
+    /// tax line outranked a total whose label the token lists do not recognise.
+    @Test("A total below the subtotal is repaired, not just one equal to it")
+    func totalBelowSubtotalIsRepaired() {
+        let result = reconciler.reconcile(total: 0.77, subtotal: 33.80, tax: 0.77, tip: nil)
+
+        #expect(result.status == .repaired)
+        #expect(result.total == 34.57)
+        #expect(result.derived == [.total])
+    }
+
     @Test("Cent-level rounding still counts as balanced")
     func centRoundingTolerated() {
         let result = reconciler.reconcile(total: 18.14, subtotal: 15.78, tax: 2.36, tip: nil)

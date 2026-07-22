@@ -25,3 +25,6 @@ Package.resolved
 
 # Generated codebase analysis (regenerate with `graphify update .`)
 graphify-out/
+
+# Local receipt dataset for testing (not distributed)
+archive/

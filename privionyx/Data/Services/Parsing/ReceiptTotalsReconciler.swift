@@ -62,9 +62,10 @@ struct ReceiptTotalsReconciler {
                 // would overstate the tip and leave the receipt not adding up.
                 result.tip = nil
                 result.status = .repaired
-            } else if Self.isTotalActuallySubtotal(total: total, subtotal: subtotal, tax: tax) {
-                // No TOTAL row reached the parser and it fell back to the subtotal. A receipt
-                // charging tax cannot have total == subtotal, so the sum is the better answer.
+            } else if Self.totalCannotBeTheTotal(total: total, subtotal: subtotal, tax: tax, tip: tipValue) {
+                // Whatever was read as the total is at or below the subtotal, so it is not the
+                // total: either the row never reached OCR and the subtotal stood in for it, or
+                // a smaller figure beside it won. The sum is the better answer either way.
                 result.total = Self.roundedToCents(subtotal + tax + tipValue)
                 result.derived.insert(.total)
                 result.status = .repaired
@@ -117,9 +118,17 @@ struct ReceiptTotalsReconciler {
         abs(total - (subtotal + tax + tip)) <= tolerance
     }
 
-    /// True when the reported total is indistinguishable from the subtotal while a non-zero
-    /// tax is charged — the signature of a totals row that never made it through OCR.
-    private static func isTotalActuallySubtotal(total: Double, subtotal: Double, tax: Double) -> Bool {
-        abs(total - subtotal) <= tolerance && tax > tolerance
+    /// True when the figure read as the total sits at or below the subtotal while the parts
+    /// sum to more. A purchase cannot cost less than the goods on it, so the figure is either
+    /// the subtotal standing in for a total row that never reached OCR, or a smaller amount
+    /// nearby that outranked it — a tax line, on a receipt whose total carries a label the
+    /// token lists do not know.
+    private static func totalCannotBeTheTotal(
+        total: Double,
+        subtotal: Double,
+        tax: Double,
+        tip: Double
+    ) -> Bool {
+        total <= subtotal + tolerance && (subtotal + tax + tip) > total + tolerance
     }
 }
