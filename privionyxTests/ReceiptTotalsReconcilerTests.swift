@@ -142,6 +142,22 @@ struct ReceiptTotalsReconcilerTests {
         #expect(result.derived == [.total])
     }
 
+    /// The grand total read into the tax field on a SPAR receipt: tax 338.16 against a
+    /// total of 9.53. No genuine tax meets or exceeds the total, in any locale.
+    @Test("A tax at or above the total is dropped, not kept")
+    func impossibleTaxDropped() {
+        let result = reconciler.reconcile(total: 9.53, subtotal: nil, tax: 338.16, tip: nil)
+        #expect(result.tax == nil)
+    }
+
+    /// Subtotal is exempt: on a tax-free receipt it legitimately equals the total.
+    @Test("A subtotal equal to the total is left alone")
+    func subtotalEqualToTotalKept() {
+        let result = reconciler.reconcile(total: 31.45, subtotal: 31.45, tax: 0.00, tip: nil)
+        #expect(result.subtotal == 31.45)
+        #expect(result.status == .consistent)
+    }
+
     @Test("Cent-level rounding still counts as balanced")
     func centRoundingTolerated() {
         let result = reconciler.reconcile(total: 18.14, subtotal: 15.78, tax: 2.36, tip: nil)

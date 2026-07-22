@@ -17,8 +17,11 @@ import UIKit
 /// `PRIVIONYX_DATASET_DIR` at it, or leave the default; the suite skips when absent.
 @Suite("Local dataset invariants")
 struct LocalDatasetTests {
-    /// Enough to be representative without turning a test run into a coffee break.
-    static let sampleSize = 40
+    /// Sampled wide because most of the archive is filtered out as out-of-locale — at forty
+    /// images only seven were being evaluated, which is too thin a net to catch anything.
+    /// The pipeline runs at about a second per receipt, so this trades a slower run for
+    /// roughly three times the in-locale coverage.
+    static let sampleSize = 150
 
     static var datasetDirectory: URL? {
         let path = ProcessInfo.processInfo.environment["PRIVIONYX_DATASET_DIR"]
@@ -143,8 +146,14 @@ struct LocalDatasetTests {
             if value < 0 {
                 found.append((.negativeComponent, "\(label) \(String(format: "%.2f", value))"))
             }
-            // Only meaningful once a total exists to compare against.
-            if parsed.amount > 0, value > parsed.amount + ReceiptTotalsReconciler.tolerance {
+        }
+
+        // Tax and tip cannot exceed the total; subtotal can, because a discount applied after
+        // the subtotal legitimately makes the total smaller (a Guardian receipt in the archive
+        // does exactly this). So subtotal is deliberately not checked here.
+        if parsed.amount > 0 {
+            for (label, value) in [("tax", parsed.tax), ("tip", parsed.tip)] {
+                guard let value, value > parsed.amount + ReceiptTotalsReconciler.tolerance else { continue }
                 found.append((
                     .componentExceedsTotal,
                     "\(label) \(String(format: "%.2f", value)) > total \(String(format: "%.2f", parsed.amount))"
@@ -164,7 +173,13 @@ struct LocalDatasetTests {
 
         let foreignMarkers = [
             "sdn bhd", "sdn. bhd", "bhd", "jumlah", "tunai", "cawangan", "kedai",
-            "ringgit", "gst summary", "no. resit", "harga"
+            "ringgit", "gst summary", "no. resit", "harga",
+            // VAT is the tax system of the UK, EU and South Africa, none of which the app
+            // targets — Canada and the US charge HST/GST/sales tax. A printed VAT
+            // registration number is a reliable out-of-locale marker, and it is what let a
+            // South African SPAR receipt through: English text, so the script filters missed it.
+            "vat no", "vat reg", "vat number", "tax invoice",
+            "gst reg", "company reg", "sdn", "amounts are in rm"
         ]
         if foreignMarkers.contains(where: { MerchantExtractor.containsWord($0, in: lowercased) }) {
             return true

@@ -104,6 +104,16 @@ struct ReceiptTotalsReconciler {
             result.status = .unverified
         }
 
+        // Final guard, against the reconciled total rather than the raw one: a tax or tip at
+        // or above the total is the grand total read into the wrong field, not a real figure.
+        // Checked here so that a total which repair corrected upward — the case where the
+        // total itself was the under-read value — does not cause a good component to be
+        // discarded. Subtotal is exempt: it legitimately equals the total on a tax-free receipt.
+        if let total = result.total {
+            if let tax = result.tax, tax >= total - Self.tolerance { result.tax = nil }
+            if let tip = result.tip, tip >= total - Self.tolerance { result.tip = nil }
+        }
+
         return result
     }
 

@@ -36,23 +36,6 @@ struct ReceiptCropEditorView: View {
                         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     }
 
-                    VStack {
-                        Spacer()
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Adjust the receipt edges")
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundStyle(.white)
-                            Text("Drag the corners so the full paper receipt sits inside the outline.")
-                                .font(.system(size: 12.5))
-                                .foregroundStyle(.white.opacity(0.75))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(16)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 28)
-                    }
                 }
             }
             .navigationTitle("Adjust Crop")
