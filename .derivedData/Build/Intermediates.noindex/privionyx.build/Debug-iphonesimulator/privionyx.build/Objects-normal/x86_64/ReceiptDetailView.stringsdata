@@ -7,7 +7,7 @@
         "key": "Delete Receipt?",
         "location": {
           "startingColumn": 16,
-          "startingLine": 43
+          "startingLine": 44
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "Delete",
         "location": {
           "startingColumn": 20,
-          "startingLine": 44
+          "startingLine": 45
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "Cancel",
         "location": {
           "startingColumn": 20,
-          "startingLine": 50
+          "startingLine": 51
         }
       },
       {
@@ -31,31 +31,23 @@
         "key": "This receipt will be removed from local storage.",
         "location": {
           "startingColumn": 18,
-          "startingLine": 52
+          "startingLine": 53
         }
       },
       {
         "comment": "",
         "key": "No receipt image available",
         "location": {
-          "startingColumn": 34,
-          "startingLine": 108
-        }
-      },
-      {
-        "comment": "",
-        "key": "Items",
-        "location": {
           "startingColumn": 26,
-          "startingLine": 144
+          "startingLine": 143
         }
       },
       {
         "comment": "",
-        "key": "Qty %lld",
+        "key": "Delete Receipt",
         "location": {
-          "startingColumn": 42,
-          "startingLine": 155
+          "startingColumn": 22,
+          "startingLine": 224
         }
       }
     ]

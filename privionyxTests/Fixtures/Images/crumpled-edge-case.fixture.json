@@ -1,0 +1,13 @@
+{
+  "notes": "Edge case: crumpled and creased, photographed at an angle against a patterned background, greyscale and low contrast. The TOTAL line at the bottom is partially obscured, so the total (342.95) is only recoverable as subtotal + tax — the case that motivates arithmetic reconciliation. Date is cropped out of frame entirely, so finding one would be a spurious value rather than a win.",
+  "image": "crumpled-edge-case.jpg",
+  "expected": {
+    "merchant": "Costco",
+    "date": null,
+    "total": 342.95,
+    "subtotal": 327.75,
+    "tax": 15.20,
+    "tip": null,
+    "category": "Shopping"
+  }
+}

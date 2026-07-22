@@ -1,0 +1,48 @@
+{
+  "source": "/Users/mohamad/Code/ios/privionyx/privionyx/Presentation/Shared/PrivionyxGlassComponents.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%@, %lld percent of spending",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 246
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 229
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ %lld percent versus last period",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 311
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 303
+        }
+      },
+      {
+        "comment": "",
+        "key": "Required",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 559
+        }
+      }
+    ]
+  },
+  "version": 1
+}

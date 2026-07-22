@@ -2,7 +2,7 @@ import CoreData
 import Foundation
 
 final class CoreDataReceiptRepository: ReceiptRepository {
-    private let stack: CoreDataStack
+    let stack: CoreDataStack
     private let fileStorage: ReceiptFileStorage
 
     init(stack: CoreDataStack, fileStorage: ReceiptFileStorage = ReceiptFileStorage()) {
@@ -65,7 +65,7 @@ final class CoreDataReceiptRepository: ReceiptRepository {
             object.imagePath = storedImagePath
             object.imageData = nil
             object.rawText = receipt.rawText
-            object.lineItemsText = Self.encodeLineItems(receipt.lineItems)
+            object.lineItemsText = ReceiptLineItemCoder.encode(receipt.lineItems)
             object.notes = receipt.notes
             object.status = receipt.status.rawValue
             if existingObject == nil {
@@ -88,46 +88,6 @@ final class CoreDataReceiptRepository: ReceiptRepository {
             context.delete(object)
             try context.save()
             try self.fileStorage.deleteImage(at: imagePath)
-        }
-    }
-
-    func purgeLegacySeedData() async throws {
-        let legacyMerchants = [
-            "Shell Downtown",
-            "Whole Foods Market",
-            "Blue Bottle Coffee",
-            "City Power & Water",
-            "Target"
-        ]
-        let legacyNotes = [
-            "OCR confidence 96%",
-            "Receipt fields reviewed",
-            "Tip included",
-            "Billing period matched",
-            "Category can be refined"
-        ]
-        let placeholderMerchants = [
-            "LOREM IPSUM DOLOR SIT AMET",
-            "Lorem Ipsum Dolor Sit Amet"
-        ]
-
-        try await stack.container.performBackgroundTask { context in
-            let request = ReceiptManagedObject.fetchRequest()
-            request.predicate = NSCompoundPredicate(
-                orPredicateWithSubpredicates: [
-                    NSPredicate(format: "merchant IN %@", legacyMerchants),
-                    NSPredicate(format: "notes IN %@", legacyNotes),
-                    NSPredicate(format: "merchant IN %@", placeholderMerchants),
-                    NSPredicate(format: "merchant CONTAINS[cd] %@", "lorem ipsum")
-                ]
-            )
-
-            let matches = try context.fetch(request)
-            matches.forEach(context.delete)
-
-            if context.hasChanges {
-                try context.save()
-            }
         }
     }
 
@@ -191,44 +151,9 @@ final class CoreDataReceiptRepository: ReceiptRepository {
             imagePath: object.imagePath,
             imageData: fileStorage.loadImageData(at: object.imagePath) ?? object.imageData,
             rawText: object.rawText,
-            lineItems: decodeLineItems(from: object.lineItemsText),
+            lineItems: ReceiptLineItemCoder.decode(from: object.lineItemsText),
             notes: object.notes,
             status: ReceiptProcessingStatus(rawValue: object.status) ?? .scanned
         )
-    }
-
-    private static func encodeLineItems(_ items: [ReceiptLineItem]) -> String? {
-        guard items.isEmpty == false,
-              let data = try? JSONEncoder().encode(items),
-              let text = String(data: data, encoding: .utf8) else {
-            return nil
-        }
-
-        return text
-    }
-
-    private static func decodeLineItems(from text: String?) -> [ReceiptLineItem] {
-        guard let text,
-              let data = text.data(using: .utf8),
-              let items = try? JSONDecoder().decode([ReceiptLineItem].self, from: data) else {
-            return []
-        }
-
-        return items
-    }
-}
-
-private extension NSPersistentContainer {
-    func performBackgroundTask<T>(_ work: @escaping (NSManagedObjectContext) throws -> T) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
-            performBackgroundTask { context in
-                do {
-                    let result = try work(context)
-                    continuation.resume(returning: result)
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
     }
 }

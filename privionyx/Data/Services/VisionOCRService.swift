@@ -1,48 +1,9 @@
-import CoreImage
-import CoreImage.CIFilterBuiltins
 import CoreGraphics
 import UIKit
 import Vision
 
-struct OCRTextLine: Hashable {
-    let text: String
-    let minX: CGFloat
-    let maxX: CGFloat
-    let midY: CGFloat
-}
-
-struct ReceiptQuadrilateral: Hashable {
-    var topLeft: CGPoint
-    var topRight: CGPoint
-    var bottomRight: CGPoint
-    var bottomLeft: CGPoint
-
-    static let `default` = ReceiptQuadrilateral(
-        topLeft: CGPoint(x: 0.08, y: 0.94),
-        topRight: CGPoint(x: 0.92, y: 0.94),
-        bottomRight: CGPoint(x: 0.92, y: 0.08),
-        bottomLeft: CGPoint(x: 0.08, y: 0.08)
-    )
-}
-
-enum OCRServiceError: LocalizedError {
-    case unsupportedImage
-
-    var errorDescription: String? {
-        switch self {
-        case .unsupportedImage:
-            "The selected image could not be processed."
-        }
-    }
-}
-
-struct OCRResult {
-    let rawText: String
-    let lines: [OCRTextLine]
-}
-
 struct VisionOCRService {
-    private let context = CIContext(options: nil)
+    private let imageProcessor: ReceiptImageProcessor
     private static let preferredLanguages = ["en-CA", "fr-CA", "en-US"]
     private static let customReceiptWords = [
         "subtotal", "sub total", "tax", "hst", "gst", "tvq", "vat", "tip", "gratuity",
@@ -54,138 +15,13 @@ struct VisionOCRService {
         "merchant", "terminal", "reference", "cardholder", "change due", "paid"
     ]
 
-    func normalizedImage(_ image: UIImage) -> UIImage {
-        let rendererFormat = UIGraphicsImageRendererFormat.default()
-        rendererFormat.scale = image.scale
-
-        let renderer = UIGraphicsImageRenderer(size: image.size, format: rendererFormat)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: image.size))
-        }
-    }
-
-    func enhanceReceiptImage(_ image: UIImage) -> UIImage {
-        let normalizedImage = normalizedImage(image)
-
-        guard let inputImage = CIImage(image: normalizedImage) else {
-            return normalizedImage
-        }
-
-        let colorControls = CIFilter.colorControls()
-        colorControls.inputImage = inputImage
-        colorControls.saturation = 0
-        colorControls.contrast = 1.18
-        colorControls.brightness = 0.02
-
-        let sharpen = CIFilter.sharpenLuminance()
-        sharpen.inputImage = colorControls.outputImage
-        sharpen.sharpness = 0.35
-
-        guard let outputImage = sharpen.outputImage,
-              let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            return normalizedImage
-        }
-
-        return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
-    }
-
-    func thresholdedReceiptImage(_ image: UIImage) -> UIImage {
-        let normalizedImage = normalizedImage(image)
-
-        guard let inputImage = CIImage(image: normalizedImage) else {
-            return normalizedImage
-        }
-
-        let mono = CIFilter.colorControls()
-        mono.inputImage = inputImage
-        mono.saturation = 0
-        mono.contrast = 1.45
-        mono.brightness = 0.03
-
-        let exposure = CIFilter.exposureAdjust()
-        exposure.inputImage = mono.outputImage
-        exposure.ev = 0.55
-
-        guard let outputImage = exposure.outputImage,
-              let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            return normalizedImage
-        }
-
-        return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
-    }
-
-    func upscaledReceiptImage(_ image: UIImage) -> UIImage {
-        let normalizedImage = normalizedImage(image)
-        let targetSize = CGSize(width: normalizedImage.size.width * 1.35, height: normalizedImage.size.height * 1.35)
-        let renderer = UIGraphicsImageRenderer(size: targetSize)
-        return renderer.image { _ in
-            normalizedImage.draw(in: CGRect(origin: .zero, size: targetSize))
-        }
-    }
-
-    func detectReceiptQuadrilateral(in image: UIImage) async -> ReceiptQuadrilateral? {
-        let normalizedImage = normalizedImage(image)
-
-        guard let cgImage = normalizedImage.cgImage else {
-            return nil
-        }
-
-        return await Task.detached(priority: .userInitiated) {
-            let request = VNDetectRectanglesRequest()
-            request.maximumObservations = 1
-            request.minimumConfidence = 0.55
-            request.minimumAspectRatio = 0.15
-            request.maximumAspectRatio = 1
-            request.quadratureTolerance = 22
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-            try? handler.perform([request])
-
-            guard let observation = request.results?.first else {
-                return nil
-            }
-
-            return ReceiptQuadrilateral(
-                topLeft: observation.topLeft,
-                topRight: observation.topRight,
-                bottomRight: observation.bottomRight,
-                bottomLeft: observation.bottomLeft
-            )
-        }
-        .value
-    }
-
-    func cropReceiptImage(_ image: UIImage, quadrilateral: ReceiptQuadrilateral) -> UIImage {
-        let normalizedImage = normalizedImage(image)
-
-        guard let inputImage = CIImage(image: normalizedImage) else {
-            return normalizedImage
-        }
-
-        let points = denormalizedPoints(for: quadrilateral, imageSize: normalizedImage.size)
-        let filter = CIFilter.perspectiveCorrection()
-        filter.inputImage = inputImage
-        filter.topLeft = points.topLeft
-        filter.topRight = points.topRight
-        filter.bottomLeft = points.bottomLeft
-        filter.bottomRight = points.bottomRight
-
-        guard let outputImage = filter.outputImage,
-              let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            return normalizedImage
-        }
-
-        return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
+    init(imageProcessor: ReceiptImageProcessor = ReceiptImageProcessor()) {
+        self.imageProcessor = imageProcessor
     }
 
     func recognizeText(in image: UIImage) async throws -> OCRResult {
-        let normalizedImage = normalizedImage(image)
-        let variants = Self.ocrVariants(
-            for: normalizedImage,
-            enhance: self.enhanceReceiptImage(_:),
-            threshold: self.thresholdedReceiptImage(_:),
-            upscale: self.upscaledReceiptImage(_:)
-        )
+        let normalizedImage = imageProcessor.normalizedImage(image)
+        let variants = ocrVariants(for: normalizedImage)
         var recognizedLines: [RecognizedLine] = []
         for variant in variants {
             let variantLines = try await Self.recognizedLines(in: variant)
@@ -196,17 +32,12 @@ struct VisionOCRService {
         return OCRResult(rawText: mergedText, lines: mergedLines)
     }
 
-    private static func ocrVariants(
-        for image: UIImage,
-        enhance: (UIImage) -> UIImage,
-        threshold: (UIImage) -> UIImage,
-        upscale: (UIImage) -> UIImage
-    ) -> [UIImage] {
-        let enhanced = enhance(image)
-        let thresholded = threshold(image)
-        let thresholdedEnhanced = threshold(enhanced)
-        let upscaled = upscale(image)
-        let upscaledEnhanced = upscale(enhanced)
+    private func ocrVariants(for image: UIImage) -> [UIImage] {
+        let enhanced = imageProcessor.enhanceReceiptImage(image)
+        let thresholded = imageProcessor.thresholdedReceiptImage(image)
+        let thresholdedEnhanced = imageProcessor.thresholdedReceiptImage(enhanced)
+        let upscaled = imageProcessor.upscaledReceiptImage(image)
+        let upscaledEnhanced = imageProcessor.upscaledReceiptImage(enhanced)
 
         return [image, enhanced, thresholded, thresholdedEnhanced, upscaled, upscaledEnhanced]
     }
@@ -389,30 +220,6 @@ struct VisionOCRService {
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
-
-    private func denormalizedPoints(for quadrilateral: ReceiptQuadrilateral, imageSize: CGSize) -> ReceiptQuadrilateral {
-        func clamp(_ point: CGPoint) -> CGPoint {
-            CGPoint(
-                x: min(max(point.x, 0.02), 0.98),
-                y: min(max(point.y, 0.02), 0.98)
-            )
-        }
-
-        func convert(_ point: CGPoint) -> CGPoint {
-            let clamped = clamp(point)
-            return CGPoint(
-                x: clamped.x * imageSize.width,
-                y: clamped.y * imageSize.height
-            )
-        }
-
-        return ReceiptQuadrilateral(
-            topLeft: convert(quadrilateral.topLeft),
-            topRight: convert(quadrilateral.topRight),
-            bottomRight: convert(quadrilateral.bottomRight),
-            bottomLeft: convert(quadrilateral.bottomLeft)
-        )
-    }
 }
 
 private struct RecognizedLine {
@@ -422,3 +229,5 @@ private struct RecognizedLine {
     let maxX: CGFloat
     let midY: CGFloat
 }
+
+extension VisionOCRService: OCRService {}

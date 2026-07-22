@@ -1,0 +1,28 @@
+{
+  "notes": "The merchant name is not the first text line — a logo row and a 'WELCOME TO' banner precede it. Tests that merchant selection weighs more than line position, since the current scoring rewards early lines heavily.",
+  "rawText": [
+    "*** *** ***",
+    "WELCOME TO",
+    "STARBUCKS #1147",
+    "220 YONGE ST",
+    "TORONTO ON",
+    "",
+    "GRANDE LATTE               5.45",
+    "BLUEBERRY MUFFIN           3.25",
+    "--------------------------------",
+    "SUBTOTAL                   8.70",
+    "HST                        1.13",
+    "TOTAL                      9.83",
+    "",
+    "MAR 04 2026 14:23"
+  ],
+  "expected": {
+    "merchant": "Starbucks",
+    "date": "2026-03-04",
+    "total": 9.83,
+    "subtotal": 8.70,
+    "tax": 1.13,
+    "tip": null,
+    "category": "Dining"
+  }
+}

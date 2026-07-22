@@ -1,12 +1,11 @@
 import Observation
 import CoreData
 import Foundation
-import UIKit
 
 @MainActor
 @Observable
 final class PrivionyxAppState {
-    private let container: PrivionyxAppContainer
+    let container: PrivionyxAppContainer
     private var hasCompletedInitialLoad = false
 
     private(set) var receipts: [ReceiptItem] = []
@@ -33,9 +32,21 @@ final class PrivionyxAppState {
         do {
             try await container.repository.purgeLegacySeedData()
             try await loadReceipts()
+            try await seedSampleDataIfRequested()
         } catch {
             lastErrorMessage = error.localizedDescription
         }
+    }
+
+    private func seedSampleDataIfRequested() async throws {
+        #if DEBUG
+        guard PrivionyxSampleData.isRequested, receipts.isEmpty else { return }
+
+        for draft in PrivionyxSampleData.drafts() {
+            try await container.saveReceiptUseCase.execute(draft)
+        }
+        try await loadReceipts()
+        #endif
     }
 
     func initializeIfNeeded() async {
@@ -62,60 +73,6 @@ final class PrivionyxAppState {
         }
     }
 
-    func parseReceipt(from rawText: String) async -> ReceiptDraft {
-        let parsed = await container.parser.parse(rawText: rawText)
-        return ReceiptDraft(
-            merchant: parsed.merchant,
-            amount: parsed.amount,
-            subtotal: parsed.subtotal,
-            tax: parsed.tax,
-            tip: parsed.tip,
-            date: parsed.date,
-            category: resolvedCategory(for: parsed.merchant, fallback: parsed.category),
-            imageData: nil,
-            rawText: parsed.rawText,
-            lineItems: parsed.lineItems,
-            notes: parsed.notes,
-            status: .scanned
-        )
-    }
-
-    func recognizeAndParseReceipt(from image: UIImage) async throws -> ReceiptDraft {
-        let ocrResult = try await container.ocrService.recognizeText(in: image)
-        let parsed = await container.parser.parse(ocrResult: ocrResult)
-
-        return ReceiptDraft(
-            merchant: parsed.merchant,
-            amount: parsed.amount,
-            subtotal: parsed.subtotal,
-            tax: parsed.tax,
-            tip: parsed.tip,
-            date: parsed.date,
-            category: resolvedCategory(for: parsed.merchant, fallback: parsed.category),
-            imageData: nil,
-            rawText: parsed.rawText,
-            lineItems: parsed.lineItems,
-            notes: parsed.notes,
-            status: .scanned
-        )
-    }
-
-    func enhanceReceiptImage(_ image: UIImage) -> UIImage {
-        container.ocrService.enhanceReceiptImage(image)
-    }
-
-    func detectReceiptQuadrilateral(in image: UIImage) async -> ReceiptQuadrilateral? {
-        await container.ocrService.detectReceiptQuadrilateral(in: image)
-    }
-
-    func cropReceiptImage(_ image: UIImage, quadrilateral: ReceiptQuadrilateral) -> UIImage {
-        container.ocrService.cropReceiptImage(image, quadrilateral: quadrilateral)
-    }
-
-    func normalizeReceiptImage(_ image: UIImage) -> UIImage {
-        container.ocrService.normalizedImage(image)
-    }
-
     func saveReceipt(_ draft: ReceiptDraft) async throws {
         try await container.saveReceiptUseCase.execute(draft)
         container.merchantRuleService.saveRule(merchant: draft.merchant, category: draft.category)
@@ -127,54 +84,8 @@ final class PrivionyxAppState {
         try await loadReceipts()
     }
 
-    func makeQuery(
-        searchText: String,
-        selectedCategory: ReceiptCategory?,
-        dateInterval: DateInterval? = nil,
-        minimumAmount: Double? = nil,
-        maximumAmount: Double? = nil
-    ) -> SpendingQuery {
-        container.queryService.makeQuery(
-            searchText: searchText,
-            selectedCategory: selectedCategory,
-            dateInterval: dateInterval,
-            minimumAmount: minimumAmount,
-            maximumAmount: maximumAmount
-        )
-    }
-
-    func filteredReceipts(
-        searchText: String,
-        selectedCategory: ReceiptCategory?,
-        dateInterval: DateInterval? = nil,
-        minimumAmount: Double? = nil,
-        maximumAmount: Double? = nil
-    ) -> [ReceiptItem] {
-        let normalizedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        return receipts.filter { receipt in
-            let matchesCategory = selectedCategory.map { receipt.category == $0 } ?? true
-            let matchesSearch = normalizedSearch.isEmpty
-                || receipt.merchant.localizedCaseInsensitiveContains(normalizedSearch)
-                || receipt.notes.localizedCaseInsensitiveContains(normalizedSearch)
-                || receipt.displayCategoryName.localizedCaseInsensitiveContains(normalizedSearch)
-                || receipt.tags.contains(where: { $0.localizedCaseInsensitiveContains(normalizedSearch) })
-                || PrivionyxCurrencyFormatter.string(for: receipt.amount).localizedCaseInsensitiveContains(normalizedSearch)
-                || (receipt.rawText?.localizedCaseInsensitiveContains(normalizedSearch) ?? false)
-            let matchesDate = dateInterval.map { $0.contains(receipt.date) } ?? true
-            let matchesMinimumAmount = minimumAmount.map { receipt.amount >= $0 } ?? true
-            let matchesMaximumAmount = maximumAmount.map { receipt.amount <= $0 } ?? true
-
-            return matchesCategory && matchesSearch && matchesDate && matchesMinimumAmount && matchesMaximumAmount
-        }
-    }
-
     private func loadReceipts() async throws {
         receipts = try await container.fetchReceiptsUseCase.execute()
         receiptsVersion += 1
-    }
-
-    private func resolvedCategory(for merchant: String, fallback: ReceiptCategory) -> ReceiptCategory {
-        container.merchantRuleService.category(for: merchant) ?? fallback
     }
 }

@@ -46,3 +46,5 @@ struct ReceiptFileStorage {
         }
     }
 }
+
+extension ReceiptFileStorage: ReceiptImageStore {}

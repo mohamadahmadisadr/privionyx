@@ -5,6 +5,91 @@
 	<key>logFormatVersion</key>
 	<integer>12</integer>
 	<key>logs</key>
-	<dict/>
+	<dict>
+		<key>1869A7D0-08F9-4DE9-A87F-7A6C4D59502F</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>1869A7D0-08F9-4DE9-A87F-7A6C4D59502F.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>privionyx project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>privionyx</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Testing project privionyx with scheme privionyx</string>
+			<key>timeStartedRecording</key>
+			<real>806425905.41332603</real>
+			<key>timeStoppedRecording</key>
+			<real>806425908.07077897</real>
+			<key>title</key>
+			<string>Testing project privionyx with scheme privionyx</string>
+			<key>uniqueIdentifier</key>
+			<string>1869A7D0-08F9-4DE9-A87F-7A6C4D59502F</string>
+		</dict>
+		<key>CFF85A1E-5376-4D80-9FBC-8B2D8E148C61</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>CFF85A1E-5376-4D80-9FBC-8B2D8E148C61.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>S</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>0</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>privionyx project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>privionyx</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Testing project privionyx with scheme privionyx</string>
+			<key>timeStartedRecording</key>
+			<real>806424945.575845</real>
+			<key>timeStoppedRecording</key>
+			<real>806424946.737679</real>
+			<key>title</key>
+			<string>Testing project privionyx with scheme privionyx</string>
+			<key>uniqueIdentifier</key>
+			<string>CFF85A1E-5376-4D80-9FBC-8B2D8E148C61</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

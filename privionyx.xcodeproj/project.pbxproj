@@ -6,8 +6,19 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		D1A000072F8365A7009C004D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D158BC972F8365A7009C004D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D158BC9E2F8365A7009C004D;
+			remoteInfo = privionyx;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		D158BC9F2F8365A7009C004D /* privionyx.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = privionyx.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1A000012F8365A7009C004D /* privionyxTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = privionyxTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +27,22 @@
 			path = privionyx;
 			sourceTree = "<group>";
 		};
+		D1A000022F8365A7009C004D /* privionyxTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = privionyxTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		D158BC9C2F8365A7009C004D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D1A000042F8365A7009C004D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				D158BCA12F8365A7009C004D /* privionyx */,
+				D1A000022F8365A7009C004D /* privionyxTests */,
 				D158BCA02F8365A7009C004D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				D158BC9F2F8365A7009C004D /* privionyx.app */,
+				D1A000012F8365A7009C004D /* privionyxTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,6 +93,27 @@
 			productReference = D158BC9F2F8365A7009C004D /* privionyx.app */;
 			productType = "com.apple.product-type.application";
 		};
+		D1A000062F8365A7009C004D /* privionyxTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D1A0000B2F8365A7009C004D /* Build configuration list for PBXNativeTarget "privionyxTests" */;
+			buildPhases = (
+				D1A000032F8365A7009C004D /* Sources */,
+				D1A000042F8365A7009C004D /* Frameworks */,
+				D1A000052F8365A7009C004D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D1A000082F8365A7009C004D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D1A000022F8365A7009C004D /* privionyxTests */,
+			);
+			name = privionyxTests;
+			productName = privionyxTests;
+			productReference = D1A000012F8365A7009C004D /* privionyxTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -80,6 +126,10 @@
 				TargetAttributes = {
 					D158BC9E2F8365A7009C004D = {
 						CreatedOnToolsVersion = 26.4;
+					};
+					D1A000062F8365A7009C004D = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = D158BC9E2F8365A7009C004D;
 					};
 				};
 			};
@@ -98,12 +148,20 @@
 			projectRoot = "";
 			targets = (
 				D158BC9E2F8365A7009C004D /* privionyx */,
+				D1A000062F8365A7009C004D /* privionyxTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		D158BC9D2F8365A7009C004D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D1A000052F8365A7009C004D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -120,7 +178,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D1A000032F8365A7009C004D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D1A000082F8365A7009C004D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D158BC9E2F8365A7009C004D /* privionyx */;
+			targetProxy = D1A000072F8365A7009C004D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		D158BCA82F8365A8009C004D /* Debug */ = {
@@ -320,6 +393,50 @@
 			};
 			name = Release;
 		};
+		D1A000092F8365A7009C004D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2HYGFUHN65;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.privionyx.app.privionyxTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/privionyx.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/privionyx";
+			};
+			name = Debug;
+		};
+		D1A0000A2F8365A7009C004D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2HYGFUHN65;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.privionyx.app.privionyxTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/privionyx.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/privionyx";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -337,6 +454,15 @@
 			buildConfigurations = (
 				D158BCAB2F8365A8009C004D /* Debug */,
 				D158BCAC2F8365A8009C004D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D1A0000B2F8365A7009C004D /* Build configuration list for PBXNativeTarget "privionyxTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D1A000092F8365A7009C004D /* Debug */,
+				D1A0000A2F8365A7009C004D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

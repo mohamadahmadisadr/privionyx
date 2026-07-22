@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(PrivionyxAppState.self) private var appState
+    @AppStorage(AppearanceMode.storageKey) private var appearanceMode: AppearanceMode = .system
 
     var body: some View {
         Group {
@@ -23,6 +24,7 @@ struct ContentView: View {
         .task {
             await appState.initializeIfNeeded()
         }
+        .preferredColorScheme(appearanceMode.colorScheme)
             .alert(
                 "Privionyx",
                 isPresented: Binding<Bool>(
@@ -51,40 +53,37 @@ private struct LaunchSplashView: View {
             PrivionyxTheme.appBackground
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 10) {
+            VStack(spacing: 18) {
+                GlassIconTile(systemImage: "doc.text.viewfinder", size: 72)
+
+                VStack(spacing: 6) {
                     Text("Privionyx")
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundStyle(PrivionyxTheme.Colors.ink)
 
-                    Text("Private receipt intelligence, prepared on device.")
-                        .font(.subheadline.weight(.medium))
+                    Text("Turn receipts into clean expense records.")
+                        .font(.system(size: 13, weight: .medium))
+                        .multilineTextAlignment(.center)
                         .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
                 }
 
-                VStack(spacing: 14) {
+                VStack(spacing: 8) {
                     ProgressView()
-                        .controlSize(.large)
-                        .tint(PrivionyxTheme.Colors.accentStrong)
 
                     Text(statusText)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .multilineTextAlignment(.center)
+                        .font(.system(size: 12))
+                        .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
                 }
-                .padding(18)
-                .background(PrivionyxTheme.Colors.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(PrivionyxTheme.Colors.separator, lineWidth: 1)
-                )
             }
-            .padding(.horizontal, 24)
+            .padding(30)
+            .frame(maxWidth: 320)
+            .privionyxCardStyle(cornerRadius: 28)
         }
     }
 }
 
 #Preview {
     ContentView()
-        .environment(PrivionyxAppState(container: .live(inMemory: true)))
+        .environment(PrivionyxAppState(container: .preview))
+        .environment(AppCoordinator())
 }

@@ -43,3 +43,5 @@ struct MerchantRuleService {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
+
+extension MerchantRuleService: MerchantRuleProviding {}

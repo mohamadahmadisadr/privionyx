@@ -10,6 +10,7 @@ import SwiftUI
 @main
 struct privionyxApp: App {
     @State private var appState: PrivionyxAppState
+    @State private var coordinator = AppCoordinator()
 
     init() {
         let container = PrivionyxAppContainer.live()
@@ -20,6 +21,7 @@ struct privionyxApp: App {
         WindowGroup {
             ContentView()
                 .environment(appState)
+                .environment(coordinator)
                 .environment(\.managedObjectContext, appState.viewContext)
         }
     }

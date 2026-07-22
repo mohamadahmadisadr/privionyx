@@ -1,0 +1,13 @@
+{
+  "notes": "Real iPhone capture, 5712x4284 HEIC, handheld over a dark table with the receipt lit unevenly and creased across the lower half. The most representative fixture in the corpus — this is what the app actually receives. Rich in traps: 'CT M/C TEND 42.10' repeats the total, four CT Money loyalty amounts sit below the totals block, 'HST #757325485' carries a tax token with no currency value, and the footer advertises a $1000 gift card.",
+  "image": "canadian-tire-camera.heic",
+  "expected": {
+    "merchant": "Canadian Tire",
+    "date": "2026-04-17",
+    "total": 42.10,
+    "subtotal": 37.26,
+    "tax": 4.84,
+    "tip": null,
+    "category": "Shopping"
+  }
+}

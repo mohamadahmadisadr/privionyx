@@ -4,194 +4,90 @@
     "Localizable": [
       {
         "comment": "",
-        "key": "Close",
+        "key": "You can review and edit the extracted fields before anything is saved.",
         "location": {
-          "startingColumn": 32,
-          "startingLine": 63
+          "startingColumn": 22,
+          "startingLine": 126
         }
       },
       {
         "comment": "",
-        "key": "Update receipt",
+        "key": "Choose how to add your receipt.",
         "location": {
-          "startingColumn": 48,
-          "startingLine": 95
+          "startingColumn": 22,
+          "startingLine": 90
         }
       },
       {
         "comment": "",
-        "key": "Add a receipt",
+        "key": "Scan it, import a photo, or enter the details manually.",
         "location": {
-          "startingColumn": 67,
-          "startingLine": 95
-        }
-      },
-      {
-        "comment": "",
-        "key": "Replace the image or adjust the extracted fields, then save the updated version.",
-        "location": {
-          "startingColumn": 28,
-          "startingLine": 100
-        }
-      },
-      {
-        "comment": "",
-        "key": "Scan a paper receipt or import a photo. Privionyx extracts the key fields and lets you review them before saving.",
-        "location": {
-          "startingColumn": 28,
-          "startingLine": 101
-        }
-      },
-      {
-        "comment": "",
-        "key": "Merchant, amount, date, category, and note will appear here after capture.",
-        "location": {
-          "startingColumn": 26,
-          "startingLine": 139
-        }
-      },
-      {
-        "comment": "",
-        "key": "Review details",
-        "location": {
-          "startingColumn": 29,
-          "startingLine": 211
-        }
-      },
-      {
-        "comment": "",
-        "key": "No amount detected",
-        "location": {
-          "startingColumn": 53,
-          "startingLine": 200
-        }
-      },
-      {
-        "comment": "",
-        "key": "%@ %@",
-        "location": {
-          "startingColumn": 76,
-          "startingLine": 200
-        }
-      },
-      {
-        "comment": "",
-        "key": "Check the detected fields and fix anything before saving.",
-        "location": {
-          "startingColumn": 26,
-          "startingLine": 213
-        }
-      },
-      {
-        "comment": "",
-        "key": "Future receipts from this merchant will use the selected category.",
-        "location": {
-          "startingColumn": 30,
-          "startingLine": 249
+          "startingColumn": 22,
+          "startingLine": 94
         }
       },
       {
         "comment": "",
         "key": "Date",
         "location": {
-          "startingColumn": 30,
-          "startingLine": 226
+          "startingColumn": 22,
+          "startingLine": 327
         }
       },
       {
         "comment": "",
         "key": "",
         "location": {
-          "startingColumn": 36,
-          "startingLine": 230
+          "startingColumn": 28,
+          "startingLine": 331
         }
       },
       {
         "comment": "",
-        "key": "Note",
+        "key": "Subtotal, tax, and tip match the total.",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 359
+        }
+      },
+      {
+        "comment": "",
+        "key": "Subtotal, tax, and tip differ from the total by %@.",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 360
+        }
+      },
+      {
+        "comment": "",
+        "key": "Category",
         "location": {
           "startingColumn": 18,
-          "startingLine": 318
+          "startingLine": 374
         }
       },
       {
         "comment": "",
-        "key": "Add a note",
-        "location": {
-          "startingColumn": 23,
-          "startingLine": 322
-        }
-      },
-      {
-        "comment": "",
-        "key": "Items",
-        "location": {
-          "startingColumn": 18,
-          "startingLine": 333
-        }
-      },
-      {
-        "comment": "",
-        "key": "Qty %lld",
-        "location": {
-          "startingColumn": 38,
-          "startingLine": 345
-        }
-      },
-      {
-        "comment": "",
-        "key": "Receipt saved",
-        "location": {
-          "startingColumn": 18,
-          "startingLine": 725
-        }
-      },
-      {
-        "comment": "",
-        "key": "Analyzing receipt",
+        "key": "Future receipts from this merchant will use the selected category.",
         "location": {
           "startingColumn": 22,
-          "startingLine": 748
+          "startingLine": 394
         }
       },
       {
         "comment": "",
-        "key": "Privionyx is extracting the merchant, amount, and date.",
+        "key": "View extracted text",
         "location": {
           "startingColumn": 22,
-          "startingLine": 756
+          "startingLine": 407
         }
       },
       {
         "comment": "",
-        "key": "Adjust Crop",
+        "key": "%lld lines",
         "location": {
-          "startingColumn": 30,
-          "startingLine": 805
-        }
-      },
-      {
-        "comment": "",
-        "key": "Detecting receipt edges",
-        "location": {
-          "startingColumn": 34,
-          "startingLine": 795
-        }
-      },
-      {
-        "comment": "",
-        "key": "Cancel",
-        "location": {
-          "startingColumn": 28,
-          "startingLine": 809
-        }
-      },
-      {
-        "comment": "",
-        "key": "Use Crop",
-        "location": {
-          "startingColumn": 28,
-          "startingLine": 814
+          "startingColumn": 22,
+          "startingLine": 409
         }
       }
     ]

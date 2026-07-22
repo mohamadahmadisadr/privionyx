@@ -2,63 +2,42 @@ import SwiftUI
 
 struct PrivionyxRootView: View {
     @Environment(PrivionyxAppState.self) private var appState
-    @State private var selectedTab: AppTab = .dashboard
+    @Environment(AppCoordinator.self) private var coordinator
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            DashboardView(viewModel: DashboardViewModel(appState: appState))
-                .tabItem {
-                    Label(AppTab.dashboard.title, systemImage: AppTab.dashboard.icon)
-                }
-                .tag(AppTab.dashboard)
+        @Bindable var coordinator = coordinator
 
-            AddReceiptView(appState: appState)
-                .tabItem {
-                    Label(AppTab.addReceipt.title, systemImage: AppTab.addReceipt.icon)
-                }
-                .tag(AppTab.addReceipt)
+        ZStack(alignment: .bottom) {
+            // A real TabView keeps every screen alive across switches, so an in-progress
+            // scan survives a trip to Home. Its own bar is hidden in favour of FloatingTabBar.
+            // TabView does not forward a safe-area inset to its children, so each screen
+            // reserves PrivionyxTheme.Metrics.tabBarClearance at its own bottom edge.
+            TabView(selection: $coordinator.selectedTab) {
+                DashboardView(viewModel: DashboardViewModel(receipts: appState.receipts))
+                    .tag(AppTab.dashboard)
+                    .toolbar(.hidden, for: .tabBar)
 
-            ReceiptListView(appState: appState)
-                .tabItem {
-                    Label(AppTab.receipts.title, systemImage: AppTab.receipts.icon)
-                }
-                .tag(AppTab.receipts)
-        }
-        .tint(PrivionyxTheme.Colors.accent)
-        .toolbarBackground(PrivionyxTheme.Colors.background, for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
-    }
-}
+                AddReceiptView(appState: appState)
+                    .tag(AppTab.addReceipt)
+                    .toolbar(.hidden, for: .tabBar)
 
-private enum AppTab: Hashable {
-    case dashboard
-    case addReceipt
-    case receipts
+                AssistantView(appState: appState)
+                    .tag(AppTab.assistant)
+                    .toolbar(.hidden, for: .tabBar)
 
-    var title: String {
-        switch self {
-        case .dashboard:
-            "Home"
-        case .addReceipt:
-            "Add"
-        case .receipts:
-            "Receipts"
-        }
-    }
+                SettingsView()
+                    .tag(AppTab.settings)
+                    .toolbar(.hidden, for: .tabBar)
+            }
 
-    var icon: String {
-        switch self {
-        case .dashboard:
-            "rectangle.grid.2x2.fill"
-        case .addReceipt:
-            "plus.viewfinder"
-        case .receipts:
-            "list.bullet.rectangle.portrait.fill"
+            FloatingTabBar(selection: $coordinator.selectedTab)
+                .padding(.bottom, 6)
         }
     }
 }
 
 #Preview {
     PrivionyxRootView()
-        .environment(PrivionyxAppState(container: .live(inMemory: true)))
+        .environment(PrivionyxAppState(container: .preview))
+        .environment(AppCoordinator())
 }

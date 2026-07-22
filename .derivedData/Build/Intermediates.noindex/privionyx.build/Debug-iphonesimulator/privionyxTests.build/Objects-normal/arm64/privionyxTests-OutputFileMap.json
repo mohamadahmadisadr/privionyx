@@ -1,0 +1,59 @@
+{
+  "" : {
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/privionyxTests-primary.dia",
+    "emit-module-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/privionyxTests-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/privionyxTests-primary-emit-module.dia",
+    "pch" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/privionyxTests-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/privionyxTests-primary.swiftdeps"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyxTests/Corpus/CorpusReport.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport.dia",
+    "index-unit-output-path" : "/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport.o",
+    "llvm-bc" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport.bc",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport.swiftdeps",
+    "swiftmodule" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/CorpusReport~partial.swiftmodule"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyxTests/Corpus/FixtureEvaluator.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator.dia",
+    "index-unit-output-path" : "/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator.o",
+    "llvm-bc" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator.bc",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator.swiftdeps",
+    "swiftmodule" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/FixtureEvaluator~partial.swiftmodule"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyxTests/Corpus/ReceiptFixture.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture.dia",
+    "index-unit-output-path" : "/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture.o",
+    "llvm-bc" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture.bc",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture.swiftdeps",
+    "swiftmodule" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptFixture~partial.swiftmodule"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyxTests/OCRDiagnosticTests.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests.dia",
+    "index-unit-output-path" : "/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests.o",
+    "llvm-bc" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests.bc",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests.swiftdeps",
+    "swiftmodule" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/OCRDiagnosticTests~partial.swiftmodule"
+  },
+  "/Users/mohamad/Code/ios/privionyx/privionyxTests/ReceiptCorpusTests.swift" : {
+    "const-values" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests.swiftconstvalues",
+    "dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests.d",
+    "diagnostics" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests.dia",
+    "index-unit-output-path" : "/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests.o",
+    "llvm-bc" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests.bc",
+    "object" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests.o",
+    "swift-dependencies" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests.swiftdeps",
+    "swiftmodule" : "/Users/mohamad/Code/ios/privionyx/.derivedData/Build/Intermediates.noindex/privionyx.build/Debug-iphonesimulator/privionyxTests.build/Objects-normal/arm64/ReceiptCorpusTests~partial.swiftmodule"
+  }
+}

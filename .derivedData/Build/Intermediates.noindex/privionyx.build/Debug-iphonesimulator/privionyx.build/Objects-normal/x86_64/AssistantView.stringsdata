@@ -1,0 +1,48 @@
+{
+  "source": "/Users/mohamad/Code/ios/privionyx/privionyx/Presentation/Assistant/AssistantView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "AI Assistant",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 62
+        }
+      },
+      {
+        "comment": "",
+        "key": "Understands every receipt you scan",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ask about your expenses…",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 247
+        }
+      },
+      {
+        "comment": "",
+        "key": "Send message",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 272
+        }
+      },
+      {
+        "comment": "",
+        "key": "Assistant is typing",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 299
+        }
+      }
+    ]
+  },
+  "version": 1
+}

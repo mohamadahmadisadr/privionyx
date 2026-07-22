@@ -11,13 +11,16 @@ struct ReceiptDetailView: View {
     @State private var isDeleteAlertPresented = false
 
     var body: some View {
-        PrivionyxScreen(
-            title: "Receipt Detail",
-            subtitle: "Saved image and extracted fields for a single local receipt."
-        ) {
-            headerSection
-            receiptImageSection
-            metadataSection
+        GlassScreen(wrapsInNavigationStack: false) {
+            header
+        } content: {
+            summaryCard
+            imageSection
+            detailsSection
+            if receipt.lineItems.isEmpty == false {
+                lineItemsSection
+            }
+            deleteButton
         }
         .sheet(isPresented: $isShareSheetPresented) {
             ActivityViewController(activityItems: shareItems)
@@ -35,9 +38,7 @@ struct ReceiptDetailView: View {
         .fullScreenCover(isPresented: $isImagePreviewPresented) {
             ReceiptImagePreview(
                 image: receipt.imageData.flatMap(UIImage.init(data:)),
-                onClose: {
-                    isImagePreviewPresented = false
-                }
+                onClose: { isImagePreviewPresented = false }
             )
         }
         .alert("Delete Receipt?", isPresented: $isDeleteAlertPresented) {
@@ -53,86 +54,71 @@ struct ReceiptDetailView: View {
         }
     }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .frame(width: 44, height: 44)
-                        .background(PrivionyxTheme.Colors.surfaceStrong, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Back")
+    // MARK: - Header
 
-                Spacer()
-
-                Button {
-                    isEditPresented = true
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .frame(width: 44, height: 44)
-                        .background(PrivionyxTheme.Colors.surfaceStrong, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Edit receipt")
-
-                Button {
-                    isShareSheetPresented = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .frame(width: 44, height: 44)
-                        .background(PrivionyxTheme.Colors.surfaceStrong, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Share receipt")
+    private var header: some View {
+        HStack(spacing: 10) {
+            GlassCircleButton(systemImage: "chevron.left", accessibilityTitle: "Back") {
+                dismiss()
             }
 
-            HStack(alignment: .top, spacing: 14) {
-                Image(systemName: receipt.category.icon)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(PrivionyxTheme.Colors.accent)
-                    .frame(width: 54, height: 54)
-                    .background(PrivionyxTheme.Colors.surfaceMuted, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            Spacer()
 
-                VStack(alignment: .leading, spacing: 6) {
+            GlassCircleButton(systemImage: "pencil", accessibilityTitle: "Edit receipt") {
+                isEditPresented = true
+            }
+
+            GlassCircleButton(systemImage: "square.and.arrow.up", accessibilityTitle: "Share receipt") {
+                isShareSheetPresented = true
+            }
+        }
+    }
+
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                InitialTile(
+                    text: receipt.merchant,
+                    tint: PrivionyxTheme.Colors.accent,
+                    size: 44,
+                    foreground: PrivionyxTheme.Colors.onAccent
+                )
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text(receipt.merchant)
-                        .font(.title3.weight(.bold))
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(PrivionyxTheme.Colors.ink)
                         .lineLimit(2)
-                        .minimumScaleFactor(0.82)
-
-                    Text(receipt.displayCategoryName)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.accent)
+                        .minimumScaleFactor(0.8)
 
                     Text(receipt.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.footnote)
+                        .font(.system(size: 12.5))
                         .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
                 }
 
                 Spacer(minLength: 8)
+            }
 
+            HStack(spacing: 8) {
+                CategoryTag(title: receipt.displayCategoryName)
+                GlassBadge(title: receipt.status.rawValue, tint: statusTint)
+                Spacer(minLength: 8)
                 Text(PrivionyxCurrencyFormatter.string(for: receipt.amount))
-                    .font(.title3.weight(.bold))
+                    .font(.system(size: 22, weight: .heavy))
                     .foregroundStyle(PrivionyxTheme.Colors.ink)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.72)
+                    .minimumScaleFactor(0.7)
             }
         }
         .privionyxCardStyle()
     }
 
-    private var receiptImageSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Receipt Image", actionTitle: receipt.imageData == nil ? nil : "Tap To View")
+    // MARK: - Sections
+
+    @ViewBuilder
+    private var imageSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            GlassSectionTitle("Receipt Image", actionTitle: receipt.imageData == nil ? nil : "Tap to view")
 
             if let imageData = receipt.imageData, let uiImage = UIImage(data: imageData) {
                 Button {
@@ -143,77 +129,120 @@ struct ReceiptDetailView: View {
                         .scaledToFit()
                         .frame(maxWidth: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(alignment: .bottomTrailing) {
+                            GlassBadge(title: "Preview", systemImage: "arrow.up.left.and.arrow.down.right")
+                                .padding(12)
+                        }
                 }
                 .buttonStyle(.plain)
             } else {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(PrivionyxTheme.Colors.surfaceStrong)
-                    .frame(height: 220)
-                    .overlay {
-                        VStack(spacing: 10) {
-                            Image(systemName: "photo")
-                                .font(.title)
-                                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-                            Text("No receipt image available")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        }
-                    }
+                VStack(spacing: 8) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 22))
+                        .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+                    Text("No receipt image available")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 180)
+                .privionyxGlass(cornerRadius: 16)
             }
         }
-        .privionyxCardStyle()
     }
 
-    private var metadataSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Extracted Data", actionTitle: receipt.status.rawValue)
+    private var detailsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            GlassSectionTitle("Details")
 
-            VStack(spacing: 14) {
-                detailRow(title: "Merchant", value: receipt.merchant)
+            VStack(spacing: 11) {
+                GlassValueRow(title: "Merchant", value: receipt.merchant)
                 if let subtotal = receipt.subtotal {
-                    detailRow(title: "Subtotal", value: PrivionyxCurrencyFormatter.string(for: subtotal))
+                    GlassValueRow(title: "Subtotal", value: PrivionyxCurrencyFormatter.string(for: subtotal))
                 }
                 if let tax = receipt.tax {
-                    detailRow(title: "Tax", value: PrivionyxCurrencyFormatter.string(for: tax))
+                    GlassValueRow(title: "Tax", value: PrivionyxCurrencyFormatter.string(for: tax))
                 }
                 if let tip = receipt.tip {
-                    detailRow(title: "Tip", value: PrivionyxCurrencyFormatter.string(for: tip))
+                    GlassValueRow(title: "Tip", value: PrivionyxCurrencyFormatter.string(for: tip))
                 }
-                detailRow(title: "Amount", value: PrivionyxCurrencyFormatter.string(for: receipt.amount))
-                detailRow(title: "Date", value: receipt.date.formatted(date: .abbreviated, time: .omitted))
-                detailRow(title: "Category", value: receipt.displayCategoryName)
+                GlassValueRow(title: "Date", value: receipt.date.formatted(date: .abbreviated, time: .omitted))
+                GlassValueRow(title: "Category", value: receipt.displayCategoryName)
                 if receipt.tags.isEmpty == false {
-                    detailRow(title: "Tags", value: receipt.tags.joined(separator: ", "))
+                    GlassValueRow(title: "Tags", value: receipt.tags.joined(separator: ", "))
                 }
                 if receipt.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
-                    detailRow(title: "Notes", value: receipt.notes)
+                    GlassValueRow(title: "Notes", value: receipt.notes)
                 }
-            }
 
-            HStack(spacing: 12) {
-                SecondaryActionButton(title: "Delete", systemImage: "trash") {
-                    isDeleteAlertPresented = true
-                }
+                Divider().overlay(PrivionyxTheme.Colors.separator)
+
+                GlassValueRow(
+                    title: "Total",
+                    value: PrivionyxCurrencyFormatter.string(for: receipt.amount),
+                    isEmphasized: true
+                )
             }
+            .privionyxCardStyle()
         }
-        .privionyxCardStyle()
     }
 
+    private var lineItemsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            GlassSectionTitle("Line Items", actionTitle: "\(receipt.lineItems.count)")
 
-    private func detailRow(title: String, value: String) -> some View {
-        HStack(alignment: .top) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-                .frame(width: 88, alignment: .leading)
+            GlassRowGroup {
+                ForEach(Array(receipt.lineItems.enumerated()), id: \.element.id) { index, item in
+                    HStack {
+                        Text(item.quantity.map { "\($0)× \(item.name)" } ?? item.name)
+                            .font(.system(size: 14))
+                            .foregroundStyle(PrivionyxTheme.Colors.ink)
 
-            Text(value)
-                .font(.subheadline)
-                .foregroundStyle(PrivionyxTheme.Colors.ink)
+                        Spacer(minLength: 12)
 
-            Spacer(minLength: 0)
+                        Text(PrivionyxCurrencyFormatter.string(for: item.amount))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+
+                    if index < receipt.lineItems.count - 1 {
+                        GlassRowDivider()
+                    }
+                }
+            }
         }
-        .padding(.vertical, 2)
+    }
+
+    private var deleteButton: some View {
+        Button {
+            isDeleteAlertPresented = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "trash")
+                Text("Delete Receipt")
+            }
+            .font(.system(size: 14.5, weight: .bold))
+            .foregroundStyle(PrivionyxTheme.Colors.danger)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .privionyxGlass(cornerRadius: 14)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Helpers
+
+    private var statusTint: Color {
+        switch receipt.status {
+        case .scanned:
+            PrivionyxTheme.Colors.accent
+        case .reviewed:
+            PrivionyxTheme.Colors.success
+        case .flagged:
+            PrivionyxTheme.Colors.warning
+        }
     }
 
     private var shareItems: [Any] {
@@ -237,40 +266,6 @@ struct ReceiptDetailView: View {
     }
 }
 
-#Preview {
-    ReceiptDetailView(
-        receipt: ReceiptItem(
-            id: UUID(),
-            merchant: "Preview Receipt",
-            amount: 24.80,
-            subtotal: 21.50,
-            tax: 3.30,
-            tip: nil,
-            date: .now,
-            category: .shopping,
-            customCategoryName: "Office Supplies",
-            tags: ["Work", "Claim"],
-            imagePath: nil,
-            imageData: nil,
-            rawText: "PREVIEW\nTOTAL 24.80",
-            lineItems: [],
-            notes: "Stored locally",
-            status: .reviewed
-        )
-    )
-}
-
-private struct ActivityViewController: UIViewControllerRepresentable {
-    let activityItems: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {
-    }
-}
-
 private struct ReceiptImagePreview: View {
     let image: UIImage?
     let onClose: () -> Void
@@ -291,7 +286,7 @@ private struct ReceiptImagePreview: View {
 
             Button(action: onClose) {
                 Image(systemName: "xmark")
-                    .font(.headline.weight(.semibold))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 42, height: 42)
                     .background(Color.white.opacity(0.14), in: Circle())
@@ -302,57 +297,28 @@ private struct ReceiptImagePreview: View {
     }
 }
 
-private struct ZoomableScrollView<Content: View>: UIViewRepresentable {
-    let content: Content
-
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(hostingController: UIHostingController(rootView: content))
-    }
-
-    func makeUIView(context: Context) -> UIScrollView {
-        let scrollView = UIScrollView()
-        scrollView.delegate = context.coordinator
-        scrollView.maximumZoomScale = 4
-        scrollView.minimumZoomScale = 1
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.showsHorizontalScrollIndicator = false
-        scrollView.backgroundColor = .clear
-
-        let hostedView = context.coordinator.hostingController.view!
-        hostedView.translatesAutoresizingMaskIntoConstraints = false
-        hostedView.backgroundColor = .clear
-
-        scrollView.addSubview(hostedView)
-
-        NSLayoutConstraint.activate([
-            hostedView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-            hostedView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-            hostedView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            hostedView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            hostedView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
-            hostedView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor)
-        ])
-
-        return scrollView
-    }
-
-    func updateUIView(_ uiView: UIScrollView, context: Context) {
-        context.coordinator.hostingController.rootView = content
-    }
-
-    final class Coordinator: NSObject, UIScrollViewDelegate {
-        let hostingController: UIHostingController<Content>
-
-        init(hostingController: UIHostingController<Content>) {
-            self.hostingController = hostingController
-        }
-
-        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
-            hostingController.view
-        }
+#Preview {
+    NavigationStack {
+        ReceiptDetailView(
+            receipt: ReceiptItem(
+                id: UUID(),
+                merchant: "Preview Receipt",
+                amount: 24.80,
+                subtotal: 21.50,
+                tax: 3.30,
+                tip: nil,
+                date: .now,
+                category: .shopping,
+                customCategoryName: "Office Supplies",
+                tags: ["Work", "Claim"],
+                imagePath: nil,
+                imageData: nil,
+                rawText: "PREVIEW\nTOTAL 24.80",
+                lineItems: [],
+                notes: "Stored locally",
+                status: .reviewed
+            )
+        )
+        .environment(PrivionyxAppState(container: .preview))
     }
 }

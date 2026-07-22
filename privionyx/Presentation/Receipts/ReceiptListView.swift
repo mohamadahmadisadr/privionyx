@@ -11,346 +11,218 @@ struct ReceiptListView: View {
     }
 
     var body: some View {
-        PrivionyxScreen(
+        GlassScreen(
             title: "Receipts",
-            subtitle: "A simple history of the receipts saved on this device."
+            subtitle: "Search and browse your saved receipts.",
+            wrapsInNavigationStack: false
         ) {
-            summarySection
-            searchSection
-            filterSection
-            receiptsSection
+            summaryCard
+            searchField
+            filters
+            receiptGroups
         }
         .task(id: viewModel.queryKey) {
             await viewModel.refresh()
         }
     }
 
-    private var summarySection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(viewModel.totalSummary)
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+    // MARK: - Summary
 
-                    Text(viewModel.countSummary)
-                        .font(.subheadline)
-                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-                }
+    private var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(viewModel.totalSummary)
+                .font(.system(size: 30, weight: .heavy))
+                .foregroundStyle(PrivionyxTheme.Colors.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
 
-                Spacer()
-
-                Image(systemName: "doc.text.fill")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(PrivionyxTheme.Colors.accent)
-                    .frame(width: 46, height: 46)
-                    .background(PrivionyxTheme.Colors.surfaceMuted, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
+            Text(viewModel.countSummary)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
 
             if viewModel.hasActiveFilters {
-                Button {
+                Button("Clear filters") {
                     viewModel.clearFilters()
-                } label: {
-                    Label("Clear filters", systemImage: "xmark.circle")
-                        .font(.footnote.weight(.semibold))
                 }
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(PrivionyxTheme.Colors.accent)
                 .buttonStyle(.plain)
+                .padding(.top, 6)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .privionyxCardStyle()
     }
 
-    private var searchSection: some View {
+    // MARK: - Filtering
+
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+
+            TextField("Search merchant, note, or tag", text: $viewModel.searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 14))
+                .foregroundStyle(PrivionyxTheme.Colors.fieldText)
+
+            if viewModel.searchText.isEmpty == false {
+                Button {
+                    viewModel.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 46)
+        .privionyxGlass(cornerRadius: 23)
+    }
+
+    private var filters: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-
-                TextField("Search merchant, note, or tag", text: $viewModel.searchText)
-                    .textFieldStyle(.plain)
-                    .foregroundStyle(PrivionyxTheme.Colors.fieldText)
-
-                if viewModel.searchText.isEmpty == false {
-                    Button {
-                        viewModel.searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Clear search")
-                }
-            }
-            .padding(14)
-            .background(PrivionyxTheme.Colors.fieldBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .privionyxCardStyle()
-    }
-
-    private var filterSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Picker("Date", selection: $viewModel.selectedDateFilter) {
-                ForEach(ReceiptDateFilter.allCases) { filter in
-                    Text(filter.title).tag(filter)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            Menu {
-                Button("All Categories") {
-                    viewModel.selectedCategory = nil
-                }
-
-                ForEach(ReceiptCategory.allCases) { category in
-                    Button(category.rawValue) {
-                        viewModel.selectedCategory = category
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(ReceiptDateFilter.allCases) { filter in
+                        GlassChip(
+                            title: filter.title,
+                            isSelected: viewModel.selectedDateFilter == filter
+                        ) {
+                            viewModel.selectedDateFilter = filter
+                        }
                     }
                 }
-            } label: {
-                HStack {
-                    Label(viewModel.categoryFilterTitle, systemImage: "tag")
-                        .font(.subheadline.weight(.semibold))
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.bold))
+                .padding(.horizontal, 1)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    GlassChip(
+                        title: "All",
+                        systemImage: "tag",
+                        isSelected: viewModel.selectedCategory == nil
+                    ) {
+                        viewModel.selectedCategory = nil
+                    }
+
+                    ForEach(ReceiptCategory.allCases) { category in
+                        GlassChip(
+                            title: category.rawValue,
+                            systemImage: category.icon,
+                            isSelected: viewModel.selectedCategory == category
+                        ) {
+                            viewModel.selectedCategory = category
+                        }
+                    }
                 }
-                .foregroundStyle(PrivionyxTheme.Colors.ink)
-                .padding(14)
-                .background(PrivionyxTheme.Colors.surfaceStrong, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.horizontal, 1)
             }
         }
-        .privionyxCardStyle()
     }
 
-    private var receiptsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "Receipt History", actionTitle: viewModel.filteredReceipts.isEmpty ? nil : viewModel.resultsSummary)
+    // MARK: - Results
 
-            if viewModel.filteredReceipts.isEmpty {
-                EmptyStateCard(
-                    systemImage: viewModel.hasActiveFilters ? "line.3.horizontal.decrease.circle" : "tray",
-                    title: viewModel.hasActiveFilters ? "No receipts match these filters" : "No receipts saved yet",
-                    message: viewModel.hasActiveFilters
-                        ? "Try clearing a filter or widening the amount and date range."
-                        : "Use the Add tab to scan a receipt or import a photo."
-                )
-            } else {
-                ForEach(viewModel.groupedReceipts) { group in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(group.title)
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+    @ViewBuilder
+    private var receiptGroups: some View {
+        if viewModel.filteredReceipts.isEmpty {
+            GlassEmptyState(
+                systemImage: viewModel.hasActiveFilters ? "line.3.horizontal.decrease" : "tray",
+                title: viewModel.hasActiveFilters ? "No receipts match these filters" : "No receipts saved yet",
+                message: viewModel.hasActiveFilters
+                    ? "Try clearing a filter or widening the date range."
+                    : "Use the Camera tab to capture a receipt or import a photo.",
+                actionTitle: viewModel.hasActiveFilters ? "Clear filters" : nil,
+                action: viewModel.hasActiveFilters ? { viewModel.clearFilters() } : nil
+            )
+        } else {
+            ForEach(viewModel.groupedReceipts) { group in
+                VStack(alignment: .leading, spacing: 10) {
+                    GlassEyebrow(group.title)
 
-                        VStack(spacing: 10) {
-                            ForEach(group.receipts) { receipt in
-                                receiptRow(receipt)
+                    GlassRowGroup {
+                        ForEach(Array(group.receipts.enumerated()), id: \.element.id) { index, receipt in
+                            NavigationLink {
+                                ReceiptDetailView(receipt: receipt)
+                            } label: {
+                                receiptRow(receipt, index: index)
+                            }
+                            .buttonStyle(.plain)
+
+                            if index < group.receipts.count - 1 {
+                                GlassRowDivider()
                             }
                         }
                     }
                 }
             }
         }
-        .privionyxCardStyle()
     }
 
-    private func receiptRow(_ receipt: ReceiptItem) -> some View {
-        NavigationLink {
-            ReceiptDetailView(receipt: receipt)
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: receipt.category.icon)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(PrivionyxTheme.Colors.accent)
-                    .frame(width: 40, height: 40)
-                    .background(PrivionyxTheme.Colors.surfaceMuted, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    private func receiptRow(_ receipt: ReceiptItem, index: Int) -> some View {
+        let isAccented = index.isMultiple(of: 2)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(receipt.merchant)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+        return HStack(spacing: 12) {
+            InitialTile(
+                text: receipt.merchant,
+                tint: isAccented ? PrivionyxTheme.Colors.accent : PrivionyxTheme.Colors.neutralTile,
+                foreground: isAccented ? PrivionyxTheme.Colors.onAccent : PrivionyxTheme.Colors.ink
+            )
 
-                    HStack(spacing: 6) {
-                        Text(receipt.displayCategoryName)
-                            .lineLimit(1)
-                        Text("•")
-                        Text(receipt.date, format: .dateTime.month(.abbreviated).day().year())
-                            .lineLimit(1)
-                    }
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(receipt.merchant)
+                    .font(.system(size: 14.5, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    .lineLimit(1)
+
+                Text("\(receipt.displayCategoryName) · \(receipt.date.formatted(.dateTime.month(.abbreviated).day()))")
+                    .font(.system(size: 12.5))
                     .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                    .lineLimit(1)
 
-                    if receipt.tags.isEmpty == false {
-                        Text(receipt.tags.prefix(2).joined(separator: ", "))
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(PrivionyxTheme.Colors.accent)
-                            .lineLimit(1)
-                    }
-                }
-
-                Spacer(minLength: 12)
-
-                VStack(alignment: .trailing, spacing: 6) {
-                    Text(PrivionyxCurrencyFormatter.string(for: receipt.amount))
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
+                if receipt.tags.isEmpty == false {
+                    Text(receipt.tags.prefix(2).joined(separator: ", "))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(PrivionyxTheme.Colors.accent)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(PrivionyxTheme.Colors.surfaceStrong, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
 
-}
+            Spacer(minLength: 8)
 
-enum ReceiptDateFilter: String, CaseIterable, Identifiable {
-    case all
-    case thisMonth
-    case last7Days
-    case thisYear
+            VStack(alignment: .trailing, spacing: 5) {
+                Text(PrivionyxCurrencyFormatter.string(for: receipt.amount))
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
 
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .all:
-            "All"
-        case .thisMonth:
-            "Month"
-        case .last7Days:
-            "7 Days"
-        case .thisYear:
-            "Year"
-        }
-    }
-
-    func interval(relativeTo currentDate: Date = .now, calendar: Calendar = .current) -> DateInterval? {
-        switch self {
-        case .all:
-            return nil
-        case .last7Days:
-            guard let start = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: currentDate)) else {
-                return nil
+                GlassBadge(title: receipt.status.rawValue, tint: tint(for: receipt.status))
             }
-            let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: currentDate)) ?? currentDate
-            return DateInterval(start: start, end: end)
-        case .thisMonth:
-            guard let interval = calendar.dateInterval(of: .month, for: currentDate) else { return nil }
-            return interval
-        case .thisYear:
-            guard let interval = calendar.dateInterval(of: .year, for: currentDate) else { return nil }
-            return interval
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+
+    private func tint(for status: ReceiptProcessingStatus) -> Color {
+        switch status {
+        case .scanned:
+            PrivionyxTheme.Colors.accent
+        case .reviewed:
+            PrivionyxTheme.Colors.success
+        case .flagged:
+            PrivionyxTheme.Colors.warning
         }
     }
-}
-
-@Observable
-@MainActor
-final class ReceiptListViewModel {
-    @ObservationIgnored private let appState: PrivionyxAppState
-    var searchText = ""
-    var selectedCategory: ReceiptCategory?
-    var selectedDateFilter: ReceiptDateFilter = .all
-    private(set) var filteredReceipts: [ReceiptItem] = []
-
-    init(appState: PrivionyxAppState) {
-        self.appState = appState
-    }
-
-    var queryKey: String {
-        "\(searchText)|\(selectedCategory?.rawValue ?? "all")|\(selectedDateFilter.rawValue)|\(appState.receiptsVersion)"
-    }
-
-    var hasActiveFilters: Bool {
-        searchText.isEmpty == false
-        || selectedCategory != nil
-        || selectedDateFilter != .all
-    }
-
-    var categoryFilterTitle: String {
-        selectedCategory?.rawValue ?? "All Categories"
-    }
-
-    var resultsSummary: String {
-        if filteredReceipts.isEmpty {
-            return "No matches"
-        }
-
-        let receiptWord = filteredReceipts.count == 1 ? "receipt" : "receipts"
-        return "\(filteredReceipts.count) \(receiptWord)"
-    }
-
-    var totalSummary: String {
-        PrivionyxCurrencyFormatter.string(for: filteredReceipts.reduce(0) { $0 + $1.amount })
-    }
-
-    var countSummary: String {
-        let receiptWord = filteredReceipts.count == 1 ? "receipt" : "receipts"
-        if hasActiveFilters {
-            return "\(filteredReceipts.count) matching \(receiptWord)"
-        }
-        return "\(filteredReceipts.count) saved \(receiptWord)"
-    }
-
-    var groupedReceipts: [ReceiptMonthGroup] {
-        let calendar = Calendar.current
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-
-        let grouped = Dictionary(grouping: filteredReceipts) { receipt in
-            calendar.dateInterval(of: .month, for: receipt.date)?.start ?? receipt.date
-        }
-
-        return grouped
-            .map { month, receipts in
-                ReceiptMonthGroup(
-                    id: month,
-                    title: formatter.string(from: month),
-                    receipts: receipts.sorted { $0.date > $1.date }
-                )
-            }
-            .sorted { $0.id > $1.id }
-    }
-
-    func clearFilters() {
-        searchText = ""
-        selectedCategory = nil
-        selectedDateFilter = .all
-    }
-
-    func refresh() async {
-        if appState.receipts.isEmpty {
-            await appState.refreshReceipts()
-        }
-        filteredReceipts = appState.filteredReceipts(
-            searchText: searchText,
-            selectedCategory: selectedCategory,
-            dateInterval: selectedDateFilter.interval(),
-            minimumAmount: nil,
-            maximumAmount: nil
-        )
-    }
-}
-
-struct ReceiptMonthGroup: Identifiable {
-    let id: Date
-    let title: String
-    let receipts: [ReceiptItem]
 }
 
 #Preview {
-    ReceiptListView(appState: PrivionyxAppState(container: .live(inMemory: true)))
+    NavigationStack {
+        ReceiptListView(appState: PrivionyxAppState(container: .preview))
+    }
 }

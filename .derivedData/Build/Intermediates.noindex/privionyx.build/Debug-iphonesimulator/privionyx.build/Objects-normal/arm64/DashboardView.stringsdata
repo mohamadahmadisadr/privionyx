@@ -4,98 +4,34 @@
     "Localizable": [
       {
         "comment": "",
-        "key": "Spending totals and charts are generated from saved receipts on this device.",
+        "key": "Settings",
         "location": {
-          "startingColumn": 18,
-          "startingLine": 46
+          "startingColumn": 33,
+          "startingLine": 66
         }
       },
       {
         "comment": "",
-        "key": "Once you save receipts, the dashboard shows total spending, category breakdowns, and recent activity automatically.",
+        "key": "Expenses",
         "location": {
-          "startingColumn": 18,
-          "startingLine": 122
+          "startingColumn": 22,
+          "startingLine": 49
         }
       },
       {
         "comment": "",
-        "key": "Period",
+        "key": "No spending recorded for %@.",
         "location": {
-          "startingColumn": 20,
-          "startingLine": 133
+          "startingColumn": 22,
+          "startingLine": 171
         }
       },
       {
         "comment": "",
-        "key": "Bucket",
+        "key": "%@ · %@",
         "location": {
-          "startingColumn": 31,
-          "startingLine": 142
-        }
-      },
-      {
-        "comment": "",
-        "key": "Amount",
-        "location": {
-          "startingColumn": 31,
-          "startingLine": 143
-        }
-      },
-      {
-        "comment": "",
-        "key": "Amount",
-        "location": {
-          "startingColumn": 35,
-          "startingLine": 165
-        }
-      },
-      {
-        "comment": "",
-        "key": "%lld",
-        "location": {
-          "startingColumn": 26,
-          "startingLine": 206
-        }
-      },
-      {
-        "comment": "",
-        "key": "Day",
-        "location": {
-          "startingColumn": 31,
-          "startingLine": 228
-        }
-      },
-      {
-        "comment": "",
-        "key": "Amount",
-        "location": {
-          "startingColumn": 31,
-          "startingLine": 229
-        }
-      },
-      {
-        "comment": "",
-        "key": "Month",
-        "location": {
-          "startingColumn": 31,
-          "startingLine": 250
-        }
-      },
-      {
-        "comment": "",
-        "key": "Delta",
-        "location": {
-          "startingColumn": 31,
-          "startingLine": 251
-        }
-      },
-      {
-        "comment": "",
-        "key": "%@ now vs %@ before",
-        "location": {
-          "startingColumn": 26,
-          "startingLine": 295
+          "startingColumn": 22,
+          "startingLine": 225
         }
       }
     ]

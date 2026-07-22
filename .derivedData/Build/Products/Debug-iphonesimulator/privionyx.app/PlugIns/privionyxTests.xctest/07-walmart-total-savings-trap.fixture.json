@@ -1,0 +1,31 @@
+{
+  "notes": "Trap: 'TOTAL SAVINGS 6.42' appears after the real total and matches the 'total' token. The correct total (32.63) is also repeated on the DEBIT PURCHASE line, so a robust extractor has corroborating evidence available.",
+  "rawText": [
+    "WALMART SUPERCENTRE",
+    "3757 KEELE ST",
+    "NORTH YORK ON",
+    "",
+    "GV PAPER TOWEL             8.97",
+    "LAUNDRY DET 2L            11.47",
+    "CEREAL 750G                4.97",
+    "TOOTHPASTE                 3.47",
+    "--------------------------------",
+    "SUBTOTAL                  28.88",
+    "HST 13%                    3.75",
+    "TOTAL                     32.63",
+    "",
+    "TOTAL SAVINGS              6.42",
+    "YOU SAVED 16%",
+    "DEBIT PURCHASE            32.63",
+    "2026-03-04"
+  ],
+  "expected": {
+    "merchant": "Walmart",
+    "date": "2026-03-04",
+    "total": 32.63,
+    "subtotal": 28.88,
+    "tax": 3.75,
+    "tip": null,
+    "category": "Shopping"
+  }
+}
