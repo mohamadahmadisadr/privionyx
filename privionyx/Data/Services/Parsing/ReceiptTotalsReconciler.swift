@@ -69,6 +69,15 @@ struct ReceiptTotalsReconciler {
                 result.total = Self.roundedToCents(subtotal + tax + tipValue)
                 result.derived.insert(.total)
                 result.status = .repaired
+            } else if let repairedTax = Self.plausibleDerivedTax(total: total, subtotal: subtotal, tip: tipValue) {
+                // Total and subtotal are the largest, most reliably printed figures, and their
+                // difference is the tax by definition. When the extracted tax contradicts that
+                // difference but the difference is itself a plausible tax, the extracted figure
+                // is the misread one — a Costco receipt prints its tax in both the totals block
+                // and a footer breakdown, and summing the two doubled 0.54 into 1.08.
+                result.tax = repairedTax
+                result.derived.insert(.tax)
+                result.status = .repaired
             } else {
                 result.status = .inconsistent
             }
@@ -122,6 +131,21 @@ struct ReceiptTotalsReconciler {
     /// the draft, the database and the displayed total — a receipt only ever has cents.
     private static func roundedToCents(_ value: Double) -> Double {
         (value * 100).rounded() / 100
+    }
+
+    /// The most any combined sales tax reaches in the app's locales is about 15%. A derived
+    /// tax beyond this is not really tax — it is the signature of a misread total or subtotal,
+    /// where trusting the difference would invent an absurd rate rather than fix anything.
+    private static let maxPlausibleTaxRate = 0.20
+
+    /// The tax implied by total minus subtotal, when that is a non-negative and plausible
+    /// amount. Returns nil when the difference is negative or too large to be tax, leaving
+    /// such receipts to be flagged inconsistent rather than silently rewritten.
+    private static func plausibleDerivedTax(total: Double, subtotal: Double, tip: Double) -> Double? {
+        guard subtotal > tolerance else { return nil }
+        let derived = roundedToCents(total - subtotal - tip)
+        guard derived >= 0, derived <= subtotal * maxPlausibleTaxRate else { return nil }
+        return derived
     }
 
     private static func balances(total: Double, subtotal: Double, tax: Double, tip: Double) -> Bool {

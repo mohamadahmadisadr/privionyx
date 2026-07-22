@@ -158,6 +158,25 @@ struct ReceiptTotalsReconcilerTests {
         #expect(result.status == .consistent)
     }
 
+    /// A Costco receipt prints tax in both the totals block and a footer breakdown; summing
+    /// them doubled 0.54 to 1.08. The difference of total and subtotal is the true tax.
+    @Test("A tax that contradicts total minus subtotal is corrected to it")
+    func impliedTaxOverridesDoubledTax() {
+        let result = reconciler.reconcile(total: 118.06, subtotal: 117.52, tax: 1.08, tip: nil)
+        #expect(result.tax == 0.54)
+        #expect(result.status == .repaired)
+        #expect(result.derived == [.tax])
+    }
+
+    /// An implausible implied tax means a misread total or subtotal, not a tax to adopt.
+    /// Overriding here would invent a 100% rate; the receipt is flagged instead.
+    @Test("An absurd implied tax is not adopted")
+    func absurdImpliedTaxRejected() {
+        let result = reconciler.reconcile(total: 100.00, subtotal: 50.00, tax: 10.00, tip: nil)
+        #expect(result.tax == 10.00)
+        #expect(result.status == .inconsistent)
+    }
+
     @Test("Cent-level rounding still counts as balanced")
     func centRoundingTolerated() {
         let result = reconciler.reconcile(total: 18.14, subtotal: 15.78, tax: 2.36, tip: nil)

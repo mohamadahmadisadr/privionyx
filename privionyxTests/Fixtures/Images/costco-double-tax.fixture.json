@@ -1,0 +1,14 @@
+{
+  "notes": "User-reported: app showed Tax 1.08 against a real 0.54, exactly double. The receipt prints tax twice - 'TAX 0.54' in the totals block and '(H) HST 13% 0.54' in the footer breakdown - and the multi-tax summation built for Quebec's TPS+TVQ added the same amount to itself. The arithmetic settles it: 118.06 - 117.52 = 0.54. Carries a '2.00-' instant discount and a '5 @ 0.69' multi-buy line, so lineItemSum is left unasserted.",
+  "image": "costco-double-tax.jpg",
+  "expected": {
+    "merchant": "Costco",
+    "date": "2026-04-08",
+    "total": 118.06,
+    "subtotal": 117.52,
+    "tax": 0.54,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}
