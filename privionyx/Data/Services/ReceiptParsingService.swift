@@ -7,6 +7,7 @@ struct ReceiptParsingService {
     private let dateExtractor = DateExtractor()
     private let merchantExtractor = MerchantExtractor()
     private let categoryClassifier = CategoryClassifier()
+    private let reconciler = ReceiptTotalsReconciler()
 
     init(mlExtractor: (any ReceiptMLExtractor)? = nil) {
         self.mlExtractor = mlExtractor
@@ -45,17 +46,27 @@ struct ReceiptParsingService {
             tax: tax,
             tip: tip,
             lineItems: lineItems
-        ) ?? .zero
-        let subtotal = mlExtraction?.subtotal ?? explicitSubtotal ?? amountExtractor.deriveSubtotal(total: amount, tax: tax, tip: tip)
-        let resolvedTax = mlExtraction?.tax ?? tax
-        let resolvedTip = mlExtraction?.tip ?? tip
+        )
+
+        // The totals block is the only part of a receipt that can be checked against
+        // itself, so every figure goes through reconciliation before it reaches the draft.
+        let reconciled = reconciler.reconcile(
+            total: amount,
+            subtotal: mlExtraction?.subtotal ?? explicitSubtotal,
+            tax: mlExtraction?.tax ?? tax,
+            tip: mlExtraction?.tip ?? tip
+        )
+        let resolvedAmount = reconciled.total ?? .zero
+        let subtotal = reconciled.subtotal
+        let resolvedTax = reconciled.tax
+        let resolvedTip = reconciled.tip
         let date = mlExtraction?.date ?? dateExtractor.extractDate(from: structuredLines) ?? .now
         let category = categoryClassifier.categorize(merchant: merchant, lines: structuredLines)
         let notes = ""
 
         return ParsedReceiptData(
             merchant: merchant,
-            amount: amount,
+            amount: resolvedAmount,
             subtotal: subtotal,
             tax: resolvedTax,
             tip: resolvedTip,
