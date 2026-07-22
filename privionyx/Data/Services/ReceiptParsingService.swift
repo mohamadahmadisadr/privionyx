@@ -74,7 +74,8 @@ struct ReceiptParsingService {
             category: category,
             rawText: rawText,
             lineItems: lineItems,
-            notes: notes
+            notes: notes,
+            derivedTotals: reconciled.derived
         )
     }
 }

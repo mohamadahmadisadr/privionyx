@@ -90,6 +90,26 @@ struct ReceiptTotalsReconcilerTests {
         #expect(result.tax == 1.00)
     }
 
+    @Test("Only computed figures are reported as derived")
+    func derivedFieldsAreReported() {
+        #expect(reconciler.reconcile(total: 327.75, subtotal: 327.75, tax: 15.20, tip: nil)
+            .derived == [.total])
+        #expect(reconciler.reconcile(total: 22.60, subtotal: nil, tax: 2.60, tip: nil)
+            .derived == [.subtotal])
+        #expect(reconciler.reconcile(total: 22.60, subtotal: 20.00, tax: nil, tip: nil)
+            .derived == [.tax])
+    }
+
+    @Test("Figures read straight off the receipt are never reported as derived")
+    func readFiguresAreNotDerived() {
+        #expect(reconciler.reconcile(total: 4.61, subtotal: 4.08, tax: 0.53, tip: nil)
+            .derived.isEmpty)
+        #expect(reconciler.reconcile(total: 52.00, subtotal: nil, tax: nil, tip: nil)
+            .derived.isEmpty)
+        #expect(reconciler.reconcile(total: 99.00, subtotal: 10.00, tax: 1.00, tip: nil)
+            .derived.isEmpty)
+    }
+
     @Test("Cent-level rounding still counts as balanced")
     func centRoundingTolerated() {
         let result = reconciler.reconcile(total: 18.14, subtotal: 15.78, tax: 2.36, tip: nil)

@@ -14,9 +14,12 @@ final class AddReceiptViewModel {
     private let editingReceiptID: UUID?
 
     var merchant = ""
-    var amount = ""
-    var subtotal = ""
-    var tax = ""
+    // Editing a figure by hand makes it the user's, not an inference, so the "calculated"
+    // note is withdrawn as soon as they touch it. `apply(draft:)` assigns `derivedTotals`
+    // after these, so loading a draft is unaffected.
+    var amount = "" { didSet { derivedTotals.remove(.total) } }
+    var subtotal = "" { didSet { derivedTotals.remove(.subtotal) } }
+    var tax = "" { didSet { derivedTotals.remove(.tax) } }
     var tip = ""
     var lineItems: [ReceiptLineItem] = []
     var date = Date.now
@@ -24,6 +27,9 @@ final class AddReceiptViewModel {
     var customCategoryName = ""
     var tagsText = ""
     var rawText = ""
+    /// Totals figures the reconciler computed rather than read. Cleared whenever the user
+    /// edits, since a hand-entered figure is no longer an inference.
+    var derivedTotals: Set<ReceiptTotalsReconciler.Field> = []
     var notes = ""
     var processingState = "Ready"
     var parsingProgress = 0.0
@@ -140,6 +146,18 @@ final class AddReceiptViewModel {
 
         if rawTextLineCount > 0, rawTextLineCount < 5 {
             hints.append("Only a few text lines were found. The crop or lighting may need another pass.")
+        }
+
+        // A calculated figure is only as good as the two it came from, so name it rather
+        // than presenting it with the same confidence as something read off the paper.
+        if derivedTotals.contains(.total) {
+            hints.append("Total was calculated from the subtotal and tax — the total line was not readable.")
+        }
+        if derivedTotals.contains(.subtotal) {
+            hints.append("Subtotal was calculated from the total and tax.")
+        }
+        if derivedTotals.contains(.tax) {
+            hints.append("Tax was calculated from the total and subtotal.")
         }
 
         if let parsedAmount, let parsedSubtotal {
@@ -302,6 +320,7 @@ final class AddReceiptViewModel {
         tagsText = draft.tags.joined(separator: ", ")
         rawText = draft.rawText ?? ""
         notes = draft.notes
+        derivedTotals = draft.derivedTotals
     }
 
     private func beginCropping(for image: UIImage) {

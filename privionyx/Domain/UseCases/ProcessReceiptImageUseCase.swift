@@ -39,7 +39,8 @@ struct ProcessReceiptImageUseCase {
             rawText: parsed.rawText,
             lineItems: parsed.lineItems,
             notes: parsed.notes,
-            status: .scanned
+            status: .scanned,
+            derivedTotals: parsed.derivedTotals
         )
     }
 }

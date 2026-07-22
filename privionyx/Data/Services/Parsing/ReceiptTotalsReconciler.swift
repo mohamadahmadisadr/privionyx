@@ -26,12 +26,23 @@ struct ReceiptTotalsReconciler {
         case inconsistent
     }
 
+    /// A figure in the totals block that reconciliation is able to derive.
+    enum Field: String, CaseIterable, Hashable, Sendable {
+        case total
+        case subtotal
+        case tax
+    }
+
     struct Result: Equatable {
         var total: Double?
         var subtotal: Double?
         var tax: Double?
         var tip: Double?
         var status: Status
+        /// Figures computed from the others rather than read off the receipt. These are
+        /// the ones worth putting in front of the user, because arithmetic can only be as
+        /// right as the figures it was given.
+        var derived: Set<Field> = []
     }
 
     func reconcile(total: Double?, subtotal: Double?, tax: Double?, tip: Double?) -> Result {
@@ -46,6 +57,7 @@ struct ReceiptTotalsReconciler {
                 // No TOTAL row reached the parser and it fell back to the subtotal. A receipt
                 // charging tax cannot have total == subtotal, so the sum is the better answer.
                 result.total = Self.roundedToCents(subtotal + tax + tipValue)
+                result.derived.insert(.total)
                 result.status = .repaired
             } else {
                 result.status = .inconsistent
@@ -53,6 +65,7 @@ struct ReceiptTotalsReconciler {
 
         case let (nil, subtotal?, tax?):
             result.total = Self.roundedToCents(subtotal + tax + tipValue)
+            result.derived.insert(.total)
             result.status = .repaired
 
         case let (total?, subtotal?, nil):
@@ -61,6 +74,7 @@ struct ReceiptTotalsReconciler {
             } else {
                 let derivedTax = Self.roundedToCents(total - subtotal - tipValue)
                 result.tax = derivedTax > Self.tolerance ? derivedTax : nil
+                if result.tax != nil { result.derived.insert(.tax) }
                 result.status = result.tax == nil ? .inconsistent : .repaired
             }
 
@@ -68,6 +82,7 @@ struct ReceiptTotalsReconciler {
             let derivedSubtotal = Self.roundedToCents(total - tax - tipValue)
             if derivedSubtotal > Self.tolerance {
                 result.subtotal = derivedSubtotal
+                result.derived.insert(.subtotal)
                 result.status = .repaired
             } else {
                 result.status = .inconsistent

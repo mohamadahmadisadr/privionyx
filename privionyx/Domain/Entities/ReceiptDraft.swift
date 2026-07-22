@@ -17,6 +17,9 @@ struct ReceiptDraft: Identifiable, Hashable {
     var lineItems: [ReceiptLineItem]
     var notes: String
     var status: ReceiptProcessingStatus
+    /// Totals figures reconciliation computed rather than read off the receipt. Extraction
+    /// metadata about this scan, not receipt data, so it is deliberately not persisted.
+    var derivedTotals: Set<ReceiptTotalsReconciler.Field>
 
     init(
         id: UUID = UUID(),
@@ -34,7 +37,8 @@ struct ReceiptDraft: Identifiable, Hashable {
         rawText: String? = nil,
         lineItems: [ReceiptLineItem] = [],
         notes: String = "",
-        status: ReceiptProcessingStatus = .scanned
+        status: ReceiptProcessingStatus = .scanned,
+        derivedTotals: Set<ReceiptTotalsReconciler.Field> = []
     ) {
         self.id = id
         self.merchant = merchant
@@ -52,6 +56,7 @@ struct ReceiptDraft: Identifiable, Hashable {
         self.lineItems = lineItems
         self.notes = notes
         self.status = status
+        self.derivedTotals = derivedTotals
     }
 
     init(item: ReceiptItem) {
@@ -71,6 +76,8 @@ struct ReceiptDraft: Identifiable, Hashable {
         self.lineItems = item.lineItems
         self.notes = item.notes
         self.status = item.status
+        // A saved receipt carries no memory of how its figures were obtained.
+        self.derivedTotals = []
     }
 
     var receiptItem: ReceiptItem {

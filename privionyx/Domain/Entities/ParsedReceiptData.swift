@@ -11,4 +11,7 @@ struct ParsedReceiptData: Hashable {
     var rawText: String
     var lineItems: [ReceiptLineItem]
     var notes: String
+    /// Totals figures that were computed rather than read. Carried through to the review
+    /// screen so the user is pointed at the numbers the app inferred.
+    var derivedTotals: Set<ReceiptTotalsReconciler.Field> = []
 }
