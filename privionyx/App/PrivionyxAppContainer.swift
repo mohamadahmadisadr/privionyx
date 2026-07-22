@@ -27,10 +27,12 @@ struct PrivionyxAppContainer {
         let merchantRuleService = MerchantRuleService(defaults: makeDefaults(inMemory: inMemory))
         let parser = ReceiptParsingService(mlExtractor: mlExtractor)
         let resolveCategoryUseCase = ResolveCategoryUseCase(merchantRules: merchantRuleService)
+        let resolveMerchantUseCase = ResolveMerchantUseCase(merchantRules: merchantRuleService)
         let processReceiptUseCase = ProcessReceiptImageUseCase(
             ocrService: ocrService,
             parser: parser,
-            resolveCategory: resolveCategoryUseCase
+            resolveCategory: resolveCategoryUseCase,
+            resolveMerchant: resolveMerchantUseCase
         )
 
         return PrivionyxAppContainer(

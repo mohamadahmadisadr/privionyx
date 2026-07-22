@@ -4,15 +4,18 @@ struct ProcessReceiptImageUseCase {
     private let ocrService: any OCRService
     private let parser: any ReceiptParser
     private let resolveCategory: ResolveCategoryUseCase
+    private let resolveMerchant: ResolveMerchantUseCase
 
     init(
         ocrService: any OCRService,
         parser: any ReceiptParser,
-        resolveCategory: ResolveCategoryUseCase
+        resolveCategory: ResolveCategoryUseCase,
+        resolveMerchant: ResolveMerchantUseCase
     ) {
         self.ocrService = ocrService
         self.parser = parser
         self.resolveCategory = resolveCategory
+        self.resolveMerchant = resolveMerchant
     }
 
     func execute(image: UIImage) async throws -> ReceiptDraft {
@@ -27,14 +30,17 @@ struct ProcessReceiptImageUseCase {
     }
 
     private func makeDraft(from parsed: ParsedReceiptData) -> ReceiptDraft {
-        ReceiptDraft(
-            merchant: parsed.merchant,
+        // Applied before the category lookup so a corrected name also matches its rule.
+        let merchant = resolveMerchant.execute(recognized: parsed.merchant)
+
+        return ReceiptDraft(
+            merchant: merchant,
             amount: parsed.amount,
             subtotal: parsed.subtotal,
             tax: parsed.tax,
             tip: parsed.tip,
             date: parsed.date,
-            category: resolveCategory.execute(merchant: parsed.merchant, fallback: parsed.category),
+            category: resolveCategory.execute(merchant: merchant, fallback: parsed.category),
             imageData: nil,
             rawText: parsed.rawText,
             lineItems: parsed.lineItems,

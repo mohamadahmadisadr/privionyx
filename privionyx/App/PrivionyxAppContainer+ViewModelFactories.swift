@@ -8,6 +8,7 @@ extension PrivionyxAppContainer {
             imageProcessor: imageProcessor,
             perspectiveService: perspectiveService,
             processReceiptUseCase: processReceiptUseCase,
+            merchantRules: merchantRuleService,
             initialDraft: initialDraft
         )
     }

@@ -11,6 +11,7 @@ final class AddReceiptViewModel {
     @ObservationIgnored private let imageProcessor: any ReceiptImageProcessing
     @ObservationIgnored private let perspectiveService: any ReceiptPerspectiveCorrecting
     @ObservationIgnored private let processReceiptUseCase: ProcessReceiptImageUseCase
+    @ObservationIgnored private let merchantRules: any MerchantRuleProviding
     private let editingReceiptID: UUID?
 
     var merchant = ""
@@ -31,6 +32,10 @@ final class AddReceiptViewModel {
     /// edits, since a hand-entered figure is no longer an inference.
     var derivedTotals: Set<ReceiptTotalsReconciler.Field> = []
     var totalsStatus: ReceiptTotalsReconciler.Status = .unverified
+    /// The merchant name recognition produced for the scan on screen, kept so that saving a
+    /// different one can be recognized as a correction rather than as a fresh entry. Empty
+    /// for manual entry and for receipts opened from the list, where there is nothing to learn.
+    private var recognizedMerchant = ""
     var notes = ""
     var processingState = "Ready"
     var parsingProgress = 0.0
@@ -55,12 +60,14 @@ final class AddReceiptViewModel {
         imageProcessor: any ReceiptImageProcessing,
         perspectiveService: any ReceiptPerspectiveCorrecting,
         processReceiptUseCase: ProcessReceiptImageUseCase,
+        merchantRules: any MerchantRuleProviding,
         initialDraft: ReceiptDraft? = nil
     ) {
         self.appState = appState
         self.imageProcessor = imageProcessor
         self.perspectiveService = perspectiveService
         self.processReceiptUseCase = processReceiptUseCase
+        self.merchantRules = merchantRules
         self.editingReceiptID = initialDraft?.id
 
         if let initialDraft {
@@ -219,6 +226,7 @@ final class AddReceiptViewModel {
     }
 
     func startManualEntry() {
+        recognizedMerchant = ""
         resetDraft()
         processingState = "Manual Entry"
         isReviewPresented = true
@@ -270,6 +278,16 @@ final class AddReceiptViewModel {
         do {
             didSaveSuccessfully = false
             try await appState.saveReceipt(draft)
+
+            // Learn only from a scan the user actually amended. `recognizedMerchant` is empty
+            // for manual entry and for receipts opened from the list, so neither teaches
+            // anything, and an unchanged name teaches nothing either.
+            if recognizedMerchant.isEmpty == false, recognizedMerchant != trimmedMerchant {
+                merchantRules.saveMerchantCorrection(
+                    recognized: recognizedMerchant,
+                    corrected: trimmedMerchant
+                )
+            }
             didSaveSuccessfully = true
             processingState = "Saved"
             showSavedToast = true
@@ -440,6 +458,7 @@ final class AddReceiptViewModel {
                 let draft = try await processReceiptUseCase.execute(image: image)
                 parsingProgress = 0.9
                 apply(draft: draft)
+                recognizedMerchant = draft.merchant
                 isParsingPresented = false
                 processingState = "Ready For Review"
                 parsingProgress = 1
