@@ -31,8 +31,8 @@ struct OCRDiagnosticTests {
 
             for (index, line) in result.lines.enumerated() {
                 let box = String(
-                    format: "x[%.2f-%.2f] y%.3f",
-                    line.minX, line.maxX, line.midY
+                    format: "x[%.2f-%.2f] y%.3f h%.4f",
+                    line.minX, line.maxX, line.midY, line.height
                 )
                 out += String(format: "%3d  %@  %@\n", index, box, line.text)
             }

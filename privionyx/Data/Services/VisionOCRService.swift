@@ -5,6 +5,11 @@ import Vision
 struct VisionOCRService {
     private let imageProcessor: ReceiptImageProcessor
     private static let preferredLanguages = ["en-CA", "fr-CA", "en-US"]
+
+    /// Below this many rows the page is treated as unreadable and retried once on a
+    /// contrast-boosted copy. Faded thermal paper is the case this exists for.
+    private static let sparseRowThreshold = 5
+
     private static let customReceiptWords = [
         "subtotal", "sub total", "tax", "hst", "gst", "tvq", "vat", "tip", "gratuity",
         "total", "amount due", "balance due", "debit", "credit", "receipt", "invoice",
@@ -19,80 +24,62 @@ struct VisionOCRService {
         self.imageProcessor = imageProcessor
     }
 
+    /// Recognizes a receipt as a list of visual rows.
+    ///
+    /// A single recognition pass is used. An earlier version ran six preprocessing variants
+    /// and merged the results, but the merge keyed on the recognized text itself, so
+    /// variants that disagreed produced separate entries rather than voting — a 50-row
+    /// receipt came back as 175 rows carrying seven spellings of its own header. One pass
+    /// over a well-prepared image is both cleaner and six times cheaper.
     func recognizeText(in image: UIImage) async throws -> OCRResult {
         let normalizedImage = imageProcessor.normalizedImage(image)
-        let variants = ocrVariants(for: normalizedImage)
-        var recognizedLines: [RecognizedLine] = []
-        for variant in variants {
-            let variantLines = try await Self.recognizedLines(in: variant)
-            recognizedLines.append(contentsOf: variantLines)
-        }
-        let mergedLines = Self.mergeRecognizedLines(recognizedLines)
-        let mergedText = mergedLines.map(\.text).joined(separator: "\n")
-        return OCRResult(rawText: mergedText, lines: mergedLines)
-    }
 
-    private func ocrVariants(for image: UIImage) -> [UIImage] {
-        let enhanced = imageProcessor.enhanceReceiptImage(image)
-        let thresholded = imageProcessor.thresholdedReceiptImage(image)
-        let thresholdedEnhanced = imageProcessor.thresholdedReceiptImage(enhanced)
-        let upscaled = imageProcessor.upscaledReceiptImage(image)
-        let upscaledEnhanced = imageProcessor.upscaledReceiptImage(enhanced)
-
-        return [image, enhanced, thresholded, thresholdedEnhanced, upscaled, upscaledEnhanced]
-    }
-
-    private static func recognizedLines(in image: UIImage) async throws -> [RecognizedLine] {
-        if #available(iOS 26.0, *) {
-            let documentLines = try await recognizedDocumentLines(in: image)
-            if documentLines.isEmpty == false {
-                return documentLines
+        var fragments = try await Self.recognizedFragments(in: normalizedImage)
+        if Self.assembleRows(fragments).count < Self.sparseRowThreshold {
+            let enhanced = imageProcessor.enhanceReceiptImage(normalizedImage)
+            let enhancedFragments = try await Self.recognizedFragments(in: enhanced)
+            if enhancedFragments.count > fragments.count {
+                fragments = enhancedFragments
             }
         }
 
-        return try recognizedTextLines(in: image)
+        let rows = Self.assembleRows(fragments)
+        return OCRResult(rawText: rows.map(\.text).joined(separator: "\n"), lines: rows)
     }
 
-    @available(iOS 26.0, *)
-    private static func recognizedDocumentLines(in image: UIImage) async throws -> [RecognizedLine] {
+    // MARK: - Recognition
+
+    private static func recognizedFragments(in image: UIImage) async throws -> [RecognizedFragment] {
         guard let cgImage = image.cgImage else {
             throw OCRServiceError.unsupportedImage
         }
 
+        let documentFragments = try await recognizedDocumentFragments(in: cgImage)
+        if documentFragments.isEmpty == false {
+            return documentFragments
+        }
+
+        return try recognizedTextFragments(in: cgImage)
+    }
+
+    private static func recognizedDocumentFragments(in cgImage: CGImage) async throws -> [RecognizedFragment] {
         var request = RecognizeDocumentsRequest()
         request.textRecognitionOptions.useLanguageCorrection = true
         request.textRecognitionOptions.automaticallyDetectLanguage = false
-        request.textRecognitionOptions.maximumCandidateCount = 3
         request.textRecognitionOptions.minimumTextHeightFraction = 0.008
         request.textRecognitionOptions.customWords = Self.customReceiptWords
-        request.textRecognitionOptions.recognitionLanguages = Self.preferredLanguages.map(Locale.Language.init(identifier:))
+        request.textRecognitionOptions.recognitionLanguages = Self.preferredLanguages
+            .map(Locale.Language.init(identifier:))
 
         let observations = try await request.perform(on: cgImage, orientation: nil)
         return observations.flatMap { observation in
-            observation.document.text.lines.compactMap { line -> RecognizedLine? in
-                let text = Self.cleanedOCRText(line.transcript)
-                guard text.isEmpty == false else {
-                    return nil
-                }
-
-                let boundingBox = line.boundingRegion.boundingBox.cgRect
-                let score = Self.candidateScore(text, confidence: 0.82)
-                return RecognizedLine(
-                    text: text,
-                    score: score,
-                    minX: boundingBox.minX,
-                    maxX: boundingBox.maxX,
-                    midY: boundingBox.midY
-                )
+            observation.document.text.lines.compactMap { line in
+                Self.fragment(text: line.transcript, box: line.boundingRegion.boundingBox.cgRect)
             }
         }
     }
 
-    private static func recognizedTextLines(in image: UIImage) throws -> [RecognizedLine] {
-        guard let cgImage = image.cgImage else {
-            throw OCRServiceError.unsupportedImage
-        }
-
+    private static func recognizedTextFragments(in cgImage: CGImage) throws -> [RecognizedFragment] {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
@@ -101,100 +88,90 @@ struct VisionOCRService {
         request.customWords = Self.customReceiptWords
         request.minimumTextHeight = 0.008
 
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        try handler.perform([request])
+        try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
 
-        let observations = request.results ?? []
-        return observations.compactMap { observation in
-            let candidates = observation.topCandidates(3)
-            guard let bestCandidate = Self.bestCandidate(from: candidates) else {
-                return nil
-            }
-
-            let text = Self.cleanedOCRText(bestCandidate.string)
-            guard text.isEmpty == false else { return nil }
-
-            return RecognizedLine(
-                text: text,
-                score: Self.candidateScore(text, confidence: bestCandidate.confidence),
-                minX: observation.boundingBox.minX,
-                maxX: observation.boundingBox.maxX,
-                midY: observation.boundingBox.midY
-            )
+        return (request.results ?? []).compactMap { observation in
+            guard let candidate = observation.topCandidates(1).first else { return nil }
+            return Self.fragment(text: candidate.string, box: observation.boundingBox)
         }
     }
 
-    private static func bestCandidate(from candidates: [VNRecognizedText]) -> VNRecognizedText? {
-        candidates.max { lhs, rhs in
-            Self.candidateScore(lhs.string, confidence: lhs.confidence) < Self.candidateScore(rhs.string, confidence: rhs.confidence)
-        }
+    private static func fragment(text: String, box: CGRect) -> RecognizedFragment? {
+        let cleaned = Self.cleanedOCRText(text)
+        guard cleaned.isEmpty == false else { return nil }
+
+        return RecognizedFragment(
+            text: cleaned,
+            minX: box.minX,
+            maxX: box.maxX,
+            midY: box.midY,
+            height: box.height
+        )
     }
 
-    private static func candidateScore(_ text: String, confidence: Float) -> Double {
-        let lowercased = text.lowercased()
-        var score = Double(confidence)
+    // MARK: - Row assembly
 
-        if lowercased.range(of: #"\d+[.,]\d{2}"#, options: .regularExpression) != nil {
-            score += 0.25
+    /// Groups fragments into visual rows, then joins each row left to right.
+    ///
+    /// Grouping is a single ordered sweep rather than a sort predicate. The previous code
+    /// sorted with "same row if |Δy| < 0.012" — a fixed threshold close enough to the line
+    /// spacing that `SUBTOTAL ~ 228.02` and `TAX ~ 228.02` while `SUBTOTAL ≁ TAX`. A
+    /// non-transitive predicate leaves `sorted(by:)` undefined, which is how the label and
+    /// amount columns ended up interleaved and every tax lookup read its neighbour's value.
+    static func assembleRows(_ fragments: [RecognizedFragment]) -> [OCRTextLine] {
+        guard fragments.isEmpty == false else { return [] }
+
+        // Vision's origin is bottom-left, so descending midY is top-of-page first.
+        let ordered = fragments.sorted { $0.midY > $1.midY }
+        let tolerance = rowTolerance(for: fragments)
+
+        var rows: [[RecognizedFragment]] = []
+        var current: [RecognizedFragment] = []
+        var anchorY: CGFloat = 0
+
+        for fragment in ordered {
+            if current.isEmpty || abs(fragment.midY - anchorY) <= tolerance {
+                current.append(fragment)
+                // Track the running mean so a skewed receipt, where one row drifts
+                // vertically across the page, still accumulates into a single row.
+                anchorY = current.map(\.midY).reduce(0, +) / CGFloat(current.count)
+            } else {
+                rows.append(current)
+                current = [fragment]
+                anchorY = fragment.midY
+            }
+        }
+        if current.isEmpty == false {
+            rows.append(current)
         }
 
-        if Self.customReceiptWords.contains(where: lowercased.contains) {
-            score += 0.18
-        }
-
-        if lowercased.contains("total") || lowercased.contains("subtotal") || lowercased.contains("tax") {
-            score += 0.12
-        }
-
-        if text.rangeOfCharacter(from: .letters) != nil {
-            score += 0.08
-        }
-
-        if text.range(of: #"[A-Za-z]{2,}\d+[A-Za-z]{2,}"#, options: .regularExpression) != nil {
-            score -= 0.08
-        }
-
-        return score
+        return rows.compactMap(Self.joinRow)
     }
 
-    private static func mergeRecognizedLines(_ lines: [RecognizedLine]) -> [OCRTextLine] {
-        let grouped = Dictionary(grouping: lines) { line in
-            let yBucket = Int((line.midY * 100).rounded())
-            let normalized = Self.normalizeOCRLine(line.text)
-            return "\(yBucket)|\(normalized)"
-        }
-
-        let merged = grouped.compactMap { _, variants -> RecognizedLine? in
-            variants.max { lhs, rhs in
-                if lhs.score == rhs.score {
-                    return lhs.text.count < rhs.text.count
-                }
-                return lhs.score < rhs.score
-            }
-        }
-        .sorted {
-            if abs($0.midY - $1.midY) < 0.012 {
-                return $0.minX < $1.minX
-            }
-            return $0.midY > $1.midY
-        }
-
-        return merged.reduce(into: [OCRTextLine]()) { result, line in
-                let cleaned = Self.cleanedOCRText(line.text)
-                guard cleaned.isEmpty == false else { return }
-                guard Self.isLikelyUsefulOCRLine(cleaned) else { return }
-                if result.last?.text != cleaned {
-                    result.append(
-                        OCRTextLine(
-                            text: cleaned,
-                            minX: line.minX,
-                            maxX: line.maxX,
-                            midY: line.midY
-                        )
-                    )
-                }
-            }
+    /// Half the median glyph height: tall enough to pull a label and its amount together,
+    /// short enough to keep adjacent rows apart, and expressed relative to the text so it
+    /// holds for both a 500px template and a 5712px camera capture.
+    private static func rowTolerance(for fragments: [RecognizedFragment]) -> CGFloat {
+        let heights = fragments.map(\.height).filter { $0 > 0 }.sorted()
+        guard heights.isEmpty == false else { return 0.006 }
+        return max(heights[heights.count / 2] * 0.5, 0.002)
     }
+
+    private static func joinRow(_ row: [RecognizedFragment]) -> OCRTextLine? {
+        let ordered = row.sorted { $0.minX < $1.minX }
+        let text = Self.cleanedOCRText(ordered.map(\.text).joined(separator: " "))
+        guard text.isEmpty == false, Self.isLikelyUsefulOCRLine(text) else { return nil }
+
+        return OCRTextLine(
+            text: text,
+            minX: ordered.map(\.minX).min() ?? 0,
+            maxX: ordered.map(\.maxX).max() ?? 0,
+            midY: ordered.map(\.midY).reduce(0, +) / CGFloat(ordered.count),
+            height: ordered.map(\.height).max() ?? 0
+        )
+    }
+
+    // MARK: - Text cleanup
 
     private static func cleanedOCRText(_ text: String) -> String {
         text
@@ -206,28 +183,24 @@ struct VisionOCRService {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// A joined row is longer than a single fragment, so the length ceiling is higher than
+    /// the per-fragment limit it replaces.
     private static func isLikelyUsefulOCRLine(_ line: String) -> Bool {
         let letters = line.filter(\.isLetter).count
         let digits = line.filter(\.isNumber).count
         guard letters + digits > 0 else { return false }
-        guard line.count <= 120 else { return false }
+        guard line.count <= 200 else { return false }
         if line.count <= 2, digits == 0 { return false }
         return true
     }
-
-    private static func normalizeOCRLine(_ line: String) -> String {
-        line.lowercased()
-            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
 }
 
-private struct RecognizedLine {
+struct RecognizedFragment {
     let text: String
-    let score: Double
     let minX: CGFloat
     let maxX: CGFloat
     let midY: CGFloat
+    let height: CGFloat
 }
 
 extension VisionOCRService: OCRService {}

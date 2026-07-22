@@ -49,39 +49,6 @@ struct ReceiptImageProcessor {
         return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
     }
 
-    func thresholdedReceiptImage(_ image: UIImage) -> UIImage {
-        let normalizedImage = normalizedImage(image)
-
-        guard let inputImage = CIImage(image: normalizedImage) else {
-            return normalizedImage
-        }
-
-        let mono = CIFilter.colorControls()
-        mono.inputImage = inputImage
-        mono.saturation = 0
-        mono.contrast = 1.45
-        mono.brightness = 0.03
-
-        let exposure = CIFilter.exposureAdjust()
-        exposure.inputImage = mono.outputImage
-        exposure.ev = 0.55
-
-        guard let outputImage = exposure.outputImage,
-              let cgImage = context.createCGImage(outputImage, from: outputImage.extent) else {
-            return normalizedImage
-        }
-
-        return UIImage(cgImage: cgImage, scale: normalizedImage.scale, orientation: .up)
-    }
-
-    func upscaledReceiptImage(_ image: UIImage) -> UIImage {
-        let normalizedImage = normalizedImage(image)
-        let targetSize = CGSize(width: normalizedImage.size.width * 1.35, height: normalizedImage.size.height * 1.35)
-        let renderer = UIGraphicsImageRenderer(size: targetSize)
-        return renderer.image { _ in
-            normalizedImage.draw(in: CGRect(origin: .zero, size: targetSize))
-        }
-    }
 }
 
 extension ReceiptImageProcessor: ReceiptImageProcessing {}
