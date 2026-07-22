@@ -1,13 +1,14 @@
 {
-  "notes": "Edge case: crumpled and creased, photographed at an angle against a patterned background, greyscale and low contrast. The TOTAL line at the bottom is partially obscured, so the total (342.95) is only recoverable as subtotal + tax — the case that motivates arithmetic reconciliation. Date is cropped out of frame entirely, so finding one would be a spurious value rather than a win.",
+  "notes": "Edge case: crumpled and creased, photographed at an angle against a patterned background, greyscale and low contrast. The TOTAL line at the bottom is partially obscured, so the total (342.95) is only recoverable as subtotal + tax \u2014 the case that motivates arithmetic reconciliation. Date is cropped out of frame entirely, so finding one would be a spurious value rather than a win. Item sum is now asserted at the printed subtotal: a fee-free grocery receipt's items and instant discounts must add up to it. This fixture carries several '3.20-A' credit rows, so it is the corpus's check that a trailing minus survives extraction \u2014 read as positive they would push the sum above the subtotal.",
   "image": "crumpled-edge-case.jpg",
   "expected": {
     "merchant": "Costco",
     "date": null,
     "total": 342.95,
     "subtotal": 327.75,
-    "tax": 15.20,
+    "tax": 15.2,
     "tip": null,
-    "category": "Shopping"
+    "category": "Shopping",
+    "lineItemSum": 327.75
   }
 }

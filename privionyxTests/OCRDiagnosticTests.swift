@@ -37,6 +37,13 @@ struct OCRDiagnosticTests {
                 out += String(format: "%3d  %@  %@\n", index, box, line.text)
             }
 
+            let parsed = await ReceiptParsingService().parse(ocrResult: result)
+            out += "\n  line items: \(parsed.lineItems.count), sum "
+            out += String(format: "%.2f\n", parsed.lineItems.map(\.amount).reduce(0, +))
+            for item in parsed.lineItems {
+                out += String(format: "    %8.2f  %@\n", item.amount, item.name)
+            }
+
             print(out)
         }
     }
