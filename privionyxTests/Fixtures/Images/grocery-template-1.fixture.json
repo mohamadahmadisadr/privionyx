@@ -1,0 +1,13 @@
+{
+  "notes": "Tax-free grocery receipt where TOTAL equals SUBTOTAL legitimately, and the same 17.07 appears four times over (subtotal, total, a bare repeat, and PURCHASE). Guards the reconciler's zero-tax path: repairing this total would be wrong.",
+  "image": "grocery-template-1.jpg",
+  "expected": {
+    "merchant": "Supermarket",
+    "date": "2019-11-21",
+    "total": 17.07,
+    "subtotal": 17.07,
+    "tax": null,
+    "tip": null,
+    "category": "Grocery"
+  }
+}

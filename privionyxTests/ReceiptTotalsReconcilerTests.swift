@@ -110,6 +110,27 @@ struct ReceiptTotalsReconcilerTests {
             .derived.isEmpty)
     }
 
+    /// Restaurants print a mandatory service charge both ways: above the subtotal on some
+    /// receipts, folded into it on others. The label is identical; only the arithmetic tells
+    /// them apart.
+    @Test("A tip already inside the subtotal is dropped rather than counted twice")
+    func tipAlreadyInSubtotalIsDropped() {
+        let result = reconciler.reconcile(total: 229.94, subtotal: 211.68, tax: 18.26, tip: 33.60)
+
+        #expect(result.status == .repaired)
+        #expect(result.tip == nil)
+        #expect(result.total == 229.94)
+        #expect(result.subtotal == 211.68)
+    }
+
+    @Test("A tip genuinely outside the subtotal is kept")
+    func tipOutsideSubtotalIsKept() {
+        let result = reconciler.reconcile(total: 71.11, subtotal: 56.00, tax: 5.03, tip: 10.08)
+
+        #expect(result.status == .consistent)
+        #expect(result.tip == 10.08)
+    }
+
     @Test("Cent-level rounding still counts as balanced")
     func centRoundingTolerated() {
         let result = reconciler.reconcile(total: 18.14, subtotal: 15.78, tax: 2.36, tip: nil)

@@ -1,0 +1,13 @@
+{
+  "notes": "Real capture of a curved receipt with a hard diagonal shadow across it — bright at the top, deeply shaded at the bottom where the totals are. The deliberate counterpart to restaurant-primerib: here the 20% service charge is already inside the printed subtotal (168.00 + 33.60 + 10.08 = 211.68), so counting it as a tip double-counts it and breaks the identity. Whether a service charge belongs in the tip field cannot be decided from the label alone — only from whether the arithmetic balances with it or without it.",
+  "image": "reddit-receipt.jpg",
+  "expected": {
+    "merchant": "Angler SF",
+    "date": "2023-09-16",
+    "total": 229.94,
+    "subtotal": 211.68,
+    "tax": 18.26,
+    "tip": null,
+    "category": "Dining"
+  }
+}

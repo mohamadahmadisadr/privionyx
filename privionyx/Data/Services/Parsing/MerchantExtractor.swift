@@ -41,6 +41,16 @@ struct MerchantExtractor {
                     return nil
                 }
 
+                // A vendor name never has a price in it.
+                guard cleanedLine.range(of: #"\d[.,]\d{2}"#, options: .regularExpression) == nil
+                else { return nil }
+
+                // Nor does it open with a number. A leading count is an item line
+                // ("2 10 oz Prime Rib"), and a leading street number is the address line
+                // directly under the name — neither is the vendor.
+                guard cleanedLine.range(of: #"^\d"#, options: .regularExpression) == nil
+                else { return nil }
+
                 let lettersOnly = cleanedLine.filter(\.isLetter).count
                 let digitsOnly = cleanedLine.filter(\.isNumber).count
                 guard lettersOnly >= 3, digitsOnly <= max(3, lettersOnly / 2) else { return nil }
@@ -59,8 +69,18 @@ struct MerchantExtractor {
                 return (cleanedLine, score)
             }
 
-        return candidates.max(by: { $0.1 < $1.1 })?.0
+        // Below this the best candidate is not a name, just the least bad line left over.
+        // A receipt that carries no vendor at all — a restaurant slip, a payment stub —
+        // must be able to say so, because an invented merchant is worse than none.
+        guard let best = candidates.max(by: { $0.1 < $1.1 }), best.1 >= Self.minimumMerchantScore
+        else { return nil }
+
+        return best.0
     }
+
+    /// Genuine letterhead lines score around 20 and up: near the top of the receipt, often
+    /// upper-case, short enough to be a name.
+    private static let minimumMerchantScore = 10
 
     /// Matches only at word boundaries. Plain `contains` made "metro" claim
     /// "Metropolitan Bakery", and "shell" would claim anything containing "shellfish".

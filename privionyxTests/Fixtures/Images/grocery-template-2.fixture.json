@@ -1,0 +1,13 @@
+{
+  "notes": "Clean grocery layout with a TEND line repeating the total, a CHANGE DUE of 0.00, per-item TFA tax flags, and the transaction date on the row below its 'Date Time Lane Clerk' header rather than beside it.",
+  "image": "grocery-template-2.jpg",
+  "expected": {
+    "merchant": "Grocery Depot",
+    "date": "2019-01-07",
+    "total": 29.82,
+    "subtotal": 28.00,
+    "tax": 1.82,
+    "tip": null,
+    "category": "Grocery"
+  }
+}

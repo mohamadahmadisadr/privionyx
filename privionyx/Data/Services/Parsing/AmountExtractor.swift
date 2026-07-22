@@ -45,7 +45,13 @@ struct AmountExtractor {
 
     func extractAmounts(in line: String) -> [Double] {
         let normalizedLine = line
-            .replacingOccurrences(of: #"(?<=\d)\s+(?=\d{2}\b)"#, with: ".", options: .regularExpression)
+            // Receipts print "12 34" for 12.34, but "2026 05:43PM" is a timestamp, not a
+            // price. Without the guard the year and hour became a 2026.05 total.
+            .replacingOccurrences(
+                of: #"(?<=\d)\s+(?=\d{2}\b)(?!\d{2}\s*[:.]\d)"#,
+                with: ".",
+                options: .regularExpression
+            )
             .replacingOccurrences(of: #"(?<=\d)\s*[\.,]\s*(?=\d{2}\b)"#, with: ".", options: .regularExpression)
         let pattern = #"\$?\s*\d+(?:[,\s]\d{3})*(?:[.,]\d{2})"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }

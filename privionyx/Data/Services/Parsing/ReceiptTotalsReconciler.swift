@@ -53,6 +53,15 @@ struct ReceiptTotalsReconciler {
         case let (total?, subtotal?, tax?):
             if Self.balances(total: total, subtotal: subtotal, tax: tax, tip: tipValue) {
                 result.status = .consistent
+            } else if tipValue > Self.tolerance,
+                      Self.balances(total: total, subtotal: subtotal, tax: tax, tip: 0) {
+                // The figures balance only once the tip is left out, so it was already inside
+                // the subtotal. Restaurants print a mandatory service charge both ways — above
+                // the subtotal on some, folded into it on others — and the label reads the same
+                // either way. Only the arithmetic distinguishes them, and counting it twice
+                // would overstate the tip and leave the receipt not adding up.
+                result.tip = nil
+                result.status = .repaired
             } else if Self.isTotalActuallySubtotal(total: total, subtotal: subtotal, tax: tax) {
                 // No TOTAL row reached the parser and it fell back to the subtotal. A receipt
                 // charging tax cannot have total == subtotal, so the sum is the better answer.

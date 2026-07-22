@@ -1,0 +1,13 @@
+{
+  "notes": "Pink thermal slip, angled on a wood table under warm light, with the total filled in by hand. Two hard cases: the receipt carries NO merchant name anywhere, so any vendor the parser reports is invented; and the mandatory service charge sits outside the food subtotal, where 56.00 + 10.08 + 5.03 = 71.11 only balances if the charge is treated as a tip. The receipt itself insists the service charge is not a tip or gratuity, but the draft has nowhere else to put it and dropping it would break the arithmetic.",
+  "image": "restaurant-primerib.jpg",
+  "expected": {
+    "merchant": null,
+    "date": "2026-03-02",
+    "total": 71.11,
+    "subtotal": 56.00,
+    "tax": 5.03,
+    "tip": 10.08,
+    "category": "Dining"
+  }
+}

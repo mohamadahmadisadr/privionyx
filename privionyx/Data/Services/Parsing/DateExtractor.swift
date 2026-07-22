@@ -19,7 +19,7 @@ struct DateExtractor {
             for candidate in slashCandidates {
                 for pattern in patterns {
                     formatter.dateFormat = pattern
-                    if let date = formatter.date(from: String(candidate)) {
+                    if let date = formatter.date(from: String(candidate)), isPlausible(date) {
                         return date
                     }
                 }
@@ -29,7 +29,7 @@ struct DateExtractor {
             for candidate in joinedCandidates {
                 for pattern in patterns {
                     formatter.dateFormat = pattern
-                    if let date = formatter.date(from: candidate) {
+                    if let date = formatter.date(from: candidate), isPlausible(date) {
                         return date
                     }
                 }
@@ -56,6 +56,20 @@ struct DateExtractor {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = .current
+        // Lenient parsing reads "9/16/23" against "MM/dd/yyyy" as the year 23 AD rather
+        // than rejecting it, and that pattern is tried first.
+        formatter.isLenient = false
         return formatter
+    }
+
+    /// A receipt is a record of a purchase that already happened, on paper that has not
+    /// been around for decades. Anything outside that window is a misparse, not a date.
+    private func isPlausible(_ date: Date) -> Bool {
+        let now = Date.now
+        guard let earliest = Calendar.current.date(byAdding: .year, value: -30, to: now),
+              let latest = Calendar.current.date(byAdding: .day, value: 2, to: now) else {
+            return true
+        }
+        return date >= earliest && date <= latest
     }
 }
