@@ -80,12 +80,7 @@ struct LineItemExtractor {
               amount > 0
         else { return nil }
 
-        let name = nameRow
-            .replacingOccurrences(of: #"^\s*\d{1,3}\s+"#, with: "", options: .regularExpression)
-            .replacingOccurrences(of: #"\s*[@x]\s*$"#, with: "", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
-
-        guard Self.latinLetterCount(in: name) >= 3 else { return nil }
+        guard let name = Self.cleanedItemName(nameRow) else { return nil }
         return ReceiptLineItem(name: name, quantity: Self.quantity(from: nameRow), amount: amount)
     }
 
@@ -153,11 +148,35 @@ struct LineItemExtractor {
             options: [.regularExpression, .backwards]
         ) else { return nil }
 
-        let name = text[..<priceRange.lowerBound]
-            .replacingOccurrences(of: #"^\s*\d{1,3}\s+"#, with: "", options: .regularExpression)
-            .replacingOccurrences(of: #"^\s*\d{5,}\s+"#, with: "", options: .regularExpression)
+        return cleanedItemName(String(text[..<priceRange.lowerBound]))
+    }
+
+    /// Turns the raw text left of the price into a name worth showing.
+    ///
+    /// Receipts prefix an item with bookkeeping the shopper never cares about: a single-letter
+    /// tax class, a quantity, and a product code, in any combination — "E 577 MPEPSI COLA",
+    /// "1216/15 CRES SCOPE", "E 3 WHOLE MILK". Each leading token of that kind is peeled off in
+    /// turn, but only while a real name remains behind it, so a genuine short lead is never
+    /// eaten. What recognition itself got wrong ("MPEPSI") is left alone — that is a
+    /// recognition problem, not a formatting one, and guessing at it would invent content.
+    ///
+    /// Internal so the peeling can be tested directly rather than only through a whole image.
+    static func cleanedItemName(_ raw: String) -> String? {
+        var name = raw
             .replacingOccurrences(of: #"\s*[@x]\s*$"#, with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+
+        // A leading tax-class letter ("E ", "S ") or a leading code or quantity ("577 ",
+        // "1216/15 ", "3 ") — repeatedly, since a row can carry several, but never the last
+        // token that still holds the name.
+        let leadingNoise = #"^(?:[A-Za-z]|\d[\d/]*)\s+"#
+        while name.range(of: leadingNoise, options: .regularExpression) != nil {
+            let stripped = name
+                .replacingOccurrences(of: leadingNoise, with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+            guard Self.latinLetterCount(in: stripped) >= 3 else { break }
+            name = stripped
+        }
 
         // A purchase has a name, and on an en-CA/fr-CA/en-US receipt that name is written in
         // Latin letters. Counting any Unicode letter let a row of separator asterisks that
