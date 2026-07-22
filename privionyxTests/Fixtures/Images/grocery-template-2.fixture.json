@@ -5,9 +5,10 @@
     "merchant": "Grocery Depot",
     "date": "2019-01-07",
     "total": 29.82,
-    "subtotal": 28.00,
+    "subtotal": 28.0,
     "tax": 1.82,
     "tip": null,
-    "category": "Grocery"
+    "category": "Grocery",
+    "lineItemSum": 28.0
   }
 }

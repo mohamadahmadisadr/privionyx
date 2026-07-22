@@ -30,7 +30,7 @@ enum FieldOutcome: String, Sendable {
 }
 
 enum FieldName: String, CaseIterable, Sendable {
-    case merchant, date, total, subtotal, tax, tip, category
+    case merchant, date, total, subtotal, tax, tip, category, lineItems
 }
 
 enum FieldComparison {
@@ -171,6 +171,11 @@ struct CorpusReport: Sendable {
         case .tax: parsed.tax.map { String(format: "%.2f", $0) } ?? "nil"
         case .tip: parsed.tip.map { String(format: "%.2f", $0) } ?? "nil"
         case .category: parsed.category.rawValue
+        case .lineItems:
+            parsed.lineItems.isEmpty
+                ? "none"
+                : String(format: "%d items, %.2f", parsed.lineItems.count,
+                         parsed.lineItems.map(\.amount).reduce(0, +))
         }
     }
 

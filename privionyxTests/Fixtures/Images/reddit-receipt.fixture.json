@@ -1,5 +1,5 @@
 {
-  "notes": "Real capture of a curved receipt with a hard diagonal shadow across it — bright at the top, deeply shaded at the bottom where the totals are. The deliberate counterpart to restaurant-primerib: here the 20% service charge is already inside the printed subtotal (168.00 + 33.60 + 10.08 = 211.68), so counting it as a tip double-counts it and breaks the identity. Whether a service charge belongs in the tip field cannot be decided from the label alone — only from whether the arithmetic balances with it or without it.",
+  "notes": "Real capture of a curved receipt with a hard diagonal shadow across it \u2014 bright at the top, deeply shaded at the bottom where the totals are. The deliberate counterpart to restaurant-primerib: here the 20% service charge is already inside the printed subtotal (168.00 + 33.60 + 10.08 = 211.68), so counting it as a tip double-counts it and breaks the identity. Whether a service charge belongs in the tip field cannot be decided from the label alone \u2014 only from whether the arithmetic balances with it or without it. Ground truth for lineItemSum was first written as 211.68, the printed subtotal, which folds in the 20% service charge and the 6% SF mandate. Corrected to 168.00: a line item is something bought, and a fee is not one. The two restaurant fixtures print their service charge on opposite sides of the subtotal, so no single token list can call both of them items \u2014 the definition has to decide it, not the layout. This also means the item sum only equals the subtotal on receipts that charge no fees.",
   "image": "reddit-receipt.jpg",
   "expected": {
     "merchant": "Angler SF",
@@ -8,6 +8,7 @@
     "subtotal": 211.68,
     "tax": 18.26,
     "tip": null,
-    "category": "Dining"
+    "category": "Dining",
+    "lineItemSum": 168.0
   }
 }

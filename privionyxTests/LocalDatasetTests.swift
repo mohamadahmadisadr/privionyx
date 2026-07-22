@@ -54,6 +54,7 @@ struct LocalDatasetTests {
         var unreadable: [String] = []
         var withoutTotal: [String] = []
         var unbalanced: [String] = []
+        var outsideLocale: [String] = []
         var totalDuration: TimeInterval = 0
 
         for url in images {
@@ -70,6 +71,11 @@ struct LocalDatasetTests {
 
             if result.lines.count < 3 {
                 unreadable.append(name)
+                continue
+            }
+
+            if Self.isOutsideTargetLocale(result.rawText) {
+                outsideLocale.append(name)
                 continue
             }
 
@@ -93,6 +99,7 @@ struct LocalDatasetTests {
             unreadable: unreadable,
             withoutTotal: withoutTotal,
             unbalanced: unbalanced,
+            outsideLocale: outsideLocale,
             totalDuration: totalDuration
         ))
 
@@ -148,6 +155,36 @@ struct LocalDatasetTests {
         return found
     }
 
+    /// The app recognizes en-CA, fr-CA and en-US and knows Canadian merchants, so a
+    /// Malaysian or Chinese receipt tells us nothing actionable — chasing its layout would
+    /// tune the parser for users it does not have. Detected from currency and company-suffix
+    /// markers rather than a language classifier, which is enough to separate the datasets.
+    static func isOutsideTargetLocale(_ text: String) -> Bool {
+        let lowercased = text.lowercased()
+
+        let foreignMarkers = [
+            "sdn bhd", "sdn. bhd", "bhd", "jumlah", "tunai", "cawangan", "kedai",
+            "ringgit", "gst summary", "no. resit", "harga"
+        ]
+        if foreignMarkers.contains(where: { MerchantExtractor.containsWord($0, in: lowercased) }) {
+            return true
+        }
+
+        // "RM" immediately against a figure is Malaysian ringgit; the word "rm" alone is too
+        // common in English receipts ("RM 12" vs "ROOM").
+        if text.range(of: #"RM\s?\d+[.,]\d{2}"#, options: .regularExpression) != nil {
+            return true
+        }
+
+        // Any CJK, Thai or Arabic script at all.
+        if text.range(of: #"[\u{3000}-\u{9FFF}\u{0E00}-\u{0E7F}\u{0600}-\u{06FF}]"#,
+                      options: .regularExpression) != nil {
+            return true
+        }
+
+        return false
+    }
+
     /// A deterministic spread across the dataset, so a run is reproducible and a fix can be
     /// checked against the same images that failed.
     private static func sampleImages(in directory: URL) throws -> [URL] {
@@ -167,15 +204,21 @@ struct LocalDatasetTests {
         unreadable: [String],
         withoutTotal: [String],
         unbalanced: [String],
+        outsideLocale: [String],
         totalDuration: TimeInterval
     ) -> String {
         var out = "\n=== LOCAL DATASET (\(count) receipts, unlabelled) ===\n"
         out += String(format: "mean %.0fms per receipt\n\n", totalDuration / Double(count) * 1000)
 
-        out += "COVERAGE (reported, not enforced)\n"
-        out += "  no text recognized : \(unreadable.count)/\(count)\n"
-        out += "  no total found     : \(withoutTotal.count)/\(count)\n"
-        out += "  totals not balanced: \(unbalanced.count)/\(count)\n\n"
+        out += "  \(outsideLocale.count) skipped as outside the target locale\n\n"
+        // Rates are against the receipts actually evaluated, not every image sampled —
+        // dividing by the full sample understated them once the locale filter began
+        // removing most of it.
+        let evaluated = count - unreadable.count - outsideLocale.count
+        out += "COVERAGE (of \(evaluated) evaluated, reported not enforced)\n"
+        out += "  no text recognized : \(unreadable.count)/\(count) sampled\n"
+        out += "  no total found     : \(withoutTotal.count)/\(evaluated)\n"
+        out += "  totals not balanced: \(unbalanced.count)/\(evaluated)\n\n"
 
         out += "IMPOSSIBLE VALUES: \(violations.count)\n"
         for violation in Violation.allCases {

@@ -5,9 +5,10 @@
     "merchant": null,
     "date": "2026-03-02",
     "total": 71.11,
-    "subtotal": 56.00,
+    "subtotal": 56.0,
     "tax": 5.03,
     "tip": 10.08,
-    "category": "Dining"
+    "category": "Dining",
+    "lineItemSum": 56.0
   }
 }

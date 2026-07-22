@@ -31,6 +31,10 @@ struct ExpectedFields: Decodable, Sendable {
     let tax: Double?
     let tip: Double?
     let category: String?
+    /// Sum of the purchased items. Set where the receipt's items are legible enough to add
+    /// up by hand; the check is the sum rather than the count, since one item wrapping onto
+    /// two rows is a presentation detail while a wrong sum is a real extraction error.
+    let lineItemSum: Double?
 
     var expectedDate: Date? {
         date.flatMap(ExpectedFields.isoFormatter.date(from:))

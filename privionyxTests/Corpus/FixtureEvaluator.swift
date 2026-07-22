@@ -64,7 +64,17 @@ enum FixtureEvaluator {
             .subtotal: FieldComparison.money(expected: expected.subtotal, actual: parsed.subtotal),
             .tax: FieldComparison.money(expected: expected.tax, actual: parsed.tax),
             .tip: FieldComparison.money(expected: expected.tip, actual: parsed.tip),
-            .category: FieldComparison.text(expected: expected.category, actual: parsed.category.rawValue)
+            .category: FieldComparison.text(expected: expected.category, actual: parsed.category.rawValue),
+            // Unlike every other field, a nil `lineItemSum` means "not asserted" rather than
+            // "the receipt has none" — some receipts carry items this extractor is not yet
+            // trying to model, such as negative discount rows, and claiming they must be
+            // absent would assert the wrong thing.
+            .lineItems: expected.lineItemSum == nil
+                ? .notApplicable
+                : FieldComparison.money(
+                    expected: expected.lineItemSum,
+                    actual: parsed.lineItems.isEmpty ? nil : parsed.lineItems.map(\.amount).reduce(0, +)
+                )
         ]
     }
 

@@ -8,6 +8,7 @@ struct ReceiptParsingService {
     private let merchantExtractor = MerchantExtractor()
     private let categoryClassifier = CategoryClassifier()
     private let reconciler = ReceiptTotalsReconciler()
+    private let lineItemExtractor = LineItemExtractor()
 
     init(mlExtractor: (any ReceiptMLExtractor)? = nil) {
         self.mlExtractor = mlExtractor
@@ -38,7 +39,11 @@ struct ReceiptParsingService {
         let tax = amountExtractor.extractTax(from: structuredLines, positionedLines: positionedLines)
         let tip = amountExtractor.extractValue(from: structuredLines, positionedLines: positionedLines, matching: ["tip", "gratuity", "service", "service tip"])
         let explicitSubtotal = amountExtractor.extractExplicitSubtotal(from: structuredLines, positionedLines: positionedLines)
-        let lineItems: [ReceiptLineItem] = []
+        // Items are only recoverable from positioned rows; the plain-text path has no
+        // geometry to tell an item's price from any other number on the line.
+        let lineItems = positionedLines.isEmpty
+            ? []
+            : lineItemExtractor.extractLineItems(from: positionedLines)
         let amountCandidates = amountExtractor.extractAmountCandidates(from: structuredLines, positionedLines: positionedLines)
         let amount = mlExtraction?.amount ?? amountExtractor.selectBestAmount(
             from: amountCandidates,
