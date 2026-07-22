@@ -34,8 +34,16 @@ struct ReceiptParsingService {
     }
 
     private func parse(rawText: String, structuredLines: [String], positionedLines: [OCRTextLine]) async -> ParsedReceiptData {
+        // The model is consulted only where deterministic extraction found nothing. It used
+        // to win outright wherever it produced a value, which meant an untrained model would
+        // have outranked the extraction path the corpus actually exercises. No model ships in
+        // the bundle today, so this is a guard against the day one does: if a model is ever
+        // trained well enough to overrule the parser, the way to let it is to reconcile both
+        // sets of figures and prefer whichever balances — not to trust it by default.
         let mlExtraction = positionedLines.isEmpty ? nil : mlExtractor?.extract(from: positionedLines)
-        let merchant = mlExtraction?.merchant ?? merchantExtractor.extractMerchant(from: structuredLines) ?? "Unknown Merchant"
+        let merchant = merchantExtractor.extractMerchant(from: structuredLines)
+            ?? mlExtraction?.merchant
+            ?? "Unknown Merchant"
         let tax = amountExtractor.extractTax(from: structuredLines, positionedLines: positionedLines)
         let tip = amountExtractor.extractValue(from: structuredLines, positionedLines: positionedLines, matching: ["tip", "gratuity", "service", "service tip"])
         let explicitSubtotal = amountExtractor.extractExplicitSubtotal(from: structuredLines, positionedLines: positionedLines)
@@ -45,27 +53,27 @@ struct ReceiptParsingService {
             ? []
             : lineItemExtractor.extractLineItems(from: positionedLines)
         let amountCandidates = amountExtractor.extractAmountCandidates(from: structuredLines, positionedLines: positionedLines)
-        let amount = mlExtraction?.amount ?? amountExtractor.selectBestAmount(
+        let amount = amountExtractor.selectBestAmount(
             from: amountCandidates,
             explicitSubtotal: explicitSubtotal,
             tax: tax,
             tip: tip,
             lineItems: lineItems
-        )
+        ) ?? mlExtraction?.amount
 
         // The totals block is the only part of a receipt that can be checked against
         // itself, so every figure goes through reconciliation before it reaches the draft.
         let reconciled = reconciler.reconcile(
             total: amount,
-            subtotal: mlExtraction?.subtotal ?? explicitSubtotal,
-            tax: mlExtraction?.tax ?? tax,
-            tip: mlExtraction?.tip ?? tip
+            subtotal: explicitSubtotal ?? mlExtraction?.subtotal,
+            tax: tax ?? mlExtraction?.tax,
+            tip: tip ?? mlExtraction?.tip
         )
         let resolvedAmount = reconciled.total ?? .zero
         let subtotal = reconciled.subtotal
         let resolvedTax = reconciled.tax
         let resolvedTip = reconciled.tip
-        let date = mlExtraction?.date ?? dateExtractor.extractDate(from: structuredLines) ?? .now
+        let date = dateExtractor.extractDate(from: structuredLines) ?? mlExtraction?.date ?? .now
         let category = categoryClassifier.categorize(merchant: merchant, lines: structuredLines)
         let notes = ""
 
@@ -80,7 +88,8 @@ struct ReceiptParsingService {
             rawText: rawText,
             lineItems: lineItems,
             notes: notes,
-            derivedTotals: reconciled.derived
+            derivedTotals: reconciled.derived,
+            totalsStatus: reconciled.status
         )
     }
 }

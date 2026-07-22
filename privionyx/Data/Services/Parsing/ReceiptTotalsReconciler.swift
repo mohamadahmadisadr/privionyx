@@ -15,7 +15,7 @@ struct ReceiptTotalsReconciler {
     /// tolerating genuine disagreement.
     static let tolerance = 0.011
 
-    enum Status: Equatable {
+    enum Status: Equatable, Hashable, Sendable {
         /// The figures balance.
         case consistent
         /// A missing or provably wrong figure was derived from the others.

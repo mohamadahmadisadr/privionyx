@@ -30,6 +30,7 @@ final class AddReceiptViewModel {
     /// Totals figures the reconciler computed rather than read. Cleared whenever the user
     /// edits, since a hand-entered figure is no longer an inference.
     var derivedTotals: Set<ReceiptTotalsReconciler.Field> = []
+    var totalsStatus: ReceiptTotalsReconciler.Status = .unverified
     var notes = ""
     var processingState = "Ready"
     var parsingProgress = 0.0
@@ -150,6 +151,13 @@ final class AddReceiptViewModel {
 
         // A calculated figure is only as good as the two it came from, so name it rather
         // than presenting it with the same confidence as something read off the paper.
+        // A total with no subtotal or tax beside it cannot be checked against anything.
+        // The figure may well be right, but nothing on the receipt corroborates it, and that
+        // is worth saying rather than presenting it with the same weight as one that adds up.
+        if totalsStatus == .unverified, parsedAmount != nil, parsedSubtotal == nil, parsedTax == nil {
+            hints.append("Only a total was found — there was nothing on the receipt to check it against.")
+        }
+
         if derivedTotals.contains(.total) {
             hints.append("Total was calculated from the subtotal and tax — the total line was not readable.")
         }
@@ -321,6 +329,7 @@ final class AddReceiptViewModel {
         rawText = draft.rawText ?? ""
         notes = draft.notes
         derivedTotals = draft.derivedTotals
+        totalsStatus = draft.totalsStatus
     }
 
     private func beginCropping(for image: UIImage) {

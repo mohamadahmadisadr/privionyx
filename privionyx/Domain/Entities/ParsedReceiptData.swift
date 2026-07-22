@@ -14,4 +14,6 @@ struct ParsedReceiptData: Hashable {
     /// Totals figures that were computed rather than read. Carried through to the review
     /// screen so the user is pointed at the numbers the app inferred.
     var derivedTotals: Set<ReceiptTotalsReconciler.Field> = []
+    /// What reconciliation could establish about the totals block as a whole.
+    var totalsStatus: ReceiptTotalsReconciler.Status = .unverified
 }

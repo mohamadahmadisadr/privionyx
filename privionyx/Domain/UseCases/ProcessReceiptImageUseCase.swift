@@ -40,7 +40,8 @@ struct ProcessReceiptImageUseCase {
             lineItems: parsed.lineItems,
             notes: parsed.notes,
             status: .scanned,
-            derivedTotals: parsed.derivedTotals
+            derivedTotals: parsed.derivedTotals,
+            totalsStatus: parsed.totalsStatus
         )
     }
 }
