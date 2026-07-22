@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Xcode build output
+build/
+DerivedData/
+.derivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+
+# Test results
+*.xcresult
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Generated codebase analysis (regenerate with `graphify update .`)
+graphify-out/

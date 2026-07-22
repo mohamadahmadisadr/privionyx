@@ -1,4 +1,0 @@
-Target dependency graph (2 targets)
-Target 'privionyxTests' in project 'privionyx'
-➜ Explicit dependency on target 'privionyx' in project 'privionyx'
-Target 'privionyx' in project 'privionyx' (no dependencies)
