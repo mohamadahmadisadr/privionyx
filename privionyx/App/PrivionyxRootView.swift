@@ -7,31 +7,24 @@ struct PrivionyxRootView: View {
     var body: some View {
         @Bindable var coordinator = coordinator
 
-        ZStack(alignment: .bottom) {
-            // A real TabView keeps every screen alive across switches, so an in-progress
-            // scan survives a trip to Home. Its own bar is hidden in favour of FloatingTabBar.
-            // TabView does not forward a safe-area inset to its children, so each screen
-            // reserves PrivionyxTheme.Metrics.tabBarClearance at its own bottom edge.
-            TabView(selection: $coordinator.selectedTab) {
+        // Native TabView: on iOS 26 this renders the system Liquid Glass tab bar and
+        // manages its own safe-area inset, so screens don't reserve space for it.
+        TabView(selection: $coordinator.selectedTab) {
+            Tab(AppTab.dashboard.title, systemImage: AppTab.dashboard.icon, value: AppTab.dashboard) {
                 DashboardView(viewModel: DashboardViewModel(receipts: appState.receipts))
-                    .tag(AppTab.dashboard)
-                    .toolbar(.hidden, for: .tabBar)
-
-                AddReceiptView(appState: appState)
-                    .tag(AppTab.addReceipt)
-                    .toolbar(.hidden, for: .tabBar)
-
-                AssistantView(appState: appState)
-                    .tag(AppTab.assistant)
-                    .toolbar(.hidden, for: .tabBar)
-
-                SettingsView()
-                    .tag(AppTab.settings)
-                    .toolbar(.hidden, for: .tabBar)
             }
 
-            FloatingTabBar(selection: $coordinator.selectedTab)
-                .padding(.bottom, 6)
+            Tab(AppTab.addReceipt.title, systemImage: AppTab.addReceipt.icon, value: AppTab.addReceipt) {
+                AddReceiptView(appState: appState)
+            }
+
+            Tab(AppTab.assistant.title, systemImage: AppTab.assistant.icon, value: AppTab.assistant) {
+                AssistantView(appState: appState)
+            }
+
+            Tab(AppTab.settings.title, systemImage: AppTab.settings.icon, value: AppTab.settings) {
+                SettingsView()
+            }
         }
     }
 }

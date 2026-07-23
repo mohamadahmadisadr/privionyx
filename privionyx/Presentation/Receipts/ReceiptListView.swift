@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ReceiptListView: View {
     private let appState: PrivionyxAppState
+    @Environment(\.dismiss) private var dismiss
     @State private var viewModel: ReceiptListViewModel
 
     init(appState: PrivionyxAppState) {
@@ -11,11 +12,9 @@ struct ReceiptListView: View {
     }
 
     var body: some View {
-        GlassScreen(
-            title: "Receipts",
-            subtitle: "Search and browse your saved receipts.",
-            wrapsInNavigationStack: false
-        ) {
+        GlassScreen(wrapsInNavigationStack: false) {
+            header
+        } content: {
             summaryCard
             searchField
             filters
@@ -23,6 +22,28 @@ struct ReceiptListView: View {
         }
         .task(id: viewModel.queryKey) {
             await viewModel.refresh()
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            GlassCircleButton(systemImage: "chevron.left", accessibilityTitle: "Back") {
+                dismiss()
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Receipts")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+
+                Text("Search and browse your saved receipts.")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+            }
+
+            Spacer(minLength: 0)
         }
     }
 

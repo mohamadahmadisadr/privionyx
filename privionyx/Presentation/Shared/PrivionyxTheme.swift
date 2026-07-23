@@ -6,8 +6,9 @@ enum PrivionyxTheme {
         static let cardRadius: CGFloat = 20
         static let controlRadius: CGFloat = 16
         static let cardPadding: CGFloat = 18
-        /// Height reserved at the bottom of every screen for the floating tab bar.
-        static let tabBarClearance: CGFloat = 96
+        /// Small breathing room above the native tab bar. The system supplies the tab
+        /// bar's own safe-area inset; this is just extra spacing below a screen's content.
+        static let tabBarClearance: CGFloat = 12
     }
 
     enum Colors {
