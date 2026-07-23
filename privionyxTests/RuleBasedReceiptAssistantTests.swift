@@ -132,4 +132,63 @@ struct RuleBasedReceiptAssistantTests {
         let reply = try await assistant.reply(to: "tell me something interesting", context: ctx)
         #expect(reply.isEmpty == false)
     }
+
+    @Test("A greeting gets a friendly reply, not a spending dump")
+    func greeting() async throws {
+        let ctx = context([receipt(merchant: "A", amount: 10)])
+        let reply = try await assistant.reply(to: "hey", context: ctx)
+        #expect(reply.lowercased().contains("hey") || reply.lowercased().contains("hi"))
+    }
+
+    @Test("\"How am I doing\" returns a multi-fact snapshot")
+    func snapshot() async throws {
+        let ctx = context([
+            receipt(merchant: "Cafe", amount: 30, category: "Dining", month: 6),
+            receipt(merchant: "Air", amount: 200, category: "Travel", month: 6),
+            receipt(merchant: "Old", amount: 100, month: 5)
+        ])
+        let reply = try await assistant.reply(to: "how am I doing this month?", context: ctx)
+        #expect(reply.contains("230")) // 30 + 200 this month
+        #expect(reply.lowercased().contains("this month"))
+    }
+
+    @Test("A saving question points at the biggest category")
+    func saving() async throws {
+        let ctx = context([
+            receipt(merchant: "Cafe", amount: 20, category: "Dining"),
+            receipt(merchant: "Air", amount: 500, category: "Travel")
+        ])
+        let reply = try await assistant.reply(to: "where can I save money?", context: ctx)
+        #expect(reply.contains("Travel"))
+    }
+
+    @Test("A \"when\" question names the most recent visit to a merchant")
+    func when() async throws {
+        let ctx = context([
+            receipt(merchant: "Costco", amount: 40, day: 2),
+            receipt(merchant: "Costco", amount: 60, day: 14)
+        ])
+        let reply = try await assistant.reply(to: "when did I last go to Costco?", context: ctx)
+        #expect(reply.contains("Costco"))
+        #expect(reply.contains("60")) // the later visit
+    }
+
+    @Test("A bare merchant question is answered even without spend keywords")
+    func entityAwareFallback() async throws {
+        let ctx = context([
+            receipt(merchant: "Netflix", amount: 15),
+            receipt(merchant: "Netflix", amount: 15, day: 20)
+        ])
+        let reply = try await assistant.reply(to: "how much at Netflix", context: ctx)
+        #expect(reply.contains("Netflix"))
+        #expect(reply.contains("30"))
+    }
+
+    @Test("Same question always answers the same way (deterministic variation)")
+    func deterministic() async throws {
+        let ctx = context([receipt(merchant: "A", amount: 10), receipt(merchant: "B", amount: 20)])
+        let first = try await assistant.reply(to: "what did I spend this month?", context: ctx)
+        let second = try await assistant.reply(to: "what did I spend this month?", context: ctx)
+        #expect(first == second)
+    }
 }
