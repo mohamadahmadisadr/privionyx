@@ -380,6 +380,10 @@ struct DashboardViewModel {
 
     private func color(for category: ReceiptCategory) -> Color {
         switch category {
+        case .housing:
+            Color.brown
+        case .bills:
+            Color.teal
         case .gas:
             PrivionyxTheme.Colors.warning
         case .grocery:
@@ -390,6 +394,10 @@ struct DashboardViewModel {
             Color.indigo
         case .utilities:
             Color.cyan
+        case .health:
+            Color.red
+        case .entertainment:
+            Color.purple
         case .shopping:
             Color.pink
         }
