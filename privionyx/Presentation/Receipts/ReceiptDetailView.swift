@@ -128,7 +128,8 @@ struct ReceiptDetailView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .frame(height: 240)
+                        .privionyxGlass(cornerRadius: 16)
                         .overlay(alignment: .bottomTrailing) {
                             GlassBadge(title: "Preview", systemImage: "arrow.up.left.and.arrow.down.right")
                                 .padding(12)
