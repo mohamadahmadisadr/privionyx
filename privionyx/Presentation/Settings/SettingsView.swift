@@ -5,6 +5,9 @@ struct SettingsView: View {
     @AppStorage(AppearanceMode.storageKey) private var appearanceMode: AppearanceMode = .system
     @AppStorage(AssistantBackend.storageKey) private var assistantBackend: AssistantBackend = .fallback
     @State private var assistantAvailability: [AssistantBackend: AssistantAvailability] = [:]
+    @State private var gemma = GemmaModelManager.shared
+    @State private var budgetInputs: [String: String] = [:]
+    private let budgetStore = MonthlyBudgetStore()
 
     var body: some View {
         NavigationStack {
@@ -24,6 +27,9 @@ struct SettingsView: View {
                         GlassEyebrow("Assistant")
                         assistantCard
 
+                        GlassEyebrow("Monthly Budgets")
+                        budgetsCard
+
                         GlassEyebrow("About")
                         aboutCard
                     }
@@ -34,6 +40,8 @@ struct SettingsView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .task {
+                gemma.refreshState()
+                loadBudgets()
                 await loadAssistantAvailability()
             }
         }
@@ -81,6 +89,81 @@ struct SettingsView: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
+    // MARK: - Budgets
+
+    private var budgetsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(spacing: 0) {
+                ForEach(Array(ReceiptCategory.allCases.enumerated()), id: \.element.id) { index, category in
+                    budgetRow(category)
+
+                    if index < ReceiptCategory.allCases.count - 1 {
+                        GlassRowDivider()
+                    }
+                }
+            }
+            .privionyxGlass(cornerRadius: 16)
+
+            Text("Set a monthly limit per category — leave a field blank for no budget. The Dashboard flags categories as you approach or exceed them.")
+                .font(.system(size: 12.5))
+                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+        }
+    }
+
+    private func budgetRow(_ category: ReceiptCategory) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: category.icon)
+                .font(.system(size: 13.5, weight: .semibold))
+                .foregroundStyle(PrivionyxTheme.Colors.accent)
+                .frame(width: 30, height: 30)
+                .background(PrivionyxTheme.Colors.accentSoft, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+            Text(category.rawValue)
+                .font(.system(size: 14.5, weight: .semibold))
+                .foregroundStyle(PrivionyxTheme.Colors.ink)
+
+            Spacer(minLength: 8)
+
+            Text(currencySymbol)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+
+            TextField("0", text: budgetBinding(for: category))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .font(.system(size: 14.5, weight: .semibold))
+                .foregroundStyle(PrivionyxTheme.Colors.ink)
+                .frame(width: 74)
+                .accessibilityLabel("\(category.rawValue) monthly budget")
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+    }
+
+    private func budgetBinding(for category: ReceiptCategory) -> Binding<String> {
+        Binding(
+            get: { budgetInputs[category.rawValue] ?? "" },
+            set: { newValue in
+                budgetInputs[category.rawValue] = newValue
+                let amount = Double(newValue.filter { $0.isNumber || $0 == "." })
+                budgetStore.setBudget(amount, for: category)
+            }
+        )
+    }
+
+    private var currencySymbol: String {
+        Locale.current.currencySymbol ?? "$"
+    }
+
+    private func loadBudgets() {
+        for category in ReceiptCategory.allCases {
+            guard let value = budgetStore.budget(for: category) else { continue }
+            budgetInputs[category.rawValue] = value == value.rounded()
+                ? String(Int(value))
+                : String(format: "%.2f", value)
+        }
+    }
+
     // MARK: - Assistant
 
     private var assistantCard: some View {
@@ -99,41 +182,143 @@ struct SettingsView: View {
     private func assistantOption(_ backend: AssistantBackend) -> some View {
         let isSelected = assistantBackend == backend
         let availability = assistantAvailability[backend]
+        // The Gemma row carries its own download control, so its detail line stays the
+        // plain description rather than repeating a "download it in Settings" reason.
+        let showReason = backend != .localGemma && availability?.reason != nil
 
-        return Button {
-            assistantBackend = backend
-        } label: {
-            HStack(alignment: .top, spacing: 12) {
-                GlassIconTile(systemImage: backend.icon, size: 30, isAccented: isSelected)
+        return VStack(spacing: 0) {
+            Button {
+                assistantBackend = backend
+            } label: {
+                HStack(alignment: .top, spacing: 12) {
+                    GlassIconTile(systemImage: backend.icon, size: 30, isAccented: isSelected)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(backend.title)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(backend.title)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(PrivionyxTheme.Colors.ink)
 
-                    Text(availability?.reason ?? backend.detail)
-                        .font(.system(size: 12))
-                        .foregroundStyle(
-                            availability?.reason == nil
-                                ? PrivionyxTheme.Colors.secondaryInk
-                                : PrivionyxTheme.Colors.warning
-                        )
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.leading)
+                        Text(showReason ? (availability?.reason ?? backend.detail) : backend.detail)
+                            .font(.system(size: 12))
+                            .foregroundStyle(showReason ? PrivionyxTheme.Colors.warning : PrivionyxTheme.Colors.secondaryInk)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.leading)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 17))
+                        .foregroundStyle(isSelected ? PrivionyxTheme.Colors.accent : PrivionyxTheme.Colors.tertiaryInk)
+                        .padding(.top, 6)
                 }
-
-                Spacer(minLength: 8)
-
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 17))
-                    .foregroundStyle(isSelected ? PrivionyxTheme.Colors.accent : PrivionyxTheme.Colors.tertiaryInk)
-                    .padding(.top, 6)
+                .padding(14)
+                .contentShape(Rectangle())
             }
-            .padding(14)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+
+            if backend == .localGemma {
+                gemmaDownloadControl
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 14)
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    // MARK: - Gemma download
+
+    @ViewBuilder
+    private var gemmaDownloadControl: some View {
+        switch gemma.state {
+        case .unsupported:
+            gemmaStatusRow(icon: "exclamationmark.triangle.fill", tint: PrivionyxTheme.Colors.tertiaryInk) {
+                Text("Not supported on this device — it doesn't have enough memory to run Gemma.")
+                    .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+            }
+
+        case .notDownloaded:
+            Button {
+                gemma.download()
+            } label: {
+                gemmaActionLabel(icon: "arrow.down.circle.fill", text: "Download\(gemmaSizeSuffix)")
+            }
+            .buttonStyle(.plain)
+
+        case let .downloading(progress):
+            VStack(alignment: .leading, spacing: 8) {
+                ProgressView(value: progress)
+                    .tint(PrivionyxTheme.Colors.accent)
+                HStack {
+                    Text("Downloading… \(Int(progress * 100))%")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                    Spacer()
+                    Button("Cancel") { gemma.cancel() }
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(PrivionyxTheme.Colors.danger)
+                        .buttonStyle(.plain)
+                }
+            }
+
+        case .ready:
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(PrivionyxTheme.Colors.success)
+                Text("Downloaded")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                Spacer()
+                Button("Delete") { gemma.deleteModel() }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.danger)
+                    .buttonStyle(.plain)
+            }
+
+        case let .failed(message):
+            VStack(alignment: .leading, spacing: 8) {
+                gemmaStatusRow(icon: "exclamationmark.triangle.fill", tint: PrivionyxTheme.Colors.warning) {
+                    Text(message).foregroundStyle(PrivionyxTheme.Colors.warning)
+                }
+                Button {
+                    gemma.download()
+                } label: {
+                    gemmaActionLabel(icon: "arrow.clockwise.circle.fill", text: "Retry")
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var gemmaSizeSuffix: String {
+        gemma.spec.map { " (\(GemmaModelCatalog.sizeDescription(for: $0)))" } ?? ""
+    }
+
+    private func gemmaActionLabel(icon: String, text: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(text).font(.system(size: 13, weight: .semibold))
+        }
+        .foregroundStyle(PrivionyxTheme.Colors.onAccent)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(PrivionyxTheme.Colors.accent, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func gemmaStatusRow<Content: View>(
+        icon: String,
+        tint: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundStyle(tint)
+            content()
+                .font(.system(size: 12))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
     }
 
     private func loadAssistantAvailability() async {
