@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardViewModel {
     let receipts: [ReceiptItem]
+    var budgetStore = MonthlyBudgetStore()
 
     func totalSpent(for period: DashboardPeriod) -> String {
         let total = receipts(in: period).reduce(0) { $0 + $1.amount }
@@ -89,7 +90,11 @@ struct DashboardViewModel {
     /// Automatically-surfaced observations (spikes, anomalies, duplicates, trends) shown as
     /// cards at the top of the Dashboard so the numbers speak up without being asked.
     func insights(limit: Int = 3) -> [ExpenseInsight] {
-        ExpenseInsights.generate(for: AssistantContext(receipts: receipts), limit: limit)
+        ExpenseInsights.generate(
+            for: AssistantContext(receipts: receipts),
+            budgets: budgetStore.budgetsByName(),
+            limit: limit
+        )
     }
 
     func comparisonText(for period: DashboardPeriod) -> String {

@@ -25,13 +25,38 @@ struct ExpenseInsight: Identifiable, Equatable {
 /// assistant. Attention-worthy findings (duplicates, anomalies, spikes) rank above neutral
 /// facts, so the most useful card is always first.
 enum ExpenseInsights {
-    static func generate(for context: AssistantContext, limit: Int = 3) -> [ExpenseInsight] {
+    static func generate(
+        for context: AssistantContext,
+        budgets: [String: Double] = [:],
+        limit: Int = 3
+    ) -> [ExpenseInsight] {
         let analytics = ExpenseAnalytics(context: context)
         guard analytics.isEmpty == false else { return [] }
 
         func money(_ value: Double) -> String { PrivionyxCurrencyFormatter.string(for: value) }
 
         var insights: [ExpenseInsight] = []
+
+        // 0. Budgets — the most actionable signal, so it leads. Show only the single most
+        // pressing one (worst overage, else nearest to its limit) to avoid a wall of cards.
+        let progress = analytics.budgetProgress(budgets: budgets)
+        if let over = progress.first(where: { $0.isOver }) {
+            insights.append(ExpenseInsight(
+                id: "budget-over",
+                symbol: "exclamationmark.circle.fill",
+                title: "Over budget on \(over.category)",
+                detail: "\(money(over.spent)) of \(money(over.limit)) this month — \(money(over.overage)) over.",
+                tone: .alert
+            ))
+        } else if let near = progress.first(where: { $0.isNearLimit }) {
+            insights.append(ExpenseInsight(
+                id: "budget-near",
+                symbol: "gauge.with.needle.fill",
+                title: "\(near.category) nearly at budget",
+                detail: "\(money(near.spent)) of \(money(near.limit)) — \(Int((near.fraction * 100).rounded()))% used.",
+                tone: .alert
+            ))
+        }
 
         // 1. Likely double charges — highest signal, money potentially wasted.
         let duplicates = analytics.duplicates()

@@ -56,6 +56,36 @@ struct ExpenseInsightsTests {
         #expect(insights.contains { $0.id == "trend" && $0.tone == .positive })
     }
 
+    @Test("Going over budget leads the insights as an alert")
+    func overBudgetLeads() {
+        let insights = ExpenseInsights.generate(
+            for: context([
+                receipt(merchant: "Cafe", amount: 350, category: "Dining"),
+                receipt(merchant: "Air", amount: 50, category: "Travel")
+            ]),
+            budgets: ["Dining": 300]
+        )
+        #expect(insights.first?.id == "budget-over")
+        #expect(insights.first?.tone == .alert)
+    }
+
+    @Test("Nearing a budget warns without claiming an overage")
+    func nearBudgetWarns() {
+        let insights = ExpenseInsights.generate(
+            for: context([receipt(merchant: "Cafe", amount: 270, category: "Dining")]),
+            budgets: ["Dining": 300]
+        )
+        #expect(insights.contains { $0.id == "budget-near" })
+    }
+
+    @Test("With no budgets set, no budget insight appears")
+    func noBudgetNoInsight() {
+        let insights = ExpenseInsights.generate(for: context([
+            receipt(merchant: "Cafe", amount: 350, category: "Dining")
+        ]))
+        #expect(insights.contains { $0.id.hasPrefix("budget") } == false)
+    }
+
     @Test("The list is capped at the requested limit")
     func respectsLimit() {
         let insights = ExpenseInsights.generate(for: context([
