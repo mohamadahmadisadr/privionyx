@@ -86,6 +86,12 @@ struct DashboardViewModel {
         receipts.sorted { $0.date > $1.date }.prefix(limit).map { $0 }
     }
 
+    /// Automatically-surfaced observations (spikes, anomalies, duplicates, trends) shown as
+    /// cards at the top of the Dashboard so the numbers speak up without being asked.
+    func insights(limit: Int = 3) -> [ExpenseInsight] {
+        ExpenseInsights.generate(for: AssistantContext(receipts: receipts), limit: limit)
+    }
+
     func comparisonText(for period: DashboardPeriod) -> String {
         let current = receipts(in: period).reduce(0) { $0 + $1.amount }
         let previous = receipts(inPrevious: period).reduce(0) { $0 + $1.amount }

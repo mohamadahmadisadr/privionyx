@@ -21,6 +21,7 @@ struct DashboardView: View {
                         if viewModel.receipts.isEmpty {
                             emptyState
                         } else {
+                            insightsSection
                             categorySection
                             recentReceiptsSection
                         }
@@ -160,6 +161,64 @@ struct DashboardView: View {
     }
 
     // MARK: - Sections
+
+    @ViewBuilder
+    private var insightsSection: some View {
+        let insights = viewModel.insights()
+        if insights.isEmpty == false {
+            VStack(alignment: .leading, spacing: 12) {
+                GlassSectionTitle("Insights")
+
+                VStack(spacing: 10) {
+                    ForEach(insights) { insight in
+                        insightCard(insight)
+                    }
+                }
+            }
+        }
+    }
+
+    private func insightCard(_ insight: ExpenseInsight) -> some View {
+        let tint = tint(for: insight.tone)
+
+        return HStack(spacing: 12) {
+            Image(systemName: insight.symbol)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 38, height: 38)
+                .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(insight.title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+
+                Text(insight.detail)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .privionyxGlass(cornerRadius: 16)
+    }
+
+    private func tint(for tone: ExpenseInsight.Tone) -> Color {
+        switch tone {
+        case .alert:
+            PrivionyxTheme.Colors.warning
+        case .positive:
+            PrivionyxTheme.Colors.success
+        case .neutral:
+            PrivionyxTheme.Colors.accent
+        }
+    }
 
     private var categorySection: some View {
         VStack(alignment: .leading, spacing: 12) {
