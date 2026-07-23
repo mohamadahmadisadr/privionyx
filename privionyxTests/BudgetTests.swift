@@ -71,6 +71,34 @@ struct BudgetTests {
         #expect(progress?.isOver == false)
     }
 
+    @Test("A receipt dated today counts, keyed by base category even with a custom label")
+    func realReceiptCountsTowardBaseCategory() {
+        let today = ReceiptItem(
+            id: UUID(),
+            merchant: "Whole Foods",
+            amount: 118,
+            subtotal: nil,
+            tax: nil,
+            tip: nil,
+            date: .now,
+            category: .grocery,
+            customCategoryName: "Organic Groceries",
+            tags: [],
+            imagePath: nil,
+            imageData: nil,
+            rawText: nil,
+            lineItems: [],
+            notes: "",
+            status: .reviewed
+        )
+        // The app builds context this way (referenceDate defaults to now).
+        let spend = ExpenseAnalytics(context: AssistantContext(receipts: [today]))
+            .currentMonthSpendByCategory()
+
+        #expect(spend["Grocery"] == 118)          // base category, so it matches a Grocery budget
+        #expect(spend["Organic Groceries"] == nil) // the custom label doesn't split it off
+    }
+
     @Test("The category closest to its limit sorts first")
     func ordering() {
         let a = analytics([
