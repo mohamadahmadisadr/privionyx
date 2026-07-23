@@ -2,21 +2,14 @@ import CoreData
 import Foundation
 
 extension CoreDataReceiptRepository {
+    /// Removes placeholder rows shipped by very early builds.
+    ///
+    /// This runs on every launch, so it MUST only match text no genuine receipt could
+    /// carry. Earlier versions also matched real merchant names ("Whole Foods Market",
+    /// "Blue Bottle Coffee", "Target", …) and generic notes — which silently deleted the
+    /// user's own scanned receipts on relaunch. Those clauses are gone; only unmistakable
+    /// lorem-ipsum placeholder text is purged now.
     func purgeLegacySeedData() async throws {
-        let legacyMerchants = [
-            "Shell Downtown",
-            "Whole Foods Market",
-            "Blue Bottle Coffee",
-            "City Power & Water",
-            "Target"
-        ]
-        let legacyNotes = [
-            "OCR confidence 96%",
-            "Receipt fields reviewed",
-            "Tip included",
-            "Billing period matched",
-            "Category can be refined"
-        ]
         let placeholderMerchants = [
             "LOREM IPSUM DOLOR SIT AMET",
             "Lorem Ipsum Dolor Sit Amet"
@@ -26,8 +19,6 @@ extension CoreDataReceiptRepository {
             let request = ReceiptManagedObject.fetchRequest()
             request.predicate = NSCompoundPredicate(
                 orPredicateWithSubpredicates: [
-                    NSPredicate(format: "merchant IN %@", legacyMerchants),
-                    NSPredicate(format: "notes IN %@", legacyNotes),
                     NSPredicate(format: "merchant IN %@", placeholderMerchants),
                     NSPredicate(format: "merchant CONTAINS[cd] %@", "lorem ipsum")
                 ]
