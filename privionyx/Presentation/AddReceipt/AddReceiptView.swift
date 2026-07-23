@@ -66,6 +66,13 @@ struct AddReceiptView: View {
         .task(id: viewModel.selectedPhotoItem) {
             await viewModel.loadSelectedPhoto()
         }
+        // Editing has no review sheet whose dismissal would fire `onSaved`, so close the
+        // editor as soon as the update succeeds.
+        .onChange(of: viewModel.didSaveSuccessfully) { _, saved in
+            if saved, viewModel.isEditing {
+                onSaved?()
+            }
+        }
         .overlay(alignment: .bottom) {
             if viewModel.showSavedToast {
                 SavedToastView()

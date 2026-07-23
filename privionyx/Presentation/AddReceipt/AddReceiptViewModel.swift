@@ -290,6 +290,13 @@ final class AddReceiptViewModel {
             }
             didSaveSuccessfully = true
             processingState = "Saved"
+
+            // Editing is its own screen that dismisses on success (the view observes
+            // `didSaveSuccessfully`). Leave the fields intact and let it close, rather than
+            // blanking the form in place — which looked like the save had failed and made a
+            // second tap hit the empty-amount guard.
+            guard isEditing == false else { return }
+
             showSavedToast = true
             resetDraft()
 

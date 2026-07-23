@@ -91,7 +91,10 @@ extension AssistantContext {
                     amount: $0.amount,
                     tax: $0.tax,
                     date: $0.date,
-                    category: $0.displayCategoryName
+                    // The canonical category, not a custom display label — analytics,
+                    // budgets, and the dashboard all key spending by the base category, so a
+                    // receipt with a custom name still counts toward its category's budget.
+                    category: $0.category.rawValue
                 )
             },
             currencyCode: currencyCode,
