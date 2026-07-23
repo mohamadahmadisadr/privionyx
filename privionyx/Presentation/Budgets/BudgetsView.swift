@@ -8,6 +8,7 @@ struct BudgetsView: View {
     let appState: PrivionyxAppState
 
     @State private var inputs: [String: String] = [:]
+    @FocusState private var focusedCategory: String?
     private let store = MonthlyBudgetStore()
 
     private var monthSpend: [String: Double] {
@@ -156,18 +157,7 @@ struct BudgetsView: View {
 
                 Spacer(minLength: 8)
 
-                HStack(spacing: 2) {
-                    Text(currencySymbol)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
-                    TextField("0", text: binding(for: category))
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.trailing)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .frame(width: 62)
-                        .accessibilityLabel("\(category.rawValue) monthly budget")
-                }
+                amountField(for: category, hasLimit: limit > 0)
             }
 
             if limit > 0 {
@@ -184,6 +174,43 @@ struct BudgetsView: View {
         }
         .padding(14)
         .privionyxGlass(cornerRadius: 16)
+    }
+
+    /// The editable limit, styled as an obvious tappable pill — a filled, bordered control
+    /// with a pencil glyph and a "Set" placeholder — so it never reads as static text.
+    private func amountField(for category: ReceiptCategory, hasLimit: Bool) -> some View {
+        let isFocused = focusedCategory == category.rawValue
+
+        return HStack(spacing: 3) {
+            if hasLimit {
+                Text(currencySymbol)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PrivionyxTheme.Colors.accent)
+            }
+
+            TextField(hasLimit ? "0" : "Set", text: binding(for: category))
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(hasLimit ? .trailing : .center)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(hasLimit ? PrivionyxTheme.Colors.ink : PrivionyxTheme.Colors.accent)
+                .focused($focusedCategory, equals: category.rawValue)
+                .frame(width: hasLimit ? 52 : 34)
+
+            Image(systemName: "pencil")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(PrivionyxTheme.Colors.accent.opacity(0.75))
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .background(PrivionyxTheme.Colors.accentSoft, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(PrivionyxTheme.Colors.accent.opacity(isFocused ? 0.85 : 0.35), lineWidth: isFocused ? 1.5 : 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { focusedCategory = category.rawValue }
+        .accessibilityLabel("\(category.rawValue) monthly budget")
+        .accessibilityHint("Tap to set a monthly limit")
     }
 
     private func subtitle(limit: Double, spent: Double, over: Bool) -> String {
