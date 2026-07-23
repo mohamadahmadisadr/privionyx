@@ -1,5 +1,6 @@
 #if DEBUG
 import Foundation
+import UIKit
 
 /// Development-only sample data. Seeded when the app is launched with
 /// `-privionyxSampleData`, so the dashboard, category bars, and assistant can be
@@ -43,13 +44,46 @@ enum PrivionyxSampleData {
                 category: category,
                 customCategoryName: nil,
                 tags: [],
-                imageData: nil,
+                imageData: receiptImage(merchant: merchant, amount: amount, tax: tax),
                 rawText: nil,
                 lineItems: [],
                 notes: "",
                 status: .reviewed
             )
         }
+    }
+
+    /// Renders a receipt-like image so the detail screen has something to show for
+    /// seeded data. Debug-only, mirrors what a real scan would store.
+    private static func receiptImage(merchant: String, amount: Double, tax: Double?) -> Data? {
+        let size = CGSize(width: 600, height: 820)
+        let image = UIGraphicsImageRenderer(size: size).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+
+            let mono = UIFont.monospacedSystemFont(ofSize: 30, weight: .regular)
+            let bold = UIFont.monospacedSystemFont(ofSize: 34, weight: .bold)
+
+            func draw(_ text: String, at y: CGFloat, font: UIFont) {
+                (text as NSString).draw(
+                    at: CGPoint(x: 44, y: y),
+                    withAttributes: [.font: font, .foregroundColor: UIColor.black]
+                )
+            }
+
+            draw(merchant.uppercased(), at: 60, font: bold)
+            draw("------------------------", at: 120, font: mono)
+            draw("SUBTOTAL", at: 200, font: mono)
+            draw(String(format: "%.2f", amount - (tax ?? 0)), at: 200, font: mono)
+            if let tax {
+                draw("TAX", at: 250, font: mono)
+                draw(String(format: "%.2f", tax), at: 250, font: mono)
+            }
+            draw("------------------------", at: 310, font: mono)
+            draw("TOTAL", at: 370, font: bold)
+            draw(String(format: "%.2f", amount), at: 370, font: bold)
+        }
+        return image.jpegData(compressionQuality: 0.8)
     }
 }
 #endif
