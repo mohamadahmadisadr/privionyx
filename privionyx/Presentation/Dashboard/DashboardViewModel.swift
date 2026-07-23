@@ -104,6 +104,11 @@ struct DashboardViewModel {
             .budgetProgress(budgets: budgetStore.budgetsByName())
     }
 
+    /// Detected subscriptions and recurring bills, priciest per month first.
+    func recurringCharges() -> [RecurringCharge] {
+        ExpenseAnalytics(context: AssistantContext(receipts: receipts)).recurringCharges()
+    }
+
     func comparisonText(for period: DashboardPeriod) -> String {
         let current = receipts(in: period).reduce(0) { $0 + $1.amount }
         let previous = receipts(inPrevious: period).reduce(0) { $0 + $1.amount }

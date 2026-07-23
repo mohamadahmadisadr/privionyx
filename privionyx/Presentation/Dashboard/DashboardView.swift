@@ -7,6 +7,7 @@ struct DashboardView: View {
     @State private var selectedPeriod: DashboardPeriod = .monthly
     @State private var isShowingAllReceipts = false
     @State private var isShowingBudgets = false
+    @State private var isShowingSubscriptions = false
 
     var body: some View {
         NavigationStack {
@@ -24,6 +25,7 @@ struct DashboardView: View {
                         } else {
                             insightsSection
                             budgetSection
+                            subscriptionsSection
                             categorySection
                             recentReceiptsSection
                         }
@@ -313,6 +315,54 @@ struct DashboardView: View {
                 }
             }
             .frame(height: 7)
+        }
+    }
+
+    @ViewBuilder
+    private var subscriptionsSection: some View {
+        let charges = viewModel.recurringCharges()
+        if charges.isEmpty == false {
+            let monthly = charges.reduce(0) { $0 + $1.monthlyEquivalent }
+
+            VStack(alignment: .leading, spacing: 12) {
+                GlassSectionTitle("Subscriptions", actionTitle: "See All") {
+                    isShowingSubscriptions = true
+                }
+
+                Button {
+                    isShowingSubscriptions = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "repeat")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(PrivionyxTheme.Colors.accent)
+                            .frame(width: 38, height: 38)
+                            .background(PrivionyxTheme.Colors.accentSoft, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(PrivionyxCurrencyFormatter.string(for: monthly)) / month")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(PrivionyxTheme.Colors.ink)
+                            Text("\(charges.count) recurring \(charges.count == 1 ? "charge" : "charges") — \(charges.prefix(2).map(\.merchant).joined(separator: ", "))\(charges.count > 2 ? "…" : "")")
+                                .font(.system(size: 12.5))
+                                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                                .lineLimit(1)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+                    }
+                    .padding(14)
+                    .privionyxGlass(cornerRadius: 16)
+                }
+                .buttonStyle(.plain)
+            }
+            .navigationDestination(isPresented: $isShowingSubscriptions) {
+                SubscriptionsView(appState: appState)
+            }
         }
     }
 
