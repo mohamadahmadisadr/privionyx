@@ -23,6 +23,12 @@ xcuserdata/
 .swiftpm/
 Package.resolved
 
+# Local LiteRT-LM Swift package clone (on-device Gemma runtime).
+# Referenced as a local package by the Xcode project. Not committed (large, has its
+# own nested .git). To rebuild on another machine: clone google-ai-edge/LiteRT-LM
+# into LiteRT-LM/LiteRT-LM and `git checkout v0.13.1`.
+LiteRT-LM/
+
 # Generated codebase analysis (regenerate with `graphify update .`)
 graphify-out/
 

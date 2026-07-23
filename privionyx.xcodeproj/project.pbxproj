@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D18C88F83011BA5A00AD6365 /* LiteRTLM in Frameworks */ = {isa = PBXBuildFile; productRef = D18C88F73011BA5A00AD6365 /* LiteRTLM */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		D1A000072F8365A7009C004D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -39,6 +43,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D18C88F83011BA5A00AD6365 /* LiteRTLM in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -89,6 +94,9 @@
 				D158BCA12F8365A7009C004D /* privionyx */,
 			);
 			name = privionyx;
+			packageProductDependencies = (
+				D18C88F73011BA5A00AD6365 /* LiteRTLM */,
+			);
 			productName = privionyx;
 			productReference = D158BC9F2F8365A7009C004D /* privionyx.app */;
 			productType = "com.apple.product-type.application";
@@ -142,6 +150,9 @@
 			);
 			mainGroup = D158BC962F8365A7009C004D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D18C88F63011BA5A00AD6365 /* XCLocalSwiftPackageReference "LiteRT-LM/LiteRT-LM" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D158BCA02F8365A7009C004D /* Products */;
 			projectDirPath = "";
@@ -235,6 +246,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -299,6 +311,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -468,6 +481,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D18C88F63011BA5A00AD6365 /* XCLocalSwiftPackageReference "LiteRT-LM/LiteRT-LM" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "LiteRT-LM/LiteRT-LM";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D18C88F73011BA5A00AD6365 /* LiteRTLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LiteRTLM;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D158BC972F8365A7009C004D /* Project object */;
 }

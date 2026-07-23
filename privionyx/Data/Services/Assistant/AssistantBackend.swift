@@ -10,6 +10,8 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
     case rules
     /// Apple's on-device foundation model. Private, but device-gated.
     case appleIntelligence
+    /// Google's Gemma 4, run locally via LiteRT-LM. Private, but must be downloaded first.
+    case localGemma
 
     static let storageKey = "privionyx.assistantBackend"
     static let fallback: AssistantBackend = .rules
@@ -22,6 +24,8 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
             "Built-in"
         case .appleIntelligence:
             "Apple Intelligence"
+        case .localGemma:
+            "Gemma (On-Device)"
         }
     }
 
@@ -31,6 +35,8 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
             "Instant, offline answers computed directly from your receipts. Works on every device."
         case .appleIntelligence:
             "Natural conversation using Apple's on-device model. Nothing leaves your iPhone. Requires Apple Intelligence."
+        case .localGemma:
+            "Google's Gemma 4 running fully offline on your device. Downloads once, then nothing leaves your iPhone."
         }
     }
 
@@ -40,6 +46,8 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
             "function"
         case .appleIntelligence:
             "apple.intelligence"
+        case .localGemma:
+            "cpu"
         }
     }
 
@@ -49,6 +57,8 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
             RuleBasedReceiptAssistant()
         case .appleIntelligence:
             FoundationModelsReceiptAssistant()
+        case .localGemma:
+            LiteRTGemmaReceiptAssistant()
         }
     }
 }

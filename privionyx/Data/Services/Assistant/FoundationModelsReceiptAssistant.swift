@@ -13,9 +13,6 @@ import FoundationModels
 /// whenever that data changes; otherwise the model would answer from a stale snapshot.
 @MainActor
 final class FoundationModelsReceiptAssistant: ReceiptAssistant {
-    /// Receipts included in the prompt digest, newest first. Bounds the context window.
-    private let maximumReceiptsInPrompt = 40
-
     #if canImport(FoundationModels)
     private var session: LanguageModelSession?
     /// Instructions the live session was built from; a mismatch means it must be rebuilt.
@@ -43,15 +40,7 @@ final class FoundationModelsReceiptAssistant: ReceiptAssistant {
     }
 
     func suggestedPrompts(for context: AssistantContext) -> [String] {
-        guard context.receipts.isEmpty == false else {
-            return ["What can you help me with?"]
-        }
-        return [
-            "Where is my money going this month?",
-            "Anything I should cut back on?",
-            "Summarize my last receipt",
-            "Compare this month to last month"
-        ]
+        ReceiptAssistantPromptBuilder.suggestedPrompts(for: context)
     }
 
     /// Builds and warms the session so the first answer isn't paying model load cost.
@@ -180,30 +169,7 @@ final class FoundationModelsReceiptAssistant: ReceiptAssistant {
     // MARK: - Prompt
 
     private func instructions(for context: AssistantContext) -> String {
-        """
-        You are the expense assistant inside Privionyx, a private on-device receipt tracker.
-        Answer only from the receipt data below — never invent merchants, amounts, or dates.
-        If the data cannot answer the question, say so plainly.
-        Keep replies under 60 words, conversational, and format money as \(context.currencyCode).
-        Today is \(context.referenceDate.formatted(date: .abbreviated, time: .omitted)).
-
-        RECEIPTS (merchant | amount | tax | date | category):
-        \(digest(for: context))
-        """
-    }
-
-    private func digest(for context: AssistantContext) -> String {
-        let recent = context.receipts
-            .sorted { $0.date > $1.date }
-            .prefix(maximumReceiptsInPrompt)
-
-        guard recent.isEmpty == false else { return "(no receipts saved yet)" }
-
-        return recent.map { receipt in
-            let tax = receipt.tax.map { String(format: "%.2f", $0) } ?? "-"
-            return "\(receipt.merchant) | \(String(format: "%.2f", receipt.amount)) | \(tax) | \(receipt.date.formatted(date: .numeric, time: .omitted)) | \(receipt.category)"
-        }
-        .joined(separator: "\n")
+        ReceiptAssistantPromptBuilder.instructions(for: context)
     }
 }
 
