@@ -22,6 +22,7 @@ struct DashboardView: View {
                             emptyState
                         } else {
                             insightsSection
+                            budgetSection
                             categorySection
                             recentReceiptsSection
                         }
@@ -217,6 +218,54 @@ struct DashboardView: View {
             PrivionyxTheme.Colors.success
         case .neutral:
             PrivionyxTheme.Colors.accent
+        }
+    }
+
+    @ViewBuilder
+    private var budgetSection: some View {
+        let progress = viewModel.budgetProgress()
+        if progress.isEmpty == false {
+            VStack(alignment: .leading, spacing: 12) {
+                GlassSectionTitle("Budgets")
+
+                VStack(spacing: 15) {
+                    ForEach(progress) { budgetBar($0) }
+                }
+                .privionyxCardStyle()
+            }
+        }
+    }
+
+    private func budgetBar(_ progress: BudgetProgress) -> some View {
+        let tint: Color = progress.isOver
+            ? PrivionyxTheme.Colors.danger
+            : (progress.isNearLimit ? PrivionyxTheme.Colors.warning : PrivionyxTheme.Colors.accent)
+
+        return VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Text(progress.category)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+
+                Spacer(minLength: 8)
+
+                Text("\(PrivionyxCurrencyFormatter.string(for: progress.spent)) / \(PrivionyxCurrencyFormatter.string(for: progress.limit))")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(progress.isOver ? PrivionyxTheme.Colors.danger : PrivionyxTheme.Colors.secondaryInk)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(PrivionyxTheme.Colors.glassFillStrong)
+                    Capsule()
+                        .fill(tint)
+                        .frame(width: max(4, geometry.size.width * min(progress.fraction, 1)))
+                }
+            }
+            .frame(height: 7)
         }
     }
 

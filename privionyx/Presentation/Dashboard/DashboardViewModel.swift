@@ -97,6 +97,13 @@ struct DashboardViewModel {
         )
     }
 
+    /// This month's progress against each set budget, most-consumed first. Empty when the
+    /// user hasn't set any budgets, so the Dashboard hides the section entirely.
+    func budgetProgress() -> [BudgetProgress] {
+        ExpenseAnalytics(context: AssistantContext(receipts: receipts))
+            .budgetProgress(budgets: budgetStore.budgetsByName())
+    }
+
     func comparisonText(for period: DashboardPeriod) -> String {
         let current = receipts(in: period).reduce(0) { $0 + $1.amount }
         let previous = receipts(inPrevious: period).reduce(0) { $0 + $1.amount }
