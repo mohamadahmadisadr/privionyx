@@ -24,10 +24,6 @@ final class AssistantViewModel {
         self.assistant = backend.makeAssistant()
     }
 
-    var contextReceipt: ReceiptItem? {
-        appState.receipts.max { $0.date < $1.date }
-    }
-
     var canSend: Bool {
         input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false && isResponding == false
     }
@@ -75,7 +71,11 @@ final class AssistantViewModel {
     private func exchange(_ text: String) async {
         messages.append(AssistantMessage(role: .user, text: text))
         isResponding = true
-        defer { isResponding = false }
+        defer {
+            isResponding = false
+            // Offer follow-ups tailored to what was just asked so the conversation flows.
+            suggestions = AssistantSuggestions.followUps(to: text, context: makeContext())
+        }
 
         // Streaming engines emit the answer so far; the reply bubble is inserted on the
         // first chunk and rewritten in place after that.

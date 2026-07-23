@@ -18,12 +18,6 @@ struct AssistantView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
 
-                if let receipt = viewModel.contextReceipt {
-                    contextStrip(for: receipt)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 12)
-                }
-
                 if let notice = viewModel.fallbackNotice {
                     noticeBanner(notice)
                         .padding(.horizontal, 20)
@@ -70,49 +64,6 @@ struct AssistantView: View {
 
             Spacer()
         }
-    }
-
-    private func contextStrip(for receipt: ReceiptItem) -> some View {
-        HStack(spacing: 8) {
-            contextCell(title: "Vendor", value: receipt.merchant, isAccented: false)
-            contextDivider
-            contextCell(
-                title: "Tax",
-                value: receipt.tax.map { PrivionyxCurrencyFormatter.string(for: $0) } ?? "—",
-                isAccented: false
-            )
-            contextDivider
-            contextCell(
-                title: "Total",
-                value: PrivionyxCurrencyFormatter.string(for: receipt.amount),
-                isAccented: true
-            )
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .privionyxGlass(cornerRadius: 14)
-    }
-
-    private func contextCell(title: String, value: String, isAccented: Bool) -> some View {
-        VStack(spacing: 2) {
-            Text(title.uppercased())
-                .font(.system(size: 10.5, weight: .bold))
-                .kerning(0.3)
-                .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
-
-            Text(value)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(isAccented ? PrivionyxTheme.Colors.accent : PrivionyxTheme.Colors.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var contextDivider: some View {
-        Rectangle()
-            .fill(PrivionyxTheme.Colors.separator)
-            .frame(width: 1, height: 26)
     }
 
     private func noticeBanner(_ text: String) -> some View {

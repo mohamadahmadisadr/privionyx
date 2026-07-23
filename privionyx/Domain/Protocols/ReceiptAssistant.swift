@@ -72,7 +72,7 @@ struct AssistantContext: Sendable {
 
 /// Flattened receipt carrying only what an assistant needs, keeping engines free of
 /// persistence and image types.
-struct AssistantReceipt: Sendable, Identifiable {
+struct AssistantReceipt: Sendable, Identifiable, Equatable {
     let id: UUID
     let merchant: String
     let amount: Double
