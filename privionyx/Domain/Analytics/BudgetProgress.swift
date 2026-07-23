@@ -22,11 +22,17 @@ struct BudgetProgress: Identifiable, Equatable {
 }
 
 extension ExpenseAnalytics {
+    /// This month's spending per category name — the denominator-free view the budgets
+    /// screen needs so it can show progress for every category, budgeted or not.
+    func currentMonthSpendByCategory() -> [String: Double] {
+        Dictionary(grouping: receipts(in: currentMonth), by: \.category)
+            .mapValues { $0.reduce(0) { $0 + $1.amount } }
+    }
+
     /// This month's progress against each provided budget (keyed by category name),
     /// most-consumed first, so the category closest to trouble surfaces at the top.
     func budgetProgress(budgets: [String: Double]) -> [BudgetProgress] {
-        let totals = Dictionary(grouping: receipts(in: currentMonth), by: \.category)
-            .mapValues { $0.reduce(0) { $0 + $1.amount } }
+        let totals = currentMonthSpendByCategory()
 
         return budgets.compactMap { name, limit -> BudgetProgress? in
             guard limit > 0 else { return nil }

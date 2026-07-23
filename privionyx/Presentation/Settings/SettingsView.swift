@@ -6,8 +6,6 @@ struct SettingsView: View {
     @AppStorage(AssistantBackend.storageKey) private var assistantBackend: AssistantBackend = .fallback
     @State private var assistantAvailability: [AssistantBackend: AssistantAvailability] = [:]
     @State private var gemma = GemmaModelManager.shared
-    @State private var budgetInputs: [String: String] = [:]
-    private let budgetStore = MonthlyBudgetStore()
 
     var body: some View {
         NavigationStack {
@@ -27,9 +25,6 @@ struct SettingsView: View {
                         GlassEyebrow("Assistant")
                         assistantCard
 
-                        GlassEyebrow("Monthly Budgets")
-                        budgetsCard
-
                         GlassEyebrow("About")
                         aboutCard
                     }
@@ -41,7 +36,6 @@ struct SettingsView: View {
             .toolbar(.hidden, for: .navigationBar)
             .task {
                 gemma.refreshState()
-                loadBudgets()
                 await loadAssistantAvailability()
             }
         }
@@ -87,81 +81,6 @@ struct SettingsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-    }
-
-    // MARK: - Budgets
-
-    private var budgetsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(spacing: 0) {
-                ForEach(Array(ReceiptCategory.allCases.enumerated()), id: \.element.id) { index, category in
-                    budgetRow(category)
-
-                    if index < ReceiptCategory.allCases.count - 1 {
-                        GlassRowDivider()
-                    }
-                }
-            }
-            .privionyxGlass(cornerRadius: 16)
-
-            Text("Set a monthly limit per category — leave a field blank for no budget. The Dashboard flags categories as you approach or exceed them.")
-                .font(.system(size: 12.5))
-                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-        }
-    }
-
-    private func budgetRow(_ category: ReceiptCategory) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: category.icon)
-                .font(.system(size: 13.5, weight: .semibold))
-                .foregroundStyle(PrivionyxTheme.Colors.accent)
-                .frame(width: 30, height: 30)
-                .background(PrivionyxTheme.Colors.accentSoft, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-
-            Text(category.rawValue)
-                .font(.system(size: 14.5, weight: .semibold))
-                .foregroundStyle(PrivionyxTheme.Colors.ink)
-
-            Spacer(minLength: 8)
-
-            Text(currencySymbol)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
-
-            TextField("0", text: budgetBinding(for: category))
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .font(.system(size: 14.5, weight: .semibold))
-                .foregroundStyle(PrivionyxTheme.Colors.ink)
-                .frame(width: 74)
-                .accessibilityLabel("\(category.rawValue) monthly budget")
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
-    }
-
-    private func budgetBinding(for category: ReceiptCategory) -> Binding<String> {
-        Binding(
-            get: { budgetInputs[category.rawValue] ?? "" },
-            set: { newValue in
-                budgetInputs[category.rawValue] = newValue
-                let amount = Double(newValue.filter { $0.isNumber || $0 == "." })
-                budgetStore.setBudget(amount, for: category)
-            }
-        )
-    }
-
-    private var currencySymbol: String {
-        Locale.current.currencySymbol ?? "$"
-    }
-
-    private func loadBudgets() {
-        for category in ReceiptCategory.allCases {
-            guard let value = budgetStore.budget(for: category) else { continue }
-            budgetInputs[category.rawValue] = value == value.rounded()
-                ? String(Int(value))
-                : String(format: "%.2f", value)
-        }
     }
 
     // MARK: - Assistant

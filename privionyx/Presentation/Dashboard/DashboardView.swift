@@ -6,6 +6,7 @@ struct DashboardView: View {
     @Environment(AppCoordinator.self) private var coordinator
     @State private var selectedPeriod: DashboardPeriod = .monthly
     @State private var isShowingAllReceipts = false
+    @State private var isShowingBudgets = false
 
     var body: some View {
         NavigationStack {
@@ -224,16 +225,62 @@ struct DashboardView: View {
     @ViewBuilder
     private var budgetSection: some View {
         let progress = viewModel.budgetProgress()
-        if progress.isEmpty == false {
-            VStack(alignment: .leading, spacing: 12) {
-                GlassSectionTitle("Budgets")
 
-                VStack(spacing: 15) {
-                    ForEach(progress) { budgetBar($0) }
+        VStack(alignment: .leading, spacing: 12) {
+            GlassSectionTitle("Budgets", actionTitle: progress.isEmpty ? nil : "See All") {
+                isShowingBudgets = true
+            }
+
+            if progress.isEmpty {
+                budgetCallToAction
+            } else {
+                Button {
+                    isShowingBudgets = true
+                } label: {
+                    VStack(spacing: 15) {
+                        ForEach(progress.prefix(3)) { budgetBar($0) }
+                    }
+                    .privionyxCardStyle()
                 }
-                .privionyxCardStyle()
+                .buttonStyle(.plain)
             }
         }
+        .navigationDestination(isPresented: $isShowingBudgets) {
+            BudgetsView(appState: appState)
+        }
+    }
+
+    private var budgetCallToAction: some View {
+        Button {
+            isShowingBudgets = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "target")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.accent)
+                    .frame(width: 38, height: 38)
+                    .background(PrivionyxTheme.Colors.accentSoft, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Set up budgets")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    Text("Track rent, groceries, dining and more against a monthly limit.")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 8)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+            }
+            .padding(14)
+            .privionyxGlass(cornerRadius: 16)
+        }
+        .buttonStyle(.plain)
     }
 
     private func budgetBar(_ progress: BudgetProgress) -> some View {
