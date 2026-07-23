@@ -100,7 +100,21 @@ enum ExpenseInsights {
             ))
         }
 
-        // 5-6. Neutral facts, so there's always something useful even in a calm month.
+        // 5. Subscriptions and bills quietly adding up each month.
+        let recurring = analytics.recurringCharges()
+        if recurring.isEmpty == false {
+            let names = recurring.prefix(3).map(\.merchant).joined(separator: ", ")
+            let more = recurring.count > 3 ? "…" : ""
+            insights.append(ExpenseInsight(
+                id: "recurring",
+                symbol: "repeat",
+                title: "\(recurring.count) recurring \(recurring.count == 1 ? "charge" : "charges")",
+                detail: "About \(money(analytics.recurringMonthlyTotal()))/mo — \(names)\(more).",
+                tone: .neutral
+            ))
+        }
+
+        // 6-7. Neutral facts, so there's always something useful even in a calm month.
         let monthReceipts = analytics.receipts(in: analytics.currentMonth)
         if let topCategory = analytics.byCategory(monthReceipts).first {
             let count = topCategory.count == 1 ? "1 receipt" : "\(topCategory.count) receipts"

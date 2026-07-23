@@ -86,6 +86,16 @@ struct ExpenseInsightsTests {
         #expect(insights.contains { $0.id.hasPrefix("budget") } == false)
     }
 
+    @Test("Recurring charges surface as an insight")
+    func recurringInsight() {
+        let insights = ExpenseInsights.generate(for: context([
+            receipt(merchant: "Netflix", amount: 16, category: "Entertainment", month: 6, day: 2),
+            receipt(merchant: "Netflix", amount: 16, category: "Entertainment", month: 5, day: 3),
+            receipt(merchant: "Netflix", amount: 16, category: "Entertainment", month: 4, day: 4)
+        ]), limit: 8)
+        #expect(insights.contains { $0.id == "recurring" })
+    }
+
     @Test("The list is capped at the requested limit")
     func respectsLimit() {
         let insights = ExpenseInsights.generate(for: context([
