@@ -74,6 +74,13 @@ struct PersistenceRoundTripTests {
 
         let survivor = secondState.receipts.first { $0.merchant == marker }
 
+        // The detail screen reads the image on demand through the store, so that is where
+        // the round trip has to be checked. Resolved against the second container to prove
+        // the stored path still resolves after a relaunch.
+        let storedImage = survivor.flatMap {
+            secondState.container.imageStore.loadImageData(at: $0.imagePath)
+        }
+
         if let survivor {
             try? await secondState.deleteReceipt(id: survivor.id)
         } else {
@@ -81,9 +88,8 @@ struct PersistenceRoundTripTests {
         }
 
         #expect(survivor != nil, "receipt was saved but a fresh app state did not load it on launch")
-        // The detail screen shows "No receipt image available" when imageData is nil, so the
-        // image must round-trip through ReceiptFileStorage, not just the receipt record.
-        #expect(survivor?.imageData != nil, "receipt loaded but its image did not round trip")
-        #expect(survivor?.imageData?.count == 2_048)
+        #expect(survivor?.hasImage == true, "receipt loaded but carries no image path")
+        #expect(storedImage != nil, "receipt loaded but its image did not round trip")
+        #expect(storedImage?.count == 2_048)
     }
 }

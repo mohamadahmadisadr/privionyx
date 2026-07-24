@@ -19,13 +19,15 @@ final class CoreDataReceiptRepository: ReceiptRepository {
             var migratedLegacyBlob = false
 
             let items = try objects.map { object in
+                // Short-circuits on `imagePath` so a already-migrated row never faults its
+                // (empty) blob column in.
                 if object.imagePath == nil, let legacyData = object.imageData, legacyData.isEmpty == false {
                     object.imagePath = try self.fileStorage.saveImageData(legacyData, for: object.id, replacing: nil)
                     object.imageData = nil
                     migratedLegacyBlob = true
                 }
 
-                return Self.map(object, fileStorage: self.fileStorage)
+                return Self.map(object)
             }
 
             if migratedLegacyBlob {
@@ -133,7 +135,9 @@ final class CoreDataReceiptRepository: ReceiptRepository {
         return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
-    private static func map(_ object: ReceiptManagedObject, fileStorage: ReceiptFileStorage) -> ReceiptItem {
+    /// Maps a row without touching its image. The bytes are read on demand through
+    /// `ReceiptImageStore` by the one screen that displays them — see `ReceiptItem`.
+    private static func map(_ object: ReceiptManagedObject) -> ReceiptItem {
         ReceiptItem(
             id: object.id,
             merchant: object.merchant,
@@ -149,7 +153,6 @@ final class CoreDataReceiptRepository: ReceiptRepository {
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { $0.isEmpty == false } ?? [],
             imagePath: object.imagePath,
-            imageData: fileStorage.loadImageData(at: object.imagePath) ?? object.imageData,
             rawText: object.rawText,
             lineItems: ReceiptLineItemCoder.decode(from: object.lineItemsText),
             notes: object.notes,

@@ -74,7 +74,11 @@ struct ReceiptDraft: Identifiable, Hashable {
         self.customCategoryName = item.customCategoryName
         self.tags = item.tags
         self.imagePath = item.imagePath
-        self.imageData = item.imageData
+        // A saved item carries only its path. Callers that need the bytes on screen — the
+        // edit sheet showing a preview — load them and assign `imageData` themselves.
+        // Leaving it nil also means `upsertReceipt` keeps the existing file rather than
+        // rewriting an identical one.
+        self.imageData = nil
         self.rawText = item.rawText
         self.lineItems = item.lineItems
         self.notes = item.notes
@@ -97,7 +101,6 @@ struct ReceiptDraft: Identifiable, Hashable {
             customCategoryName: customCategoryName,
             tags: tags,
             imagePath: imagePath,
-            imageData: imageData,
             rawText: rawText,
             lineItems: lineItems,
             notes: notes,

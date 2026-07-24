@@ -10,6 +10,9 @@ struct PrivionyxAppContainer {
     let perspectiveService: any ReceiptPerspectiveCorrecting
     let mlExtractor: any ReceiptMLExtractor
     let merchantRuleService: any MerchantRuleProviding
+    /// Reads receipt images on demand. `ReceiptItem` carries only the path, so the screens
+    /// that actually display an image load it through here.
+    let imageStore: any ReceiptImageStore
 
     let fetchReceiptsUseCase: FetchReceiptsUseCase
     let saveReceiptUseCase: SaveReceiptUseCase
@@ -19,7 +22,10 @@ struct PrivionyxAppContainer {
 
     static func live(inMemory: Bool = false) -> PrivionyxAppContainer {
         let stack = CoreDataStack(inMemory: inMemory)
-        let repository = CoreDataReceiptRepository(stack: stack)
+        // One instance shared by the repository (which writes images) and the UI (which
+        // reads them), so both resolve paths against the same directory.
+        let fileStorage = ReceiptFileStorage()
+        let repository = CoreDataReceiptRepository(stack: stack, fileStorage: fileStorage)
         let imageProcessor = ReceiptImageProcessor()
         let perspectiveService = ReceiptPerspectiveService(imageProcessor: imageProcessor)
         let ocrService = VisionOCRService(imageProcessor: imageProcessor)
@@ -44,6 +50,7 @@ struct PrivionyxAppContainer {
             perspectiveService: perspectiveService,
             mlExtractor: mlExtractor,
             merchantRuleService: merchantRuleService,
+            imageStore: fileStorage,
             fetchReceiptsUseCase: FetchReceiptsUseCase(repository: repository),
             saveReceiptUseCase: SaveReceiptUseCase(repository: repository),
             deleteReceiptUseCase: DeleteReceiptUseCase(repository: repository),

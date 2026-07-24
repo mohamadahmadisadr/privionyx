@@ -85,7 +85,6 @@ struct BudgetTests {
             customCategoryName: "Organic Groceries",
             tags: [],
             imagePath: nil,
-            imageData: nil,
             rawText: nil,
             lineItems: [],
             notes: "",

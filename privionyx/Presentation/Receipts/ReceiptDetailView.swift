@@ -9,6 +9,12 @@ struct ReceiptDetailView: View {
     @State private var isImagePreviewPresented = false
     @State private var isEditPresented = false
     @State private var isDeleteAlertPresented = false
+    /// Loaded on appearance rather than carried on `ReceiptItem` — this is the only screen
+    /// that shows the image, so it is the only one that should pay for it. The original
+    /// bytes are kept beside the decoded image so handing the editor a draft doesn't
+    /// re-encode a JPEG that hasn't changed.
+    @State private var image: UIImage?
+    @State private var imageData: Data?
 
     var body: some View {
         GlassScreen(wrapsInNavigationStack: false) {
@@ -22,13 +28,16 @@ struct ReceiptDetailView: View {
             }
             deleteButton
         }
+        .task(id: receipt.id) {
+            await loadImage()
+        }
         .sheet(isPresented: $isShareSheetPresented) {
             ActivityViewController(activityItems: shareItems)
         }
         .sheet(isPresented: $isEditPresented) {
             AddReceiptView(
                 appState: appState,
-                initialDraft: ReceiptDraft(item: receipt),
+                initialDraft: editingDraft,
                 onSaved: {
                     isEditPresented = false
                     dismiss()
@@ -37,7 +46,7 @@ struct ReceiptDetailView: View {
         }
         .fullScreenCover(isPresented: $isImagePreviewPresented) {
             ReceiptImagePreview(
-                image: receipt.imageData.flatMap(UIImage.init(data:)),
+                image: image,
                 onClose: { isImagePreviewPresented = false }
             )
         }
@@ -118,13 +127,13 @@ struct ReceiptDetailView: View {
     @ViewBuilder
     private var imageSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            GlassSectionTitle("Receipt Image", actionTitle: receipt.imageData == nil ? nil : "Tap to view")
+            GlassSectionTitle("Receipt Image", actionTitle: receipt.hasImage ? "Tap to view" : nil)
 
-            if let imageData = receipt.imageData, let uiImage = UIImage(data: imageData) {
+            if let image {
                 Button {
                     isImagePreviewPresented = true
                 } label: {
-                    Image(uiImage: uiImage)
+                    Image(uiImage: image)
                         .resizable()
                         .scaledToFit()
                         .frame(maxWidth: .infinity)
@@ -136,6 +145,13 @@ struct ReceiptDetailView: View {
                         }
                 }
                 .buttonStyle(.plain)
+            } else if receipt.hasImage {
+                // An image exists and is still being read off disk. Distinguished from the
+                // empty case so the "no image" message doesn't flash on the way in.
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 180)
+                    .privionyxGlass(cornerRadius: 16)
             } else {
                 VStack(spacing: 8) {
                     Image(systemName: "photo")
@@ -246,10 +262,37 @@ struct ReceiptDetailView: View {
         }
     }
 
+    /// Reads the image off disk, away from the main actor so a large capture doesn't
+    /// stall the push animation.
+    private func loadImage() async {
+        guard receipt.hasImage, image == nil else { return }
+
+        let imageStore = appState.container.imageStore
+        let path = receipt.imagePath
+
+        let loaded = await Task.detached(priority: .userInitiated) { () -> (Data, UIImage)? in
+            guard let data = imageStore.loadImageData(at: path),
+                  let image = UIImage(data: data) else { return nil }
+            return (data, image)
+        }.value
+
+        imageData = loaded?.0
+        image = loaded?.1
+    }
+
+    /// The draft handed to the edit sheet. `ReceiptDraft(item:)` leaves `imageData` nil, so
+    /// the already-loaded bytes are attached here — the originals, not a re-encode, so an
+    /// edit that never touches the photo doesn't cost it a compression generation.
+    private var editingDraft: ReceiptDraft {
+        var draft = ReceiptDraft(item: receipt)
+        draft.imageData = imageData
+        return draft
+    }
+
     private var shareItems: [Any] {
         var items: [Any] = [shareSummary]
 
-        if let imageData = receipt.imageData, let image = UIImage(data: imageData) {
+        if let image {
             items.insert(image, at: 0)
         }
 
@@ -313,7 +356,6 @@ private struct ReceiptImagePreview: View {
                 customCategoryName: "Office Supplies",
                 tags: ["Work", "Claim"],
                 imagePath: nil,
-                imageData: nil,
                 rawText: "PREVIEW\nTOTAL 24.80",
                 lineItems: [],
                 notes: "Stored locally",
