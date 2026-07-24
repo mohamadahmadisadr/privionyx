@@ -9,6 +9,19 @@ final class AssistantViewModel {
     private(set) var backend: AssistantBackend
     private var assistant: any ReceiptAssistant
 
+    /// Engines, built once and reused.
+    ///
+    /// `makeAssistant()` returns a fresh instance, and the language-model engines hold their
+    /// expensive state in instance properties — a loaded LiteRT `Engine`, a warmed
+    /// `LanguageModelSession`. Since `prepare(backend:)` runs on every appearance of the
+    /// Assistant tab, building a new engine each time discarded a multi-gigabyte model load
+    /// and paid for it again on the next question.
+    ///
+    /// Only the selected engine and the built-in one are kept: switching backends releases
+    /// the engine being switched away from, so two models' weights are never resident at
+    /// once. The built-in engine is stateless, so keeping it costs nothing.
+    @ObservationIgnored private var engines: [AssistantBackend: any ReceiptAssistant] = [:]
+
     var input = ""
     private(set) var messages: [AssistantMessage] = []
     private(set) var suggestions: [String] = []
@@ -21,7 +34,19 @@ final class AssistantViewModel {
     init(appState: PrivionyxAppState, backend: AssistantBackend = .rules) {
         self.appState = appState
         self.backend = backend
-        self.assistant = backend.makeAssistant()
+
+        let initial = backend.makeAssistant()
+        self.assistant = initial
+        self.engines = [backend: initial]
+    }
+
+    /// The cached engine for `backend`, built on first use.
+    private func engine(for backend: AssistantBackend) -> any ReceiptAssistant {
+        if let existing = engines[backend] { return existing }
+
+        let created = backend.makeAssistant()
+        engines[backend] = created
+        return created
     }
 
     var canSend: Bool {
@@ -33,7 +58,13 @@ final class AssistantViewModel {
         let backendChanged = backend != self.backend
         self.backend = backend
 
-        let candidate = backend.makeAssistant()
+        // Release the engine being switched away from before building the new one, so a
+        // model the user is no longer using doesn't stay resident.
+        if backendChanged {
+            engines = engines.filter { $0.key == backend || $0.key == .fallback }
+        }
+
+        let candidate = engine(for: backend)
         let availability = await candidate.availability()
 
         switch availability {
@@ -41,7 +72,7 @@ final class AssistantViewModel {
             assistant = candidate
             fallbackNotice = nil
         case let .unavailable(reason):
-            assistant = AssistantBackend.fallback.makeAssistant()
+            assistant = engine(for: .fallback)
             fallbackNotice = "\(reason) Using the built-in engine instead."
         }
 
@@ -106,7 +137,7 @@ final class AssistantViewModel {
             return
         }
 
-        let builtIn = AssistantBackend.fallback.makeAssistant()
+        let builtIn = engine(for: .fallback)
 
         guard let recovered = try? await builtIn.reply(to: prompt, context: makeContext()) else {
             upsertReply(id: replyID, text: error.localizedDescription)
