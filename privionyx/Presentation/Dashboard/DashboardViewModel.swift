@@ -517,21 +517,32 @@ enum DashboardPeriod: String, CaseIterable, Identifiable {
     }
 }
 
+// These are recomputed whenever the Dashboard re-renders, so their identity has to come
+// from what they describe. A fresh `UUID()` per instance meant every rebuild produced a set
+// SwiftUI considered entirely new, and `ForEach` tore the rows down and rebuilt them rather
+// than diffing — losing animation and reusable views on something as ordinary as switching
+// the period. Each key below is unique within the collection it appears in.
+
 struct SpendingChartPoint: Identifiable {
+    /// Deliberately not the label: the daily fallback series takes the last seven days that
+    /// actually have receipts, which can span more than a week and repeat a weekday name.
+    /// Nothing puts these in a `ForEach` today; a stable id would need the bucket's date.
     let id = UUID()
     let label: String
     let amount: Double
 }
 
 struct CategorySummary: Identifiable {
-    let id = UUID()
+    /// One entry per category.
+    var id: String { category }
     let category: String
     let amount: Double
     let color: Color
 }
 
 struct CategoryShare: Identifiable {
-    let id = UUID()
+    /// One entry per category.
+    var id: String { name }
     let name: String
     /// Fraction of the period's total spending, 0...1.
     let share: Double
@@ -539,26 +550,30 @@ struct CategoryShare: Identifiable {
 }
 
 struct MerchantSummary: Identifiable {
-    let id = UUID()
+    /// Built by grouping on merchant, so one entry per name.
+    var id: String { name }
     let name: String
     let amount: Double
     let receiptCount: Int
 }
 
 struct WeekdaySummary: Identifiable {
-    let id = UUID()
+    /// One entry per weekday symbol.
+    var id: String { label }
     let label: String
     let amount: Double
 }
 
 struct MonthlyDeltaPoint: Identifiable {
-    let id = UUID()
+    /// Six consecutive months, so the abbreviated name doesn't repeat.
+    var id: String { label }
     let label: String
     let delta: Double
 }
 
 struct CategoryComparison: Identifiable {
-    let id = UUID()
+    /// One entry per category.
+    var id: String { category }
     let category: String
     let currentAmount: Double
     let previousAmount: Double

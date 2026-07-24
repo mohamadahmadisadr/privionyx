@@ -13,6 +13,9 @@ enum ReceiptFieldLabel: String, CaseIterable {
 
 struct CoreMLReceiptExtractionService {
     private let model: MLModel?
+    /// The same reader the deterministic path uses, rather than a second one here. See
+    /// `parseDate(from:)`.
+    private let dateExtractor = DateExtractor()
 
     init(bundle: Bundle = .main) {
         if let modelURL = bundle.url(forResource: "ReceiptFieldExtractor", withExtension: "mlmodelc") {
@@ -119,19 +122,15 @@ struct CoreMLReceiptExtractionService {
         return Double(normalized)
     }
 
+    /// Reads the date out of a whole OCR row.
+    ///
+    /// This used to hand the row straight to `DateFormatter.date(from:)`, which matches the
+    /// entire string or nothing — so "Date: 03/14/2026" and "03/14/2026 14:22" both failed,
+    /// and the model's date label could never produce a value. `DateExtractor` is what the
+    /// deterministic path already uses: it pulls candidate segments out of the line, tries a
+    /// wider set of formats, and rejects dates too far from today to be a purchase.
     private func parseDate(from line: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-
-        for pattern in ["MM/dd/yyyy", "MM/dd/yy", "yyyy-MM-dd", "dd/MM/yyyy", "dd/MM/yy"] {
-            formatter.dateFormat = pattern
-            if let date = formatter.date(from: line) {
-                return date
-            }
-        }
-
-        return nil
+        dateExtractor.extractDate(from: [line])
     }
 }
 
