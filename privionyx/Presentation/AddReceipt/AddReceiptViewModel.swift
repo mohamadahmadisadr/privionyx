@@ -270,7 +270,7 @@ final class AddReceiptViewModel {
             imagePath: nil,
             imageData: previewImage?.jpegData(compressionQuality: 0.82),
             rawText: rawText.isEmpty ? nil : rawText,
-            lineItems: [],
+            lineItems: lineItems,
             notes: notes.trimmingCharacters(in: .whitespacesAndNewlines),
             status: .reviewed
         )
@@ -346,7 +346,7 @@ final class AddReceiptViewModel {
         subtotal = draft.subtotal.map { String(format: "%.2f", $0) } ?? ""
         tax = draft.tax.map { String(format: "%.2f", $0) } ?? ""
         tip = draft.tip.map { String(format: "%.2f", $0) } ?? ""
-        lineItems = []
+        lineItems = draft.lineItems
         date = draft.date
         selectedCategory = draft.category
         customCategoryName = draft.customCategoryName ?? ""
