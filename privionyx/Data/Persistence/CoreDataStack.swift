@@ -4,8 +4,16 @@ import Foundation
 final class CoreDataStack {
     let container: NSPersistentContainer
 
-    init(inMemory: Bool = false) {
-        let model = Self.makeModel()
+    /// Set when the on-disk store could not be opened and the app is running on a
+    /// replacement. Nil on a normal launch. Surfaced rather than swallowed, because it means
+    /// the receipts on screen are not the ones the user saved.
+    private(set) var storeLoadFailure: String?
+
+    /// - Parameter storeURL: Overrides the on-disk location. Defaults to the app's real
+    ///   store; tests point it at a temporary file so they can exercise migration and
+    ///   recovery without touching the user's data.
+    init(inMemory: Bool = false, storeURL: URL? = nil) {
+        let model = PrivionyxModelVersion.current.model
         container = NSPersistentContainer(name: "PrivionyxModel", managedObjectModel: model)
 
         if inMemory {
@@ -13,17 +21,27 @@ final class CoreDataStack {
             description.url = URL(fileURLWithPath: "/dev/null")
             description.type = NSInMemoryStoreType
             container.persistentStoreDescriptions = [description]
+            _ = load()
         } else {
-            let description = NSPersistentStoreDescription(url: Self.storeURL())
-            description.type = NSSQLiteStoreType
-            description.shouldMigrateStoreAutomatically = true
-            description.shouldInferMappingModelAutomatically = true
-            container.persistentStoreDescriptions = [description]
-        }
+            let storeURL = storeURL ?? Self.storeURL()
 
-        container.loadPersistentStores { _, error in
-            if let error {
-                fatalError("Failed to load persistent stores: \(error.localizedDescription)")
+            // Run before loading. A programmatic model gives Core Data no version bundle to
+            // find a source model in, so it cannot do this on its own however the store
+            // description is configured.
+            do {
+                try Self.migrateStoreIfNeeded(at: storeURL, to: model)
+            } catch {
+                // Not fatal on its own — the store may still open, and if it doesn't the
+                // recovery below takes over with a message that names this cause.
+                storeLoadFailure = "Your receipt database couldn't be upgraded: \(error.localizedDescription)"
+            }
+
+            container.persistentStoreDescriptions = [Self.description(for: storeURL)]
+
+            if let error = load() {
+                recover(from: error, storeURL: storeURL)
+            } else {
+                storeLoadFailure = nil
             }
         }
 
@@ -31,7 +49,137 @@ final class CoreDataStack {
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
     }
 
-    private static func storeURL() -> URL {
+    // MARK: - Loading
+
+    private static func description(for storeURL: URL) -> NSPersistentStoreDescription {
+        let description = NSPersistentStoreDescription(url: storeURL)
+        description.type = NSSQLiteStoreType
+        // Loading synchronously keeps `load()` able to report its error, and keeps a
+        // half-initialised stack from being handed out.
+        description.shouldAddStoreAsynchronously = false
+        description.shouldMigrateStoreAutomatically = true
+        description.shouldInferMappingModelAutomatically = true
+        return description
+    }
+
+    private func load() -> Error? {
+        var loadError: Error?
+        container.loadPersistentStores { _, error in loadError = error }
+        return loadError
+    }
+
+    /// Last resort when the store won't open: move it aside and start clean, so a bad file
+    /// costs the user their history rather than the ability to launch at all. The previous
+    /// behaviour was `fatalError`, which turned any unreadable or unmigratable store into an
+    /// unrecoverable crash on every launch.
+    private func recover(from error: Error, storeURL: URL) {
+        let quarantined = Self.quarantineStore(at: storeURL)
+
+        if load() == nil {
+            storeLoadFailure = quarantined == nil
+                ? "Your receipt database couldn't be opened and has been reset."
+                : """
+                  Your receipt database couldn't be opened, so it was set aside and a new one \
+                  started. The previous file is kept at \(quarantined!.lastPathComponent).
+                  """
+            return
+        }
+
+        // Even a brand-new store won't open — the device is out of space, or the container
+        // isn't writable. Fall back to memory so the app runs and can say so, instead of
+        // crash-looping.
+        container.persistentStoreDescriptions = [{
+            let description = NSPersistentStoreDescription()
+            description.url = URL(fileURLWithPath: "/dev/null")
+            description.type = NSInMemoryStoreType
+            description.shouldAddStoreAsynchronously = false
+            return description
+        }()]
+        _ = load()
+
+        storeLoadFailure = """
+            Privionyx can't reach its database (\(error.localizedDescription)). It's running \
+            without saving — anything you add now will be lost when you close the app.
+            """
+    }
+
+    /// Moves an unreadable store aside rather than deleting it, so the data is still there
+    /// if it can be salvaged later. A SQLite store is three files and they only mean
+    /// anything together, so they move as a set.
+    private static func quarantineStore(at url: URL) -> URL? {
+        let fileManager = FileManager.default
+        let stamp = Int(Date.now.timeIntervalSince1970)
+        let quarantineURL = url.deletingLastPathComponent()
+            .appendingPathComponent("Unreadable-\(stamp)-\(url.lastPathComponent)")
+
+        var movedAny = false
+        for suffix in ["", "-wal", "-shm"] {
+            let source = URL(fileURLWithPath: url.path + suffix)
+            guard fileManager.fileExists(atPath: source.path) else { continue }
+
+            do {
+                try fileManager.moveItem(at: source, to: URL(fileURLWithPath: quarantineURL.path + suffix))
+                movedAny = true
+            } catch {
+                // Can't preserve it, but it still has to go or the reload hits the same file.
+                try? fileManager.removeItem(at: source)
+            }
+        }
+
+        return movedAny ? quarantineURL : nil
+    }
+
+    // MARK: - Migration
+
+    enum MigrationError: LocalizedError {
+        /// No shipped version matches the store — written by a newer build, or damaged.
+        case unrecognizedStoreVersion
+
+        var errorDescription: String? {
+            switch self {
+            case .unrecognizedStoreVersion:
+                "the file was written by a version of Privionyx this one doesn't recognise"
+            }
+        }
+    }
+
+    /// Brings a store written by an older schema up to `destinationModel`, in place.
+    ///
+    /// No-ops when the store doesn't exist yet or already matches, so this is safe on every
+    /// launch. The migration runs into a temporary store and is swapped in only once it has
+    /// succeeded — a failure partway leaves the original untouched rather than half-converted.
+    static func migrateStoreIfNeeded(at url: URL, to destinationModel: NSManagedObjectModel) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+
+        let metadata = try NSPersistentStoreCoordinator.metadataForPersistentStore(type: .sqlite, at: url)
+        guard destinationModel.isConfiguration(withName: nil, compatibleWithStoreMetadata: metadata) == false else {
+            return
+        }
+
+        guard let sourceVersion = PrivionyxModelVersion.version(forStoreMetadata: metadata) else {
+            throw MigrationError.unrecognizedStoreVersion
+        }
+
+        let sourceModel = sourceVersion.model
+        let mapping = try NSMappingModel.inferredMappingModel(
+            forSourceModel: sourceModel,
+            destinationModel: destinationModel
+        )
+
+        let workingURL = url.deletingLastPathComponent()
+            .appendingPathComponent("Migrating-\(UUID().uuidString).sqlite")
+
+        try NSMigrationManager(sourceModel: sourceModel, destinationModel: destinationModel)
+            .migrateStore(from: url, type: .sqlite, mapping: mapping, to: workingURL, type: .sqlite)
+
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: destinationModel)
+        try coordinator.replacePersistentStore(at: url, withPersistentStoreFrom: workingURL, type: .sqlite)
+        try? coordinator.destroyPersistentStore(at: workingURL, type: .sqlite)
+    }
+
+    // MARK: - Location
+
+    static func storeURL() -> URL {
         let fileManager = FileManager.default
         let baseURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
@@ -44,44 +192,5 @@ final class CoreDataStack {
         }
 
         return directoryURL.appendingPathComponent("Privionyx.sqlite")
-    }
-
-    private static func makeModel() -> NSManagedObjectModel {
-        let model = NSManagedObjectModel()
-
-        let receiptEntity = NSEntityDescription()
-        receiptEntity.name = "Receipt"
-        receiptEntity.managedObjectClassName = NSStringFromClass(ReceiptManagedObject.self)
-
-        receiptEntity.properties = [
-            attribute(name: "id", type: .UUIDAttributeType),
-            attribute(name: "merchant", type: .stringAttributeType),
-            attribute(name: "amount", type: .doubleAttributeType),
-            attribute(name: "subtotal", type: .doubleAttributeType, optional: true),
-            attribute(name: "tax", type: .doubleAttributeType, optional: true),
-            attribute(name: "tip", type: .doubleAttributeType, optional: true),
-            attribute(name: "date", type: .dateAttributeType),
-            attribute(name: "category", type: .stringAttributeType),
-            attribute(name: "customCategoryName", type: .stringAttributeType, optional: true),
-            attribute(name: "tagsText", type: .stringAttributeType, optional: true),
-            attribute(name: "imagePath", type: .stringAttributeType, optional: true),
-            attribute(name: "imageData", type: .binaryDataAttributeType, optional: true),
-            attribute(name: "rawText", type: .stringAttributeType, optional: true),
-            attribute(name: "lineItemsText", type: .stringAttributeType, optional: true),
-            attribute(name: "notes", type: .stringAttributeType),
-            attribute(name: "status", type: .stringAttributeType),
-            attribute(name: "createdAt", type: .dateAttributeType)
-        ]
-
-        model.entities = [receiptEntity]
-        return model
-    }
-
-    private static func attribute(name: String, type: NSAttributeType, optional: Bool = false) -> NSAttributeDescription {
-        let attribute = NSAttributeDescription()
-        attribute.name = name
-        attribute.attributeType = type
-        attribute.isOptional = optional
-        return attribute
     }
 }

@@ -36,6 +36,13 @@ final class PrivionyxAppState {
         } catch {
             lastErrorMessage = error.localizedDescription
         }
+
+        // Reported after loading rather than before, so it isn't overwritten by a load error
+        // and so the user sees it against the receipts actually on screen. A reset store is
+        // not something to discover by noticing an empty list.
+        if let storeLoadFailure = container.storeLoadFailure {
+            lastErrorMessage = storeLoadFailure
+        }
     }
 
     private func seedSampleDataIfRequested() async throws {

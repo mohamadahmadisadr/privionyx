@@ -13,6 +13,9 @@ struct PrivionyxAppContainer {
     /// Reads receipt images on demand. `ReceiptItem` carries only the path, so the screens
     /// that actually display an image load it through here.
     let imageStore: any ReceiptImageStore
+    /// Set when the saved database couldn't be opened and the app is running on a
+    /// replacement, so the user can be told their receipts aren't the ones on screen.
+    let storeLoadFailure: String?
 
     let fetchReceiptsUseCase: FetchReceiptsUseCase
     let saveReceiptUseCase: SaveReceiptUseCase
@@ -51,6 +54,7 @@ struct PrivionyxAppContainer {
             mlExtractor: mlExtractor,
             merchantRuleService: merchantRuleService,
             imageStore: fileStorage,
+            storeLoadFailure: stack.storeLoadFailure,
             fetchReceiptsUseCase: FetchReceiptsUseCase(repository: repository),
             saveReceiptUseCase: SaveReceiptUseCase(repository: repository),
             deleteReceiptUseCase: DeleteReceiptUseCase(repository: repository),
