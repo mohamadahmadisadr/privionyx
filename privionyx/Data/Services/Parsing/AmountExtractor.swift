@@ -27,19 +27,42 @@ struct AmountExtractor {
 
         let sourceLines = positionedLines.isEmpty ? lines.enumerated().map { (text: $0.element, index: $0.offset, geometry: nil as OCRTextLine?) } : positionedLines.enumerated().map { (text: $0.element.text, index: $0.offset, geometry: Optional($0.element)) }
 
-        return sourceLines.flatMap { source in
+        let scored = sourceLines.flatMap { source in
             extractAmounts(in: source.text).map { amount in
                 (
                     amount: amount,
                     score: amountScore(
                         for: source.text,
                         index: source.index,
-                        amount: amount,
                         totalLines: lines.count,
                         geometry: source.geometry
                     )
                 )
             }
+        }
+
+        return Self.rankedByMagnitude(scored)
+    }
+
+    /// How much "the total is usually the largest figure on the receipt" is worth.
+    ///
+    /// Below the `total` label bonus on purpose, so a labelled figure outranks a larger
+    /// unlabelled one whatever the receipt's size.
+    private static let magnitudeWeight = 60.0
+
+    /// Adds the size prior as a share of the largest candidate rather than as the amount.
+    ///
+    /// `amountScore` used to start at the amount in dollars, which made this prior worth
+    /// nothing on a small receipt and more than every label combined on a large one — the
+    /// same three lines ("TOTAL", "CASH", "CHANGE") extracted correctly at $12.50 and
+    /// returned the cash tendered at $420. Ranking against the other candidates makes the
+    /// weighting mean the same thing at any size.
+    private static func rankedByMagnitude(_ candidates: [(amount: Double, score: Int)]) -> [(amount: Double, score: Int)] {
+        guard let largest = candidates.map(\.amount).max(), largest > 0 else { return candidates }
+
+        return candidates.map { candidate in
+            let share = candidate.amount / largest
+            return (amount: candidate.amount, score: candidate.score + Int((share * magnitudeWeight).rounded()))
         }
     }
 
@@ -245,9 +268,12 @@ struct AmountExtractor {
         return nil
     }
 
-    private func amountScore(for line: String, index: Int, amount: Double, totalLines: Int, geometry: OCRTextLine?) -> Int {
+    /// Scores what the *line* says about the figure. The figure's own size is added later,
+    /// by `rankedByMagnitude`, once every candidate is known and it can be weighed against
+    /// them instead of in dollars.
+    private func amountScore(for line: String, index: Int, totalLines: Int, geometry: OCRTextLine?) -> Int {
         let lowercased = line.lowercased()
-        var score = Int(amount.rounded())
+        var score = 0
 
         let positiveSignals = [
             ("grand total", 100),
