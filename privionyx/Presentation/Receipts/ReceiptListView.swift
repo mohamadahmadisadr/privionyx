@@ -12,7 +12,9 @@ struct ReceiptListView: View {
     }
 
     var body: some View {
-        GlassScreen(wrapsInNavigationStack: false) {
+        // Lazy: the month groups below grow with the user's library, and every row was
+        // being built up front on each filter change.
+        GlassScreen(lazyContent: true, wrapsInNavigationStack: false) {
             header
         } content: {
             summaryCard

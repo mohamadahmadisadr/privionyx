@@ -50,6 +50,23 @@ final class ReceiptListViewModel {
     var selectedCategory: ReceiptCategory?
     var selectedDateFilter: ReceiptDateFilter = .all
     private(set) var filteredReceipts: [ReceiptItem] = []
+    /// Grouped form of `filteredReceipts`, computed alongside it. It used to be a computed
+    /// property read from `body`, which re-grouped everything and built a `DateFormatter`
+    /// on every render.
+    private(set) var groupedReceipts: [ReceiptMonthGroup] = []
+
+    /// Receipts paired with a pre-folded haystack to match against. Rebuilt only when the
+    /// receipts change, so the per-keystroke cost is a plain substring search rather than
+    /// six locale-aware comparisons and a currency format per receipt.
+    private var searchIndex: [SearchableReceipt] = []
+    private var indexedVersion: Int?
+    /// The search text the current results were produced for, so filter taps aren't debounced.
+    private var appliedSearchText = ""
+
+    /// How long typing has to settle before the list is rebuilt. `.task(id:)` cancels the
+    /// previous run when the query changes, so a wait at the top of `refresh()` is all the
+    /// debounce needed — an abandoned keystroke never reaches the filter.
+    private static let searchDebounce = Duration.milliseconds(200)
 
     init(appState: PrivionyxAppState) {
         self.appState = appState
@@ -90,24 +107,22 @@ final class ReceiptListViewModel {
         return "\(filteredReceipts.count) saved \(receiptWord)"
     }
 
-    var groupedReceipts: [ReceiptMonthGroup] {
+    private static func grouped(_ receipts: [ReceiptItem]) -> [ReceiptMonthGroup] {
         let calendar = Calendar.current
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
 
-        let grouped = Dictionary(grouping: filteredReceipts) { receipt in
+        return Dictionary(grouping: receipts) { receipt in
             calendar.dateInterval(of: .month, for: receipt.date)?.start ?? receipt.date
         }
-
-        return grouped
-            .map { month, receipts in
-                ReceiptMonthGroup(
-                    id: month,
-                    title: formatter.string(from: month),
-                    receipts: receipts.sorted { $0.date > $1.date }
-                )
-            }
-            .sorted { $0.id > $1.id }
+        .map { month, receipts in
+            ReceiptMonthGroup(
+                id: month,
+                title: formatter.string(from: month),
+                receipts: receipts.sorted { $0.date > $1.date }
+            )
+        }
+        .sorted { $0.id > $1.id }
     }
 
     func clearFilters() {
@@ -117,14 +132,33 @@ final class ReceiptListViewModel {
     }
 
     func refresh() async {
+        // Only typing is debounced. A category chip or date filter should apply at once, and
+        // those leave the search text alone.
+        if searchText != appliedSearchText {
+            try? await Task.sleep(for: Self.searchDebounce)
+            guard Task.isCancelled == false else { return }
+        }
+        appliedSearchText = searchText
+
         if appState.receipts.isEmpty {
             await appState.refreshReceipts()
         }
+
+        rebuildSearchIndexIfNeeded()
+
         filteredReceipts = filtered(
             searchText: searchText,
             selectedCategory: selectedCategory,
             dateInterval: selectedDateFilter.interval()
         )
+        groupedReceipts = Self.grouped(filteredReceipts)
+    }
+
+    private func rebuildSearchIndexIfNeeded() {
+        guard indexedVersion != appState.receiptsVersion else { return }
+
+        searchIndex = appState.receipts.map(SearchableReceipt.init(receipt:))
+        indexedVersion = appState.receiptsVersion
     }
 
     private func filtered(
@@ -132,21 +166,50 @@ final class ReceiptListViewModel {
         selectedCategory: ReceiptCategory?,
         dateInterval: DateInterval?
     ) -> [ReceiptItem] {
-        let normalizedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = SearchableReceipt.fold(searchText.trimmingCharacters(in: .whitespacesAndNewlines))
 
-        return appState.receipts.filter { receipt in
-            let matchesCategory = selectedCategory.map { receipt.category == $0 } ?? true
-            let matchesSearch = normalizedSearch.isEmpty
-                || receipt.merchant.localizedCaseInsensitiveContains(normalizedSearch)
-                || receipt.notes.localizedCaseInsensitiveContains(normalizedSearch)
-                || receipt.displayCategoryName.localizedCaseInsensitiveContains(normalizedSearch)
-                || receipt.tags.contains(where: { $0.localizedCaseInsensitiveContains(normalizedSearch) })
-                || PrivionyxCurrencyFormatter.string(for: receipt.amount).localizedCaseInsensitiveContains(normalizedSearch)
-                || (receipt.rawText?.localizedCaseInsensitiveContains(normalizedSearch) ?? false)
-            let matchesDate = dateInterval.map { $0.contains(receipt.date) } ?? true
+        return searchIndex.compactMap { entry in
+            let receipt = entry.receipt
 
-            return matchesCategory && matchesSearch && matchesDate
+            guard selectedCategory.map({ receipt.category == $0 }) ?? true else { return nil }
+            guard dateInterval.map({ $0.contains(receipt.date) }) ?? true else { return nil }
+            guard query.isEmpty || entry.haystack.contains(query) else { return nil }
+
+            return receipt
         }
+    }
+}
+
+/// A receipt flattened into one lowercase, diacritic-folded string covering every field the
+/// list searches. Folding each receipt once turns a keystroke into a plain substring scan;
+/// the previous filter ran up to six `localizedCaseInsensitiveContains` calls and formatted
+/// the amount as currency for every receipt, on every character typed.
+private struct SearchableReceipt {
+    let receipt: ReceiptItem
+    let haystack: String
+
+    init(receipt: ReceiptItem) {
+        self.receipt = receipt
+
+        var parts = [
+            receipt.merchant,
+            receipt.notes,
+            receipt.displayCategoryName,
+            // Kept so "12.50" still finds a receipt, without paying to format it per keystroke.
+            PrivionyxCurrencyFormatter.string(for: receipt.amount)
+        ]
+        parts.append(contentsOf: receipt.tags)
+        if let rawText = receipt.rawText {
+            parts.append(rawText)
+        }
+
+        haystack = Self.fold(parts.joined(separator: "\n"))
+    }
+
+    /// Case- and diacritic-insensitive matching, applied once to each side rather than being
+    /// re-derived per comparison. Matches `MerchantRuleService`'s normalisation.
+    static func fold(_ text: String) -> String {
+        text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
     }
 }
 

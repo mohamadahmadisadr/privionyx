@@ -9,6 +9,10 @@ struct GlassScreen<Content: View>: View {
     let title: String
     var subtitle: String?
     var scrollContent: Bool = true
+    /// Builds the content in a `LazyVStack` so rows are created as they scroll into view.
+    /// Off by default — laziness costs SwiftUI the ability to size the whole stack up front,
+    /// which is only worth paying on a screen whose content grows without bound.
+    var lazyContent: Bool = false
     var dismissKeyboardOnTap: Bool = true
     /// Tab roots own a navigation stack; screens pushed onto an existing stack must not
     /// create a nested one, or their own pushes lose the back gesture.
@@ -36,6 +40,7 @@ struct GlassScreen<Content: View>: View {
 
     init<Header: View>(
         scrollContent: Bool = true,
+        lazyContent: Bool = false,
         dismissKeyboardOnTap: Bool = true,
         wrapsInNavigationStack: Bool = true,
         @ViewBuilder header: () -> Header,
@@ -44,6 +49,7 @@ struct GlassScreen<Content: View>: View {
         self.title = ""
         self.subtitle = nil
         self.scrollContent = scrollContent
+        self.lazyContent = lazyContent
         self.dismissKeyboardOnTap = dismissKeyboardOnTap
         self.wrapsInNavigationStack = wrapsInNavigationStack
         self.header = AnyView(header())
@@ -78,33 +84,46 @@ struct GlassScreen<Content: View>: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
+    @ViewBuilder
     private var screenContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            if let header {
-                header
-            } else {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.82)
-
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            content
+        if lazyContent {
+            LazyVStack(alignment: .leading, spacing: 20) { stackContent }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, PrivionyxTheme.Metrics.tabBarClearance)
+        } else {
+            VStack(alignment: .leading, spacing: 20) { stackContent }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, PrivionyxTheme.Metrics.tabBarClearance)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, PrivionyxTheme.Metrics.tabBarClearance)
+    }
+
+    /// Left unwrapped — no enclosing `Group` or `VStack` — so `LazyVStack` sees the header
+    /// and the content as separate children and can defer the ones off screen.
+    @ViewBuilder
+    private var stackContent: some View {
+        if let header {
+            header
+        } else {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+
+        content
     }
 }
 
