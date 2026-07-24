@@ -37,4 +37,19 @@ struct GemmaModelCatalogTests {
         let text = GemmaModelCatalog.sizeDescription(for: .gemma4E2B)
         #expect(text.contains("GB"))
     }
+
+    /// The system hands the app a completion handler for *any* background session it is
+    /// woken for, and expects it back whether or not the app recognises the identifier.
+    /// Dropping it holds the app's background assertion open until it is killed.
+    @MainActor
+    @Test("An unrecognised background session identifier still returns its completion handler")
+    func foreignSessionIdentifierIsAcknowledged() async {
+        await confirmation("completion handler called") { called in
+            GemmaModelManager.handleBackgroundSessionEvents(
+                identifier: "com.example.somebody-elses-session"
+            ) {
+                called()
+            }
+        }
+    }
 }

@@ -34,6 +34,13 @@ final class GemmaModelManager {
     private var session: URLSession?
     private var task: URLSessionDownloadTask?
     private var resumeData: Data?
+    /// Handed over when the system relaunches the app purely to deliver download events.
+    /// Must be called once the session says it has finished delivering them.
+    private var backgroundEventsCompletion: (() -> Void)?
+
+    /// Stable across launches: recreating a session with the same identifier is how a
+    /// download started by a previous launch is reattached rather than restarted.
+    private static let backgroundSessionIdentifier = "com.privionyx.gemma-model-download"
 
     init(spec: GemmaModelSpec? = GemmaModelCatalog.modelForCurrentDevice()) {
         self.spec = spec
@@ -112,7 +119,10 @@ final class GemmaModelManager {
     // MARK: - Delegate callbacks (invoked on the main actor)
 
     fileprivate func handleProgress(_ progress: Double) {
-        guard case .downloading = state else { return }
+        // Bytes arriving *are* the evidence a download is in flight. After a relaunch these
+        // can land before `reconnectToBackgroundSession` has restored the state, so this
+        // accepts them rather than dropping them on the old `.downloading` guard.
+        guard spec != nil, isReady == false else { return }
         state = .downloading(progress: min(max(progress, 0), 1))
     }
 
@@ -186,14 +196,77 @@ final class GemmaModelManager {
         return values?.volumeAvailableCapacityForImportantUsage
     }
 
+    /// The one session for this process.
+    ///
+    /// Background rather than default: the model is measured in gigabytes, and a default
+    /// session is suspended when the user leaves the app and its tasks cancelled shortly
+    /// after — so a download only completed if the user sat and watched it. A background
+    /// session is run by the system daemon and survives the app being suspended or killed.
+    ///
+    /// Cached because creating a second session with the same identifier is an error, and
+    /// never invalidated because it is meant to outlive any particular screen.
     private func makeSession(for spec: GemmaModelSpec) -> URLSession {
         if let session { return session }
-        let config = URLSessionConfiguration.default
-        config.waitsForConnectivity = true
+
+        let config = URLSessionConfiguration.background(withIdentifier: Self.backgroundSessionIdentifier)
+        // The user pressed Download and is watching a progress bar, so this shouldn't be
+        // deferred to whenever the system considers convenient.
+        config.isDiscretionary = false
+        // Relaunch the app in the background to deliver completion if it isn't running.
+        config.sessionSendsLaunchEvents = true
+        // `waitsForConnectivity` is deliberately not set: background sessions ignore it and
+        // wait for connectivity regardless.
+
         let delegate = DownloadDelegate(manager: self, spec: spec)
         let session = URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
         self.session = session
         return session
+    }
+
+    // MARK: - Reattaching across launches
+
+    /// Routes the system's background-session callback to the manager. Called from the app
+    /// delegate when the app is relaunched to deliver download events.
+    static func handleBackgroundSessionEvents(identifier: String, completionHandler: @escaping () -> Void) {
+        guard identifier == backgroundSessionIdentifier else {
+            // Not ours — the system still expects the handler to be called.
+            completionHandler()
+            return
+        }
+
+        shared.backgroundEventsCompletion = completionHandler
+        shared.reconnectToBackgroundSession()
+    }
+
+    /// Rebuilds the session so the system can hand back a download left running by an
+    /// earlier launch, and restores the progress state for one still in flight. Safe to call
+    /// on every launch; does nothing when there is no download to adopt.
+    func reconnectToBackgroundSession() {
+        guard let spec else { return }
+
+        makeSession(for: spec).getAllTasks { [weak self] tasks in
+            guard let inFlight = tasks.compactMap({ $0 as? URLSessionDownloadTask }).first else { return }
+
+            Task { @MainActor in
+                self?.adopt(inFlight, spec: spec)
+            }
+        }
+    }
+
+    private func adopt(_ downloadTask: URLSessionDownloadTask, spec: GemmaModelSpec) {
+        guard isReady == false else { return }
+
+        task = downloadTask
+        let expected = downloadTask.countOfBytesExpectedToReceive > 0
+            ? downloadTask.countOfBytesExpectedToReceive
+            : spec.approxBytes
+        let fraction = expected > 0 ? Double(downloadTask.countOfBytesReceived) / Double(expected) : 0
+        state = .downloading(progress: min(max(fraction, 0), 1))
+    }
+
+    fileprivate func finishBackgroundEvents() {
+        backgroundEventsCompletion?()
+        backgroundEventsCompletion = nil
     }
 }
 
@@ -244,6 +317,12 @@ private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unc
             let message = (error as? LocalizedError)?.errorDescription ?? "The download couldn't be saved."
             Task { @MainActor [manager] in manager?.handleFailure(message, resumeData: nil) }
         }
+    }
+
+    /// The system has finished replaying everything that happened while the app was away.
+    /// Calling the stored handler is what lets it suspend us again.
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        Task { @MainActor [manager] in manager?.finishBackgroundEvents() }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
