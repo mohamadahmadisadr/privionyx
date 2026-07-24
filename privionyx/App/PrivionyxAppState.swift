@@ -30,7 +30,7 @@ final class PrivionyxAppState {
         defer { isBootstrapping = false }
 
         do {
-            try await container.repository.purgeLegacySeedData()
+            try await container.repository.performMaintenance()
             try await loadReceipts()
             try await seedSampleDataIfRequested()
         } catch {

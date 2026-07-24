@@ -3,38 +3,30 @@ import Foundation
 
 final class CoreDataReceiptRepository: ReceiptRepository {
     let stack: CoreDataStack
-    private let fileStorage: ReceiptFileStorage
+    let fileStorage: ReceiptFileStorage
+    /// Records which one-off maintenance steps have run. See `performMaintenance()`.
+    let defaults: UserDefaults
 
-    init(stack: CoreDataStack, fileStorage: ReceiptFileStorage = ReceiptFileStorage()) {
+    init(
+        stack: CoreDataStack,
+        fileStorage: ReceiptFileStorage = ReceiptFileStorage(),
+        defaults: UserDefaults = .standard
+    ) {
         self.stack = stack
         self.fileStorage = fileStorage
+        self.defaults = defaults
     }
 
+    /// A read, and only a read. The legacy image-blob conversion used to happen here, which
+    /// meant a query could mutate rows and save — so any fetch could fail on a write error,
+    /// and two concurrent fetches could conflict. It runs in `performMaintenance()` now.
     func fetchReceipts(matching query: SpendingQuery?) async throws -> [ReceiptItem] {
         try await stack.container.performBackgroundTask { context in
             let request = ReceiptManagedObject.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
             request.predicate = Self.makePredicate(for: query)
-            let objects = try context.fetch(request)
-            var migratedLegacyBlob = false
 
-            let items = try objects.map { object in
-                // Short-circuits on `imagePath` so a already-migrated row never faults its
-                // (empty) blob column in.
-                if object.imagePath == nil, let legacyData = object.imageData, legacyData.isEmpty == false {
-                    object.imagePath = try self.fileStorage.saveImageData(legacyData, for: object.id, replacing: nil)
-                    object.imageData = nil
-                    migratedLegacyBlob = true
-                }
-
-                return Self.map(object)
-            }
-
-            if migratedLegacyBlob {
-                try context.save()
-            }
-
-            return items
+            return try context.fetch(request).map(Self.map)
         }
     }
 

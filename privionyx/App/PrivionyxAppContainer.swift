@@ -28,12 +28,15 @@ struct PrivionyxAppContainer {
         // One instance shared by the repository (which writes images) and the UI (which
         // reads them), so both resolve paths against the same directory.
         let fileStorage = ReceiptFileStorage()
-        let repository = CoreDataReceiptRepository(stack: stack, fileStorage: fileStorage)
+        // Shared with the merchant rules below so an in-memory container gets one isolated
+        // suite — otherwise a preview or test would read the real app's maintenance flags.
+        let defaults = makeDefaults(inMemory: inMemory)
+        let repository = CoreDataReceiptRepository(stack: stack, fileStorage: fileStorage, defaults: defaults)
         let imageProcessor = ReceiptImageProcessor()
         let perspectiveService = ReceiptPerspectiveService(imageProcessor: imageProcessor)
         let ocrService = VisionOCRService(imageProcessor: imageProcessor)
         let mlExtractor = CoreMLReceiptExtractionService()
-        let merchantRuleService = MerchantRuleService(defaults: makeDefaults(inMemory: inMemory))
+        let merchantRuleService = MerchantRuleService(defaults: defaults)
         let parser = ReceiptParsingService(mlExtractor: mlExtractor)
         let resolveCategoryUseCase = ResolveCategoryUseCase(merchantRules: merchantRuleService)
         let resolveMerchantUseCase = ResolveMerchantUseCase(merchantRules: merchantRuleService)
