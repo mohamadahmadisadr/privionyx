@@ -30,7 +30,16 @@ enum ExpenseInsights {
         budgets: [String: Double] = [:],
         limit: Int = 3
     ) -> [ExpenseInsight] {
-        let analytics = ExpenseAnalytics(context: context)
+        generate(for: ExpenseAnalytics(context: context), budgets: budgets, limit: limit)
+    }
+
+    /// Takes analytics rather than a context so a caller that already has one — the
+    /// Dashboard — doesn't pay to rebuild it, which re-maps every receipt.
+    static func generate(
+        for analytics: ExpenseAnalytics,
+        budgets: [String: Double] = [:],
+        limit: Int = 3
+    ) -> [ExpenseInsight] {
         guard analytics.isEmpty == false else { return [] }
 
         func money(_ value: Double) -> String { PrivionyxCurrencyFormatter.string(for: value) }
@@ -105,11 +114,15 @@ enum ExpenseInsights {
         if recurring.isEmpty == false {
             let names = recurring.prefix(3).map(\.merchant).joined(separator: ", ")
             let more = recurring.count > 3 ? "…" : ""
+            // Summed from the list already in hand. Calling `recurringMonthlyTotal()` here
+            // re-ran the whole detection — grouping and sorting every receipt a second time —
+            // to arrive at the total of the charges just computed.
+            let monthlyTotal = recurring.reduce(0) { $0 + $1.monthlyEquivalent }
             insights.append(ExpenseInsight(
                 id: "recurring",
                 symbol: "repeat",
                 title: "\(recurring.count) recurring \(recurring.count == 1 ? "charge" : "charges")",
-                detail: "About \(money(analytics.recurringMonthlyTotal()))/mo — \(names)\(more).",
+                detail: "About \(money(monthlyTotal))/mo — \(names)\(more).",
                 tone: .neutral
             ))
         }

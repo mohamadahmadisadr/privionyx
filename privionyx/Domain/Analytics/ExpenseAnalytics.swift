@@ -293,9 +293,13 @@ struct ExpenseAnalytics {
             let sorted = group.sorted { $0.date < $1.date }
             for (index, receipt) in sorted.enumerated() {
                 for other in sorted.dropFirst(index + 1) {
+                    // Ascending by date, so once one receipt is past the window every
+                    // later one is too. Without this the inner loop walked a merchant's
+                    // entire history for each of its receipts, comparing pairs years apart.
+                    let daysApart = other.date.timeIntervalSince(receipt.date) / 86_400
+                    guard daysApart <= days else { break }
+
                     guard abs(receipt.amount - other.amount) < 0.01 else { continue }
-                    let daysApart = abs(other.date.timeIntervalSince(receipt.date)) / 86_400
-                    guard daysApart <= days else { continue }
                     results.append(DuplicatePair(merchant: receipt.merchant, amount: receipt.amount, first: receipt.date, second: other.date))
                 }
             }

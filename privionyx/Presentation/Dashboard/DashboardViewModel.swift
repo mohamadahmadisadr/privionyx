@@ -1,8 +1,36 @@
 import SwiftUI
 
-struct DashboardViewModel {
+/// Derived figures for the Dashboard.
+///
+/// A reference type, and deliberately so: every screen section asks it a different question
+/// about the same receipts, and `body` re-runs whenever the period changes. As a struct
+/// there was nowhere to keep an answer, so each render recomputed the lot — `categorySummaries`
+/// scanned the array once per category, and recurring-charge detection ran three times over.
+///
+/// Everything here is memoised for the life of the instance, which is exactly the life of one
+/// `receipts` array: `PrivionyxRootView` builds a new view model whenever the receipts change,
+/// so a cached answer can never go stale.
+@MainActor
+final class DashboardViewModel {
     let receipts: [ReceiptItem]
-    var budgetStore = MonthlyBudgetStore()
+    private let budgetStore: MonthlyBudgetStore
+
+    private var receiptsInPeriod: [DashboardPeriod: [ReceiptItem]] = [:]
+    private var receiptsInPreviousPeriod: [DashboardPeriod: [ReceiptItem]] = [:]
+    private var categorySummariesByPeriod: [DashboardPeriod: [CategorySummary]] = [:]
+    private var chartPointsByPeriod: [DashboardPeriod: [SpendingChartPoint]] = [:]
+    private var cachedInsights: [Int: [ExpenseInsight]] = [:]
+    private var cachedBudgetProgress: [BudgetProgress]?
+    private var cachedRecurringCharges: [RecurringCharge]?
+
+    /// Built once. Constructing it maps the whole receipts array, and it was previously
+    /// rebuilt by every caller that needed analytics.
+    private lazy var analytics = ExpenseAnalytics(context: AssistantContext(receipts: receipts))
+
+    init(receipts: [ReceiptItem], budgetStore: MonthlyBudgetStore = MonthlyBudgetStore()) {
+        self.receipts = receipts
+        self.budgetStore = budgetStore
+    }
 
     func totalSpent(for period: DashboardPeriod) -> String {
         let total = receipts(in: period).reduce(0) { $0 + $1.amount }
@@ -90,23 +118,37 @@ struct DashboardViewModel {
     /// Automatically-surfaced observations (spikes, anomalies, duplicates, trends) shown as
     /// cards at the top of the Dashboard so the numbers speak up without being asked.
     func insights(limit: Int = 3) -> [ExpenseInsight] {
-        ExpenseInsights.generate(
-            for: AssistantContext(receipts: receipts),
+        if let cached = cachedInsights[limit] { return cached }
+
+        let generated = ExpenseInsights.generate(
+            for: analytics,
             budgets: budgetStore.budgetsByName(),
             limit: limit
         )
+        cachedInsights[limit] = generated
+        return generated
     }
 
     /// This month's progress against each set budget, most-consumed first. Empty when the
     /// user hasn't set any budgets, so the Dashboard hides the section entirely.
     func budgetProgress() -> [BudgetProgress] {
-        ExpenseAnalytics(context: AssistantContext(receipts: receipts))
-            .budgetProgress(budgets: budgetStore.budgetsByName())
+        if let cachedBudgetProgress { return cachedBudgetProgress }
+
+        let progress = analytics.budgetProgress(budgets: budgetStore.budgetsByName())
+        cachedBudgetProgress = progress
+        return progress
     }
 
     /// Detected subscriptions and recurring bills, priciest per month first.
+    ///
+    /// Cached because detection groups and sorts every receipt, and the Dashboard asks for
+    /// this twice in one pass — once for the subscriptions card, once by way of `insights()`.
     func recurringCharges() -> [RecurringCharge] {
-        ExpenseAnalytics(context: AssistantContext(receipts: receipts)).recurringCharges()
+        if let cachedRecurringCharges { return cachedRecurringCharges }
+
+        let charges = analytics.recurringCharges()
+        cachedRecurringCharges = charges
+        return charges
     }
 
     func comparisonText(for period: DashboardPeriod) -> String {
@@ -123,14 +165,22 @@ struct DashboardViewModel {
     }
 
     func categorySummaries(for period: DashboardPeriod) -> [CategorySummary] {
-        ReceiptCategory.allCases.map { category in
-            let amount = receipts(in: period)
-                .filter { $0.category == category }
-                .reduce(0) { $0 + $1.amount }
+        if let cached = categorySummariesByPeriod[period] { return cached }
 
+        // One pass, rather than a full scan per category.
+        var totals: [ReceiptCategory: Double] = [:]
+        for receipt in receipts(in: period) {
+            totals[receipt.category, default: 0] += receipt.amount
+        }
+
+        // Still driven by `allCases` so the order stays the declaration order.
+        let summaries = ReceiptCategory.allCases.compactMap { category -> CategorySummary? in
+            guard let amount = totals[category], amount > 0 else { return nil }
             return CategorySummary(category: category.rawValue, amount: amount, color: color(for: category))
         }
-        .filter { $0.amount > 0 }
+
+        categorySummariesByPeriod[period] = summaries
+        return summaries
     }
 
     func topMerchants(for period: DashboardPeriod) -> [MerchantSummary] {
@@ -165,15 +215,16 @@ struct DashboardViewModel {
 
     func weekdaySummaries(for period: DashboardPeriod) -> [WeekdaySummary] {
         let calendar = Calendar.current
-        let scopedReceipts = receipts(in: period)
-        let symbols = calendar.shortWeekdaySymbols
 
-        return symbols.enumerated().map { index, symbol in
-            let weekdayIndex = index + 1
-            let amount = scopedReceipts
-                .filter { calendar.component(.weekday, from: $0.date) == weekdayIndex }
-                .reduce(0) { $0 + $1.amount }
-            return WeekdaySummary(label: symbol, amount: amount)
+        // One pass rather than one per weekday, which also computes each receipt's weekday
+        // once instead of seven times.
+        var totals: [Int: Double] = [:]
+        for receipt in receipts(in: period) {
+            totals[calendar.component(.weekday, from: receipt.date), default: 0] += receipt.amount
+        }
+
+        return calendar.shortWeekdaySymbols.enumerated().map { index, symbol in
+            WeekdaySummary(label: symbol, amount: totals[index + 1] ?? 0)
         }
     }
 
@@ -226,16 +277,19 @@ struct DashboardViewModel {
     }
 
     func categoryComparisons(for period: DashboardPeriod) -> [CategoryComparison] {
-        let currentReceipts = receipts(in: period)
-        let previousReceipts = receipts(inPrevious: period)
+        // Two passes total rather than two per category.
+        var currentTotals: [ReceiptCategory: Double] = [:]
+        for receipt in receipts(in: period) {
+            currentTotals[receipt.category, default: 0] += receipt.amount
+        }
+        var previousTotals: [ReceiptCategory: Double] = [:]
+        for receipt in receipts(inPrevious: period) {
+            previousTotals[receipt.category, default: 0] += receipt.amount
+        }
 
         let totals = ReceiptCategory.allCases.compactMap { category -> CategoryComparison? in
-            let currentAmount = currentReceipts
-                .filter { $0.category == category }
-                .reduce(0) { $0 + $1.amount }
-            let previousAmount = previousReceipts
-                .filter { $0.category == category }
-                .reduce(0) { $0 + $1.amount }
+            let currentAmount = currentTotals[category] ?? 0
+            let previousAmount = previousTotals[category] ?? 0
 
             guard currentAmount > 0 || previousAmount > 0 else { return nil }
 
@@ -280,6 +334,14 @@ struct DashboardViewModel {
     }
 
     func chartPoints(for period: DashboardPeriod) -> [SpendingChartPoint] {
+        if let cached = chartPointsByPeriod[period] { return cached }
+
+        let points = computeChartPoints(for: period)
+        chartPointsByPeriod[period] = points
+        return points
+    }
+
+    private func computeChartPoints(for period: DashboardPeriod) -> [SpendingChartPoint] {
         let calendar = Calendar.current
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -347,6 +409,22 @@ struct DashboardViewModel {
     }
 
     private func receipts(in period: DashboardPeriod) -> [ReceiptItem] {
+        if let cached = receiptsInPeriod[period] { return cached }
+
+        let scoped = computeReceipts(in: period)
+        receiptsInPeriod[period] = scoped
+        return scoped
+    }
+
+    private func receipts(inPrevious period: DashboardPeriod) -> [ReceiptItem] {
+        if let cached = receiptsInPreviousPeriod[period] { return cached }
+
+        let scoped = computeReceipts(inPrevious: period)
+        receiptsInPreviousPeriod[period] = scoped
+        return scoped
+    }
+
+    private func computeReceipts(in period: DashboardPeriod) -> [ReceiptItem] {
         let calendar = Calendar.current
 
         switch period {
@@ -363,7 +441,7 @@ struct DashboardViewModel {
         }
     }
 
-    private func receipts(inPrevious period: DashboardPeriod) -> [ReceiptItem] {
+    private func computeReceipts(inPrevious period: DashboardPeriod) -> [ReceiptItem] {
         let calendar = Calendar.current
 
         switch period {
