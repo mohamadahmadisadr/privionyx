@@ -33,9 +33,7 @@ struct VisionOCRService {
     /// over a well-prepared image is both cleaner and six times cheaper.
     func recognizeText(in image: UIImage) async throws -> OCRResult {
         // Downscale before anything else so every later copy is of the smaller image.
-        let normalizedImage = imageProcessor.normalizedImage(
-            imageProcessor.downscaledForRecognition(image)
-        )
+        let normalizedImage = imageProcessor.preparedForRecognition(image)
 
         var fragments = try await Self.recognizedFragments(in: normalizedImage)
         if Self.assembleRows(fragments).count < Self.sparseRowThreshold {

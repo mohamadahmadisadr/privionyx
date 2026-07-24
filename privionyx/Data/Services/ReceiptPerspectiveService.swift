@@ -5,7 +5,7 @@ import UIKit
 import Vision
 
 struct ReceiptPerspectiveService {
-    private let context = CIContext(options: nil)
+    private let context = ReceiptImageProcessor.sharedContext
     private let imageProcessor: ReceiptImageProcessor
 
     init(imageProcessor: ReceiptImageProcessor = ReceiptImageProcessor()) {
