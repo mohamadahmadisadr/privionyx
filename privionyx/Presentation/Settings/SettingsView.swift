@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var assistantAvailability: [AssistantBackend: AssistantAvailability] = [:]
     @State private var gemma = GemmaModelManager.shared
     @AppStorage(GemmaModelManager.allowsCellularDownloadKey) private var allowsCellularGemmaDownload = false
+    @State private var isRemovingSamples = false
 
     var body: some View {
         NavigationStack {
@@ -300,6 +301,16 @@ struct SettingsView: View {
             aboutRow(icon: "dollarsign.circle.fill", label: "Currency", value: PrivionyxCurrencyFormatter.currentCurrencyCode)
             GlassRowDivider()
             aboutRow(icon: "info.circle.fill", label: "Version", value: appVersionText)
+            if appState.hasSampleReceipts {
+                GlassRowDivider()
+                Button {
+                    Task { await removeSamples() }
+                } label: {
+                    sampleRemovalRow
+                }
+                .buttonStyle(.plain)
+                .disabled(isRemovingSamples)
+            }
             GlassRowDivider()
             NavigationLink {
                 AcknowledgementsView()
@@ -343,6 +354,37 @@ struct SettingsView: View {
         }
         .padding(14)
         .contentShape(Rectangle())
+    }
+
+    /// Present for as long as any sample remains, which is the whole reason it is here rather
+    /// than only in the empty state: loading samples is what makes that empty state disappear.
+    private var sampleRemovalRow: some View {
+        HStack(spacing: 12) {
+            GlassIconTile(systemImage: "sparkles.rectangle.stack.fill", size: 30, isAccented: false)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(isRemovingSamples ? "Removing…" : "Remove Sample Receipts")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(isRemovingSamples ? PrivionyxTheme.Colors.tertiaryInk : PrivionyxTheme.Colors.danger)
+                Text("Deletes only receipts tagged \(PrivionyxSampleData.tag). Yours are untouched.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+            }
+
+            Spacer(minLength: 8)
+        }
+        .padding(14)
+        .contentShape(Rectangle())
+    }
+
+    private func removeSamples() async {
+        isRemovingSamples = true
+        defer { isRemovingSamples = false }
+        do {
+            try await appState.removeSampleReceipts()
+        } catch {
+            appState.lastError = .deletingReceipt(error)
+        }
     }
 
     private var appVersionText: String {

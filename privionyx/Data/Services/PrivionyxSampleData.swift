@@ -1,16 +1,34 @@
-#if DEBUG
 import Foundation
 import UIKit
 
-/// Development-only sample data. Seeded when the app is launched with
-/// `-privionyxSampleData`, so the dashboard, category bars, and assistant can be
-/// exercised without scanning receipts by hand. Never runs in a release build and
-/// never runs without the launch argument.
-enum PrivionyxSampleData {
+/// A small library of example receipts, loaded only when someone asks for it.
+///
+/// It ships in release builds now rather than being debug-only. An empty app is impossible to
+/// evaluate — an App Store reviewer has no receipts, no printed paper, and no camera in the
+/// simulator, so without this there is no path from launching the app to seeing it work. The
+/// same is true of anyone deciding whether to keep it.
+///
+/// **Nothing is loaded unless the user taps a button.** Sample receipts are otherwise ordinary
+/// receipts and count towards the dashboard, budgets and recurring charges exactly as real ones
+/// do, which is the point — and also the hazard, since someone who tries them and then starts
+/// scanning would have their real figures mixed with fiction. Hence `tag`: every sample carries
+/// it, so removal takes back precisely what was added and nothing the user typed, and the tag
+/// is visible on the row and in the detail view so no sample is mistaken for a real receipt.
+nonisolated enum PrivionyxSampleData {
+    /// Written into `tags` on every sample, and the only way the app can tell one apart from a
+    /// receipt the user entered. Capitalised as it is displayed.
+    static let tag = "Sample"
+
+    /// Development shortcut, unrelated to the user-facing button: seeds on launch so the
+    /// dashboard and assistant can be exercised without tapping through. Debug builds only.
     static let launchArgument = "-privionyxSampleData"
 
     static var isRequested: Bool {
+        #if DEBUG
         ProcessInfo.processInfo.arguments.contains(launchArgument)
+        #else
+        false
+        #endif
     }
 
     static func drafts(relativeTo now: Date = .now) -> [ReceiptDraft] {
@@ -43,7 +61,7 @@ enum PrivionyxSampleData {
                 date: date(daysAgo: daysAgo),
                 category: category,
                 customCategoryName: nil,
-                tags: [],
+                tags: [Self.tag],
                 imageData: receiptImage(merchant: merchant, amount: amount, tax: tax),
                 rawText: nil,
                 lineItems: [],
@@ -53,8 +71,9 @@ enum PrivionyxSampleData {
         }
     }
 
-    /// Renders a receipt-like image so the detail screen has something to show for
-    /// seeded data. Debug-only, mirrors what a real scan would store.
+    /// Renders a receipt-like image so the detail screen has something to show for a sample,
+    /// mirroring what a real scan would store. Drawn rather than bundled, so ten sample
+    /// receipts cost the app download nothing.
     private static func receiptImage(merchant: String, amount: Double, tax: Double?) -> Data? {
         let size = CGSize(width: 600, height: 820)
         let image = UIGraphicsImageRenderer(size: size).image { context in
@@ -86,4 +105,3 @@ enum PrivionyxSampleData {
         return image.jpegData(compressionQuality: 0.8)
     }
 }
-#endif

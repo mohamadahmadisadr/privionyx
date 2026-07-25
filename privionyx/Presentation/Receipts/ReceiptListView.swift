@@ -148,19 +148,37 @@ struct ReceiptListView: View {
         }
     }
 
+    /// Named for what it does rather than for getting started: nothing about this is a step
+    /// towards using the app with your own receipts, and a button that reads "Get started"
+    /// would be inviting the tap under false pretences.
+    private func loadSamples() async {
+        do {
+            try await appState.loadSampleReceipts()
+        } catch {
+            appState.lastError = .savingReceipt(error)
+        }
+    }
+
     // MARK: - Results
 
     @ViewBuilder
     private var receiptGroups: some View {
         if viewModel.filteredReceipts.isEmpty {
+            // Offering samples only when the library is genuinely empty, not merely filtered
+            // to nothing — the answer to "no receipts match these filters" is to change the
+            // filters, and adding ten receipts instead would be a non-sequitur.
+            let isFiltered = viewModel.hasActiveFilters
+
             GlassEmptyState(
-                systemImage: viewModel.hasActiveFilters ? "line.3.horizontal.decrease" : "tray",
-                title: viewModel.hasActiveFilters ? "No receipts match these filters" : "No receipts saved yet",
-                message: viewModel.hasActiveFilters
+                systemImage: isFiltered ? "line.3.horizontal.decrease" : "tray",
+                title: isFiltered ? "No receipts match these filters" : "No receipts saved yet",
+                message: isFiltered
                     ? "Try clearing a filter or widening the date range."
-                    : "Use the Camera tab to capture a receipt or import a photo.",
-                actionTitle: viewModel.hasActiveFilters ? "Clear filters" : nil,
-                action: viewModel.hasActiveFilters ? { viewModel.clearFilters() } : nil
+                    : "Use the Camera tab to capture a receipt or import a photo — or load a few examples to see how it works.",
+                actionTitle: isFiltered ? "Clear filters" : "Load sample receipts",
+                action: isFiltered
+                    ? { viewModel.clearFilters() }
+                    : { Task { await loadSamples() } }
             )
         } else {
             ForEach(viewModel.groupedReceipts) { group in

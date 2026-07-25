@@ -177,8 +177,22 @@ Still open before a submission:
   file) and reproduces the Apache-2.0 text in full from `Resources/Apache-2.0.txt`. In full and
   on-device rather than linked: a licence behind a network request is not a licence the user
   has. Verified present at the bundle root of the built product.
-- **The screenshot problem.** Review runs on a device with no receipts and no model
-  downloaded. Whatever a reviewer sees on first launch is what the app is judged on.
+- ~~**The screenshot problem.**~~ *Done.* `PrivionyxSampleData` was already there but
+  `#if DEBUG` behind a launch argument, so a reviewer could never reach it. It ships now, loaded
+  only by a deliberate tap in the receipts empty state.
+
+  The design question was not first launch — nothing auto-loads, so a new user sees exactly what
+  they saw before. It was what happens *after*: samples count towards the dashboard, budgets and
+  recurring charges like real receipts, so someone who tries them and then starts scanning would
+  have real figures mixed with fiction and no way to tell which rows to remove. Hence the
+  reserved `Sample` tag on every one — it already renders on the row and in the detail view, so
+  nothing is mistaken for a real receipt, and removal selects by tag so it takes back precisely
+  what was added.
+
+  Removal lives in Settings rather than in the empty state, because loading samples is exactly
+  what makes that empty state disappear — the only affordance for undoing it would have vanished
+  with it. Selecting by tag also means a sample the user edited and untagged is theirs to keep;
+  `SampleReceiptTests` covers that, and that removal spares real receipts.
 
 ## 5. Swift 6 language mode — *done*
 

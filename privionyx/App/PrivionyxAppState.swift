@@ -54,14 +54,40 @@ final class PrivionyxAppState {
     }
 
     private func seedSampleDataIfRequested() async throws {
-        #if DEBUG
         guard PrivionyxSampleData.isRequested, receipts.isEmpty else { return }
+        try await loadSampleReceipts()
+    }
 
+    // MARK: - Sample receipts
+
+    /// Whether any sample receipt is currently in the library.
+    ///
+    /// Drives the removal affordance in Settings. It has to live there rather than only in the
+    /// empty state, because loading samples is exactly what makes the empty state disappear —
+    /// the one place the user could undo it would vanish with it.
+    var hasSampleReceipts: Bool {
+        receipts.contains { $0.tags.contains(PrivionyxSampleData.tag) }
+    }
+
+    /// Adds the example receipts. Never called except by a deliberate tap.
+    func loadSampleReceipts() async throws {
         for draft in PrivionyxSampleData.drafts() {
             try await container.saveReceiptUseCase.execute(draft)
         }
         try await loadReceipts()
-        #endif
+    }
+
+    /// Removes every sample and nothing else.
+    ///
+    /// Selected by tag rather than by anything remembered from when they were added, so it
+    /// stays correct across launches, across a restore from backup, and if the user has since
+    /// edited one. A sample the user edited into something they want to keep is theirs to
+    /// keep — untagging it in the editor is all that takes.
+    func removeSampleReceipts() async throws {
+        for receipt in receipts where receipt.tags.contains(PrivionyxSampleData.tag) {
+            try await container.deleteReceiptUseCase.execute(id: receipt.id)
+        }
+        try await loadReceipts()
     }
 
     func initializeIfNeeded() async {
