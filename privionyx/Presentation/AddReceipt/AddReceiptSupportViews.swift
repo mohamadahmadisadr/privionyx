@@ -6,8 +6,13 @@ struct SavedToastView: View {
     }
 }
 
+/// Shown over the capture screen while a photograph is turned into a draft.
+///
+/// The determinate bar this used to carry was driven by hard-coded fractions, and the work
+/// it sat above cannot report a percentage — so it said nothing true and made the wait look
+/// longer than it was. The spinner conveys "working"; the phase says what is being worked on.
 struct ParsingReceiptView: View {
-    let progress: Double
+    let phase: ReceiptProcessingPhase
 
     var body: some View {
         ZStack {
@@ -20,15 +25,14 @@ struct ParsingReceiptView: View {
                     .progressViewStyle(.circular)
                     .scaleEffect(1.1)
 
-                Text("Analyzing receipt…")
+                Text(phase.label)
                     .font(.system(size: 13.5, weight: .semibold))
                     .foregroundStyle(PrivionyxTheme.Colors.ink)
-
-                ProgressView(value: progress)
-                    .frame(width: 180)
+                    .animation(.easeInOut(duration: 0.2), value: phase)
             }
             .padding(.vertical, 22)
             .padding(.horizontal, 26)
+            .frame(minWidth: 200)
             .privionyxGlass(cornerRadius: 18, strong: true)
         }
         .interactiveDismissDisabled()

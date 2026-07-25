@@ -1,5 +1,23 @@
 import UIKit
 
+/// The stages of turning a photograph into a draft, in the order they run.
+///
+/// Reported so the capture overlay can say what is happening instead of animating a
+/// fabricated percentage. Recognition dominates the wall clock; extraction is comparatively
+/// instant.
+enum ReceiptProcessingPhase: Equatable {
+    case recognizing
+    case extracting
+
+    /// Shown under the spinner while this stage runs.
+    var label: String {
+        switch self {
+        case .recognizing: "Reading the receipt…"
+        case .extracting: "Extracting fields…"
+        }
+    }
+}
+
 struct ProcessReceiptImageUseCase {
     private let ocrService: any OCRService
     private let parser: any ReceiptParser
@@ -18,9 +36,20 @@ struct ProcessReceiptImageUseCase {
         self.resolveMerchant = resolveMerchant
     }
 
-    func execute(image: UIImage) async throws -> ReceiptDraft {
+    /// - Parameter onPhase: Reports which stage is running as it starts. The two stages are
+    ///   the only progress this pipeline can honestly report: Vision does not surface
+    ///   incremental progress, and parsing is fast enough that subdividing it would be
+    ///   invention. Callers that don't care can omit it.
+    func execute(
+        image: UIImage,
+        onPhase: @MainActor (ReceiptProcessingPhase) -> Void = { _ in }
+    ) async throws -> ReceiptDraft {
+        await onPhase(.recognizing)
         let ocrResult = try await ocrService.recognizeText(in: image)
+
+        await onPhase(.extracting)
         let parsed = await parser.parse(ocrResult: ocrResult)
+
         return makeDraft(from: parsed)
     }
 

@@ -38,7 +38,10 @@ final class AddReceiptViewModel {
     private var recognizedMerchant = ""
     var notes = ""
     var stage: ReceiptCaptureStage = .idle
-    var parsingProgress = 0.0
+    /// Which stage of the pipeline is running, for the capture overlay. Replaces a
+    /// `parsingProgress` fraction whose values were chosen to look plausible rather than
+    /// measured — the pipeline cannot report a percentage, so it reports what it is doing.
+    var parsingPhase: ReceiptProcessingPhase = .recognizing
     var previewImage: UIImage?
     var showSavedToast = false
     var didSaveSuccessfully = false
@@ -365,7 +368,6 @@ final class AddReceiptViewModel {
         rawText = ""
         notes = ""
         stage = .idle
-        parsingProgress = 0
         previewImage = nil
         ocrSourceImage = nil
         cropSourceImage = nil
@@ -388,26 +390,22 @@ final class AddReceiptViewModel {
     private func analyzeReceipt(from image: UIImage) {
         isParsingPresented = true
         stage = .extracting
-        parsingProgress = 0.2
+        parsingPhase = .recognizing
 
         Task {
             do {
-                await Task.yield()
-                try? await Task.sleep(for: .milliseconds(150))
-                parsingProgress = 0.55
-                let draft = try await processReceiptUseCase.execute(image: image)
-                parsingProgress = 0.9
+                let draft = try await processReceiptUseCase.execute(image: image) { phase in
+                    parsingPhase = phase
+                }
+
                 apply(draft: draft)
                 recognizedMerchant = draft.merchant
                 isParsingPresented = false
                 stage = .readyForReview
-                parsingProgress = 1
-                try? await Task.sleep(for: .milliseconds(120))
                 isReviewPresented = true
             } catch {
                 isParsingPresented = false
                 stage = .needsReview
-                parsingProgress = 0
                 appState.lastErrorMessage = error.localizedDescription
             }
         }

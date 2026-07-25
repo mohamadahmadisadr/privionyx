@@ -82,7 +82,7 @@ struct AddReceiptView: View {
         }
         .overlay {
             if viewModel.isParsingPresented {
-                ParsingReceiptView(progress: viewModel.parsingProgress)
+                ParsingReceiptView(phase: viewModel.parsingPhase)
                     .transition(.opacity)
                     .zIndex(10)
             }
