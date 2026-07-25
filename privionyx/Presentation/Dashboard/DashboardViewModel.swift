@@ -54,10 +54,6 @@ final class DashboardViewModel {
             .rawValue ?? "None"
     }
 
-    var latestMerchant: String {
-        receipts.first?.merchant ?? "None"
-    }
-
     func largestReceiptValue(for period: DashboardPeriod) -> String {
         let value = receipts(in: period).map(\.amount).max() ?? 0
         return PrivionyxCurrencyFormatter.string(for: value)

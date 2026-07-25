@@ -62,6 +62,7 @@ final class ReceiptListViewModel {
     private var indexedVersion: Int?
     /// The search text the current results were produced for, so filter taps aren't debounced.
     private var appliedSearchText = ""
+    private var hasAttemptedRecoveryLoad = false
 
     /// How long typing has to settle before the list is rebuilt. `.task(id:)` cancels the
     /// previous run when the query changes, so a wait at the top of `refresh()` is all the
@@ -140,7 +141,11 @@ final class ReceiptListViewModel {
         }
         appliedSearchText = searchText
 
-        if appState.receipts.isEmpty {
+        // A recovery for the case where launch failed to load anything, attempted once.
+        // Keyed on having tried rather than on the list being empty, which is otherwise a
+        // normal state that made every keystroke re-run a full fetch.
+        if appState.receipts.isEmpty, hasAttemptedRecoveryLoad == false {
+            hasAttemptedRecoveryLoad = true
             await appState.refreshReceipts()
         }
 

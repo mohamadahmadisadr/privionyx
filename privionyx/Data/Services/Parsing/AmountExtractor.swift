@@ -456,12 +456,12 @@ struct AmountExtractor {
     }
 
     private func parseCurrencyValue(_ rawValue: String) -> Double? {
+        // Only `$`, digits and separators can reach here: both callers pass a substring
+        // matched by a digits-only pattern. This used to also substitute S→5 and O→0, which
+        // read as OCR repair but could never fire — glyph confusion is handled upstream,
+        // where the text still has letters in it.
         var value = rawValue
             .replacingOccurrences(of: "$", with: "")
-            .replacingOccurrences(of: "S", with: "5")
-            .replacingOccurrences(of: "s", with: "5")
-            .replacingOccurrences(of: "O", with: "0")
-            .replacingOccurrences(of: "o", with: "0")
             .replacingOccurrences(of: " ", with: "")
 
         if value.contains(","), value.contains(".") {

@@ -7,6 +7,9 @@ import Foundation
 final class PrivionyxAppState {
     let container: PrivionyxAppContainer
     private var hasCompletedInitialLoad = false
+    /// Set once bootstrap has succeeded. Distinct from "there are no receipts": an empty
+    /// library is a perfectly normal state, not a signal that the work still needs doing.
+    private var hasBootstrapped = false
 
     private(set) var receipts: [ReceiptItem] = []
     private(set) var receiptsVersion = 0
@@ -25,7 +28,7 @@ final class PrivionyxAppState {
     }
 
     func bootstrapIfNeeded() async {
-        guard isBootstrapping == false, receipts.isEmpty else { return }
+        guard hasBootstrapped == false, isBootstrapping == false else { return }
         isBootstrapping = true
         defer { isBootstrapping = false }
 
@@ -33,6 +36,9 @@ final class PrivionyxAppState {
             try await container.repository.performMaintenance()
             try await loadReceipts()
             try await seedSampleDataIfRequested()
+            // Only on success, so a failed launch can still retry rather than being stuck
+            // with whatever it managed to load.
+            hasBootstrapped = true
         } catch {
             lastErrorMessage = error.localizedDescription
         }
