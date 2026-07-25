@@ -1,0 +1,28 @@
+{
+  "notes": "Faded thermal print: several zeroes came back as the letter O. The sanitizer already repairs an O between two digits, but here two of them are the last character of the amount — 7.5O and 15.5O — which is where a worn print head leaves the damage most often.",
+  "rawText": [
+    "HILLCREST BAKERY",
+    "910 ST CLAIR AVE W",
+    "TORONTO ON",
+    "",
+    "SOURDOUGH LOAF               7.5O",
+    "CROISSANT X2                 8.00",
+    "---------------------------------",
+    "SUBTOTAL                    15.5O",
+    "HST 13%                      2.O2",
+    "TOTAL                       17.52",
+    "DEBIT                       17.52",
+    "",
+    "03/1O/2026 O8:45"
+  ],
+  "expected": {
+    "merchant": "Hillcrest Bakery",
+    "date": "2026-03-10",
+    "total": 17.52,
+    "subtotal": 15.50,
+    "tax": 2.02,
+    "tip": null,
+    "category": "Dining",
+    "lineItemSum": null
+  }
+}

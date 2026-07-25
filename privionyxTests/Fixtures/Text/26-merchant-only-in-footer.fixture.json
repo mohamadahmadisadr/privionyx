@@ -1,0 +1,30 @@
+{
+  "notes": "The letterhead is terminal boilerplate and the shop's name appears only in the sign-off at the bottom. The first line of the receipt reads MERCHANT COPY, which looks exactly like a name to a positional heuristic.",
+  "rawText": [
+    "MERCHANT COPY",
+    "TERM ID 44012",
+    "BATCH 0091",
+    "",
+    "TOPSOIL 25L X3              41.97",
+    "CEDAR MULCH                 12.99",
+    "---------------------------------",
+    "SUBTOTAL                    54.96",
+    "HST 13%                      7.14",
+    "TOTAL                       62.10",
+    "INTERAC                     62.10",
+    "",
+    "THANK YOU FOR SHOPPING AT",
+    "LAKEVIEW GARDEN CENTRE",
+    "03/07/2026 10:52"
+  ],
+  "expected": {
+    "merchant": "Lakeview Garden Centre",
+    "date": "2026-03-07",
+    "total": 62.10,
+    "subtotal": 54.96,
+    "tax": 7.14,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}

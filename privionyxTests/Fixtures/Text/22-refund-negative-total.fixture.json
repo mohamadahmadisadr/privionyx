@@ -1,0 +1,28 @@
+{
+  "notes": "A return. The subtotal, tax and total are all printed negative, and the refund back to the card is printed positive below them. A refund is money coming back, so its total is negative — recording it as a positive expense would overstate spending by twice the amount.",
+  "rawText": [
+    "BRIGHTON HOME GOODS",
+    "340 DANFORTH AVE",
+    "TORONTO ON",
+    "",
+    "*** RETURN ***",
+    "TABLE LAMP                  49.99",
+    "---------------------------------",
+    "SUBTOTAL                   -49.99",
+    "HST 13%                     -6.50",
+    "TOTAL                      -56.49",
+    "REFUND TO VISA              56.49",
+    "",
+    "03/14/2026 13:08"
+  ],
+  "expected": {
+    "merchant": "Brighton Home Goods",
+    "date": "2026-03-14",
+    "total": -56.49,
+    "subtotal": -49.99,
+    "tax": -6.50,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}

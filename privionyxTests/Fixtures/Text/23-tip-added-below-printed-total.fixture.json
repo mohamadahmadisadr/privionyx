@@ -1,0 +1,34 @@
+{
+  "notes": "A restaurant card slip carries two totals: the printed amount of the food, then the tip and the final total written in on the tip line. The larger figure at the bottom is the real total, and the smaller one above it is labelled with a word the scorer knows nothing about.",
+  "rawText": [
+    "TRATTORIA VERDE",
+    "221 COLLEGE ST",
+    "TORONTO ON",
+    "",
+    "SERVER MARCO    TABLE 12",
+    "2 GUESTS",
+    "",
+    "LINGUINE VONGOLE            26.00",
+    "OSSO BUCO                   32.00",
+    "SPARKLING WATER              6.00",
+    "---------------------------------",
+    "SUBTOTAL                    64.00",
+    "HST 13%                      8.32",
+    "AMOUNT                      72.32",
+    "",
+    "TIP                         14.00",
+    "TOTAL                       86.32",
+    "",
+    "03/13/2026 20:15"
+  ],
+  "expected": {
+    "merchant": "Trattoria Verde",
+    "date": "2026-03-13",
+    "total": 86.32,
+    "subtotal": 64.00,
+    "tax": 8.32,
+    "tip": 14.00,
+    "category": "Dining",
+    "lineItemSum": null
+  }
+}

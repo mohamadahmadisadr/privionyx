@@ -1,0 +1,29 @@
+{
+  "notes": "A US receipt charging two different rates on different goods, each on its own row with the rate printed beside the amount. The receipt carries one tax figure only as the sum of the two, and each row holds a percentage that has the shape of a price.",
+  "rawText": [
+    "SUNSET MARKET",
+    "1180 W SUNSET BLVD",
+    "LOS ANGELES CA",
+    "",
+    "DELI SANDWICH                9.49",
+    "COLD BREW                    4.75",
+    "BAG OF ICE                   3.29",
+    "---------------------------------",
+    "SUBTOTAL                    17.53",
+    "FOOD TAX 2.00%               0.28",
+    "SALES TAX 8.25%              0.68",
+    "TOTAL                       18.49",
+    "",
+    "03/08/2026 12:33"
+  ],
+  "expected": {
+    "merchant": "Sunset Market",
+    "date": "2026-03-08",
+    "total": 18.49,
+    "subtotal": 17.53,
+    "tax": 0.96,
+    "tip": null,
+    "category": "Grocery",
+    "lineItemSum": null
+  }
+}
