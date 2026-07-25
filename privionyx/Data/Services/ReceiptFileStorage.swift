@@ -1,7 +1,11 @@
 import Foundation
 
-struct ReceiptFileStorage {
-    private let fileManager = FileManager.default
+nonisolated struct ReceiptFileStorage: Sendable {
+    /// Not stored: `FileManager` is not `Sendable`, and holding one would make this type
+    /// unusable from the background context the repository writes on. `FileManager.default`
+    /// is documented as safe to use from multiple threads, which is exactly the access this
+    /// type makes of it.
+    private var fileManager: FileManager { .default }
 
     /// Persists the image and returns a **relative** identifier (the filename only).
     ///

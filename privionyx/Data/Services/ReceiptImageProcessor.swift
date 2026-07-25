@@ -3,7 +3,7 @@ import CoreImage.CIFilterBuiltins
 import CoreGraphics
 import UIKit
 
-struct ReceiptImageProcessor {
+nonisolated struct ReceiptImageProcessor {
     /// Shared because building a `CIContext` compiles its shader pipelines, and this is a
     /// struct that several services default-construct. `CIContext` is documented as safe to
     /// share across threads.

@@ -7,7 +7,7 @@ import Foundation
 /// on the order of a megabyte — inlining the bytes here made the app's resident memory grow
 /// with the size of the library, to render a list that only ever shows a monogram tile.
 /// Load the bytes on demand through `ReceiptImageStore` at the one screen that shows them.
-struct ReceiptItem: Identifiable, Hashable {
+nonisolated struct ReceiptItem: Identifiable, Hashable, Sendable {
     let id: UUID
     let merchant: String
     let amount: Double

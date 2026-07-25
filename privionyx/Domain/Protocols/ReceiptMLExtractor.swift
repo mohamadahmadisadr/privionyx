@@ -1,5 +1,5 @@
 import Foundation
 
-protocol ReceiptMLExtractor: Sendable {
+nonisolated protocol ReceiptMLExtractor: Sendable {
     func extract(from lines: [OCRTextLine]) -> ReceiptMLExtraction?
 }

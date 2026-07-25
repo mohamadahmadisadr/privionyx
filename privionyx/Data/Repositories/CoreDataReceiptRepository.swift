@@ -1,11 +1,15 @@
 import CoreData
 import Foundation
 
-final class CoreDataReceiptRepository: ReceiptRepository {
+/// `nonisolated`: every method here does its work inside a background context, so confining
+/// the type to the main actor — which is what the project's default isolation would otherwise
+/// do — describes the opposite of what it does.
+nonisolated final class CoreDataReceiptRepository: ReceiptRepository, Sendable {
     let stack: CoreDataStack
     let fileStorage: ReceiptFileStorage
     /// Records which one-off maintenance steps have run. See `performMaintenance()`.
-    let defaults: UserDefaults
+    /// `UserDefaults` is thread-safe by documentation and not `Sendable` by type.
+    nonisolated(unsafe) let defaults: UserDefaults
 
     init(
         stack: CoreDataStack,
@@ -30,7 +34,11 @@ final class CoreDataReceiptRepository: ReceiptRepository {
     }
 
     func upsertReceipt(_ receipt: ReceiptDraft) async throws {
-        try await stack.container.performBackgroundTask { context in
+        // Captures the storage rather than `self`: the closure runs on Core Data's queue,
+        // and the repository holds a `CoreDataStack` whose load state is mutable and has no
+        // business crossing over. `ReceiptFileStorage` is a `Sendable` value with nothing
+        // but the file system behind it.
+        try await stack.container.performBackgroundTask { [fileStorage] context in
             let request = ReceiptManagedObject.fetchRequest()
             request.fetchLimit = 1
             request.predicate = NSPredicate(format: "id == %@", receipt.id as CVarArg)
@@ -40,7 +48,7 @@ final class CoreDataReceiptRepository: ReceiptRepository {
             let storedImagePath: String?
 
             if let imageData = receipt.imageData, imageData.isEmpty == false {
-                storedImagePath = try self.fileStorage.saveImageData(imageData, for: receipt.id, replacing: existingObject?.imagePath)
+                storedImagePath = try fileStorage.saveImageData(imageData, for: receipt.id, replacing: existingObject?.imagePath)
             } else {
                 storedImagePath = existingObject?.imagePath ?? receipt.imagePath
             }
@@ -70,7 +78,7 @@ final class CoreDataReceiptRepository: ReceiptRepository {
     }
 
     func deleteReceipt(id: UUID) async throws {
-        try await stack.container.performBackgroundTask { context in
+        try await stack.container.performBackgroundTask { [fileStorage] context in
             let request = ReceiptManagedObject.fetchRequest()
             request.fetchLimit = 1
             request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
@@ -80,7 +88,7 @@ final class CoreDataReceiptRepository: ReceiptRepository {
 
             context.delete(object)
             try context.save()
-            try self.fileStorage.deleteImage(at: imagePath)
+            try fileStorage.deleteImage(at: imagePath)
         }
     }
 

@@ -1,6 +1,6 @@
 import Foundation
 
-struct ReceiptLineItem: Identifiable, Hashable, Codable {
+nonisolated struct ReceiptLineItem: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     var name: String
     var quantity: Int?

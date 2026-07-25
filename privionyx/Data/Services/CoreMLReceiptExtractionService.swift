@@ -1,7 +1,7 @@
 import CoreML
 import Foundation
 
-enum ReceiptFieldLabel: String, CaseIterable {
+nonisolated enum ReceiptFieldLabel: String, CaseIterable, Sendable {
     case merchant
     case total
     case subtotal
@@ -11,8 +11,10 @@ enum ReceiptFieldLabel: String, CaseIterable {
     case ignore
 }
 
-struct CoreMLReceiptExtractionService {
-    private let model: MLModel?
+nonisolated struct CoreMLReceiptExtractionService {
+    /// `MLModel` is documented as safe for concurrent prediction but is not `Sendable`, and
+    /// this service is consulted from the parsing pipeline off the main actor.
+    nonisolated(unsafe) private let model: MLModel?
     /// The same reader the deterministic path uses, rather than a second one here. See
     /// `parseDate(from:)`.
     private let dateExtractor = DateExtractor()
@@ -134,7 +136,7 @@ struct CoreMLReceiptExtractionService {
     }
 }
 
-private extension ReceiptMLExtraction {
+private nonisolated extension ReceiptMLExtraction {
     var hasUsefulValues: Bool {
         merchant?.isEmpty == false ||
         amount != nil ||

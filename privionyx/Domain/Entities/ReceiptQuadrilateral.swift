@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
 
-struct ReceiptQuadrilateral: Hashable {
+nonisolated struct ReceiptQuadrilateral: Hashable, Sendable {
     var topLeft: CGPoint
     var topRight: CGPoint
     var bottomRight: CGPoint

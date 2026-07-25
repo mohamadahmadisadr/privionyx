@@ -1,6 +1,6 @@
 import Foundation
 
-enum OCRServiceError: LocalizedError {
+nonisolated enum OCRServiceError: LocalizedError, Sendable {
     case unsupportedImage
 
     var errorDescription: String? {

@@ -67,7 +67,7 @@ struct MemoryFootprintTests {
     }
 
     /// Shared between the sampler and the test body.
-    private final class Peak: @unchecked Sendable {
+    private nonisolated final class Peak: @unchecked Sendable {
         private let lock = NSLock()
         private var storage: UInt64
 
@@ -86,7 +86,10 @@ struct MemoryFootprintTests {
 
     /// `phys_footprint` is the figure jetsam actually judges a process on — resident size
     /// understates it, and it is what a memory-limit crash report quotes.
-    private static func footprintBytes() -> UInt64 {
+    // `nonisolated` so the detached sampler can call it. The project defaults unannotated
+    // declarations to the main actor, and a sampler that had to hop there to read the
+    // footprint would be sampling the wrong thing at the wrong moment.
+    private nonisolated static func footprintBytes() -> UInt64 {
         var info = task_vm_info_data_t()
         var count = mach_msg_type_number_t(
             MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size

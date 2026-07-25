@@ -1,6 +1,6 @@
 import Foundation
 
-struct OCRResult {
+nonisolated struct OCRResult: Sendable {
     let rawText: String
     let lines: [OCRTextLine]
 }

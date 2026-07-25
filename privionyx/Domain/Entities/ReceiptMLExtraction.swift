@@ -1,6 +1,6 @@
 import Foundation
 
-struct ReceiptMLExtraction {
+nonisolated struct ReceiptMLExtraction: Sendable {
     var merchant: String?
     var amount: Double?
     var subtotal: Double?

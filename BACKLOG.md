@@ -49,7 +49,7 @@ before concluding anything is unused.
 
 - Text corpus: **26 fixtures, 100% fully correct**, every field at 100%.
 - Image corpus: 9 fixtures, all passing.
-- Full suite green.
+- Full suite green, on Swift 6 language mode, with no warnings in either target.
 
 At 100% the corpus has stopped telling us anything until it grows. See "Corpus shapes still
 uncovered" — the last two batches returned two real bugs and then three.
@@ -173,19 +173,46 @@ Still open before a submission:
 - **The screenshot problem.** Review runs on a device with no receipts and no model
   downloaded. Whatever a reviewer sees on first launch is what the app is judged on.
 
-## 5. Swift 6 language mode
+## 5. Swift 6 language mode — *done*
 
-`SWIFT_VERSION = 5.0` while the code is annotated as though it were 6, so none of the
-`@MainActor` and `Sendable` annotations are actually enforced.
+`SWIFT_VERSION = 6.0` on all four configurations. Clean build, no warnings in either target,
+full suite green, both corpora still 100%.
 
-Concrete hole: `NSPersistentContainer+Async.performBackgroundTask` takes a non-`@Sendable`
-closure with an unconstrained `T`, and `ReceiptItem` isn't declared `Sendable`.
+Wide and mechanical as expected — 48 files — but two things mattered more than the annotations,
+and the first is the reason this item existed at all.
 
-Two pre-existing warnings to clear on the way: `GemmaModelManager.swift:38` (main-actor
-isolated static method called from a nonisolated context) and
-`LiteRTGemmaReceiptAssistant.swift:30` (`shared` from a nonisolated context).
+**The project's default isolation was pointed the wrong way, silently.**
+`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` was already set, so every unannotated declaration
+was nominally confined to the main actor — including `ReceiptManagedObject`,
+`ReceiptLineItemCoder`, `ReceiptFileStorage` and the entire parsing pipeline. All of it is
+reached from Core Data's private queue or from `Task.detached`. Under Swift 5 the isolation was
+assigned and then ignored, so the code worked. Turning enforcement on is what surfaced it. The
+data and domain layers are now explicitly `nonisolated`, which is what they always were in fact.
 
-Expect this to be wide but mechanical.
+**`performBackgroundTask` was the hole this entry named, and it was load-bearing.** The closure
+is now `@Sendable` with `T: Sendable`, and that is what forced the above: once the boundary was
+real, everything crossing it had to say what it was. The constraint's actual job is to make
+returning an `NSManagedObject` a compile error rather than an occasional crash. The two closures
+that captured `self` for a single field now capture `[fileStorage]`.
+
+Along the way: `CoreDataStack.storeLoadFailure` became a `let` — the loading steps are static
+now, so it is decided once in `init` — which shrinks that type's `@unchecked Sendable` claim to
+the container alone. `NSMergeByPropertyObjectTrumpMergePolicy`, a global `var` of type `Any`,
+gave way to `NSMergePolicy.mergeByPropertyObjectTrump`. `FileManager`, `UserDefaults` and
+`MLModel` — thread-safe by documentation, `Sendable` by nothing — are `nonisolated(unsafe)`
+where they are held.
+
+**The one asserted guarantee is `@preconcurrency import LiteRTLM`.** The package is
+`swift-tools-version: 5.9` with no concurrency settings, and its API cannot be satisfied
+otherwise: `Engine` is an actor whose `createConversation()` returns a plain class, and
+`Conversation.sendMessage` is a nonisolated `async` method, so a `Conversation` must leave one
+isolation domain to be created and enter another to be used. Neither crossing is annotatable
+from this side. What makes it hold is on this side — one conversation at a time, reached only
+through the `@MainActor` `LiteRTGemmaReceiptAssistant`. Drop the attribute when the package
+ships Swift 6 annotations.
+
+The two warnings this entry expected to clear sat inside `#if canImport(LiteRTLM)` and are
+gone; that boundary is the `@preconcurrency` import's business now.
 
 ## 6. `SpendingQuery` dead predicate layer — *done, deleted*
 

@@ -44,10 +44,10 @@ struct ProcessReceiptImageUseCase {
         image: UIImage,
         onPhase: @MainActor (ReceiptProcessingPhase) -> Void = { _ in }
     ) async throws -> ReceiptDraft {
-        await onPhase(.recognizing)
+        onPhase(.recognizing)
         let ocrResult = try await ocrService.recognizeText(in: image)
 
-        await onPhase(.extracting)
+        onPhase(.extracting)
         let parsed = await parser.parse(ocrResult: ocrResult)
 
         return makeDraft(from: parsed)

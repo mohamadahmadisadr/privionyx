@@ -4,7 +4,7 @@ import CoreGraphics
 import UIKit
 import Vision
 
-struct ReceiptPerspectiveService {
+nonisolated struct ReceiptPerspectiveService {
     private let context = ReceiptImageProcessor.sharedContext
     private let imageProcessor: ReceiptImageProcessor
 

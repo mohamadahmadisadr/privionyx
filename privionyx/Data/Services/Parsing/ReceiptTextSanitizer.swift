@@ -1,6 +1,6 @@
 import Foundation
 
-struct ReceiptTextSanitizer {
+nonisolated struct ReceiptTextSanitizer {
     /// Flattens a line's punctuation so labels compare equal — "sub-total", "sub.total" and
     /// "subtotal" all become the same token.
     ///

@@ -1,8 +1,13 @@
 import CoreData
 import Foundation
 
+/// Explicitly `nonisolated`: the project defaults every unannotated type to the main actor,
+/// and a managed object belongs to the queue of the context that fetched it, which for every
+/// write in this app is a background one. Under Swift 5's language mode the default was
+/// applied and then ignored — rows were being read and written off the main actor by a type
+/// the compiler believed was confined to it.
 @objc(ReceiptManagedObject)
-final class ReceiptManagedObject: NSManagedObject {
+nonisolated final class ReceiptManagedObject: NSManagedObject {
     @NSManaged var id: UUID
     @NSManaged var merchant: String
     @NSManaged var amount: Double
@@ -22,7 +27,7 @@ final class ReceiptManagedObject: NSManagedObject {
     @NSManaged var createdAt: Date
 }
 
-extension ReceiptManagedObject {
+nonisolated extension ReceiptManagedObject {
     @nonobjc static func fetchRequest() -> NSFetchRequest<ReceiptManagedObject> {
         NSFetchRequest<ReceiptManagedObject>(entityName: "Receipt")
     }

@@ -3,7 +3,7 @@ import Foundation
 /// Persists the user's optional monthly spending limit per category. Amounts live in
 /// UserDefaults keyed by the category's raw value, mirroring `MerchantRuleService`. A
 /// missing or non-positive entry means "no budget set" for that category.
-struct MonthlyBudgetStore {
+nonisolated struct MonthlyBudgetStore {
     private let defaults: UserDefaults
     private let storageKey = "privionyx.monthly-budgets"
 

@@ -1,6 +1,6 @@
 import Foundation
 
-protocol ReceiptRepository {
+nonisolated protocol ReceiptRepository {
     /// Every receipt, newest first.
     ///
     /// There is no filtered variant. Filtering happens in memory over

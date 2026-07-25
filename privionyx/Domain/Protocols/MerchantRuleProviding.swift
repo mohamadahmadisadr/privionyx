@@ -1,6 +1,6 @@
 import Foundation
 
-protocol MerchantRuleProviding: Sendable {
+nonisolated protocol MerchantRuleProviding: Sendable {
     func category(for merchant: String) -> ReceiptCategory?
     func saveRule(merchant: String, category: ReceiptCategory)
 

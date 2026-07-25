@@ -12,7 +12,7 @@ import Foundation
 /// perfect. Repairing near-misses against a small vocabulary at the point rows are
 /// assembled means every matcher downstream sees the intended word without any of them
 /// having to know about OCR noise.
-enum ReceiptLabelRepair {
+nonisolated enum ReceiptLabelRepair {
     /// Only words that decide document structure. Merchant names and product names are
     /// deliberately absent — correcting those would be inventing content rather than
     /// recovering it, and a wrong guess there is worse than the raw text.

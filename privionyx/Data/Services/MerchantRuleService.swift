@@ -1,7 +1,12 @@
 import Foundation
 
-struct MerchantRuleService {
-    private let defaults: UserDefaults
+/// `nonisolated` because the parsing pipeline consults it off the main actor. `UserDefaults`
+/// is documented as thread-safe, which is the only shared state here.
+nonisolated struct MerchantRuleService {
+    /// `UserDefaults` is thread-safe by documentation but not `Sendable` by type, and this
+    /// struct has to cross actors to be useful. The unsafety is the annotation's, not the
+    /// class's.
+    nonisolated(unsafe) private let defaults: UserDefaults
     private let storageKey = "privionyx.merchant-category-rules"
     private let nameCorrectionKey = "privionyx.merchant-name-corrections"
 

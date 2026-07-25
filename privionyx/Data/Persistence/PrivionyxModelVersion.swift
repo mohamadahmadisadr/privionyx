@@ -15,7 +15,7 @@ import Foundation
 /// Never edit a past case. Its entire purpose is to describe a store already sitting on
 /// someone's device, and changing it changes the version hashes that identify those stores —
 /// which is exactly the failure this type exists to prevent.
-enum PrivionyxModelVersion: CaseIterable {
+nonisolated enum PrivionyxModelVersion: CaseIterable {
     /// The original schema, shipped before versioning existed. Reproduces what
     /// `CoreDataStack.makeModel()` built, so stores already on disk stay readable.
     case v1

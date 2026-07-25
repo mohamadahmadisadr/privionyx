@@ -1,6 +1,6 @@
 import Foundation
 
-struct DateExtractor {
+nonisolated struct DateExtractor {
     private let sanitizer = ReceiptTextSanitizer()
 
     /// Labels marking a date that is not the transaction's own. On an LCBO receipt the

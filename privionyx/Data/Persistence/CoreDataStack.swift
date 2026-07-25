@@ -1,27 +1,35 @@
 import CoreData
 import Foundation
 
-final class CoreDataStack {
+/// `@unchecked Sendable`, and only just: the container is handed to background contexts by
+/// design, and `viewContext` is bound to the main queue and read only from the main actor.
+/// `NSPersistentContainer` carries no `Sendable` conformance to lean on, so the claim is
+/// stated here rather than inferred. Everything else on this type is immutable — the loading
+/// steps are static so the failure message can be a `let` decided once, in `init`, rather
+/// than a `var` the annotation would have to cover as well.
+nonisolated final class CoreDataStack: @unchecked Sendable {
     let container: NSPersistentContainer
 
     /// Set when the on-disk store could not be opened and the app is running on a
     /// replacement. Nil on a normal launch. Surfaced rather than swallowed, because it means
     /// the receipts on screen are not the ones the user saved.
-    private(set) var storeLoadFailure: String?
+    let storeLoadFailure: String?
 
     /// - Parameter storeURL: Overrides the on-disk location. Defaults to the app's real
     ///   store; tests point it at a temporary file so they can exercise migration and
     ///   recovery without touching the user's data.
     init(inMemory: Bool = false, storeURL: URL? = nil) {
         let model = PrivionyxModelVersion.current.model
-        container = NSPersistentContainer(name: "PrivionyxModel", managedObjectModel: model)
+        let container = NSPersistentContainer(name: "PrivionyxModel", managedObjectModel: model)
+        self.container = container
 
         if inMemory {
             let description = NSPersistentStoreDescription()
             description.url = URL(fileURLWithPath: "/dev/null")
             description.type = NSInMemoryStoreType
             container.persistentStoreDescriptions = [description]
-            _ = load()
+            _ = Self.load(container)
+            storeLoadFailure = nil
         } else {
             let storeURL = storeURL ?? Self.storeURL()
 
@@ -31,22 +39,24 @@ final class CoreDataStack {
             do {
                 try Self.migrateStoreIfNeeded(at: storeURL, to: model)
             } catch {
-                // Not fatal on its own — the store may still open, and if it doesn't the
-                // recovery below takes over with a message that names this cause.
-                storeLoadFailure = "Your receipt database couldn't be upgraded: \(error.localizedDescription)"
+                // Not fatal on its own — the store may still open, and if it does the message
+                // is dropped below. If it doesn't, recovery takes over and names this cause.
             }
 
             container.persistentStoreDescriptions = [Self.description(for: storeURL)]
 
-            if let error = load() {
-                recover(from: error, storeURL: storeURL)
+            if let error = Self.load(container) {
+                storeLoadFailure = Self.recover(container, from: error, storeURL: storeURL)
             } else {
                 storeLoadFailure = nil
             }
         }
 
         container.viewContext.automaticallyMergesChangesFromParent = true
-        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+        // `NSMergeByPropertyObjectTrumpMergePolicy` is a global `var` of type `Any` in the
+        // Core Data overlay, which Swift 6 refuses as shared mutable state. Same policy, as
+        // the typed class property.
+        container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
     }
 
     // MARK: - Loading
@@ -62,7 +72,7 @@ final class CoreDataStack {
         return description
     }
 
-    private func load() -> Error? {
+    private static func load(_ container: NSPersistentContainer) -> Error? {
         var loadError: Error?
         container.loadPersistentStores { _, error in loadError = error }
         return loadError
@@ -72,17 +82,20 @@ final class CoreDataStack {
     /// costs the user their history rather than the ability to launch at all. The previous
     /// behaviour was `fatalError`, which turned any unreadable or unmigratable store into an
     /// unrecoverable crash on every launch.
-    private func recover(from error: Error, storeURL: URL) {
-        let quarantined = Self.quarantineStore(at: storeURL)
+    private static func recover(
+        _ container: NSPersistentContainer,
+        from error: Error,
+        storeURL: URL
+    ) -> String {
+        let quarantined = quarantineStore(at: storeURL)
 
-        if load() == nil {
-            storeLoadFailure = quarantined == nil
+        if load(container) == nil {
+            return quarantined == nil
                 ? "Your receipt database couldn't be opened and has been reset."
                 : """
                   Your receipt database couldn't be opened, so it was set aside and a new one \
                   started. The previous file is kept at \(quarantined!.lastPathComponent).
                   """
-            return
         }
 
         // Even a brand-new store won't open — the device is out of space, or the container
@@ -95,9 +108,9 @@ final class CoreDataStack {
             description.shouldAddStoreAsynchronously = false
             return description
         }()]
-        _ = load()
+        _ = load(container)
 
-        storeLoadFailure = """
+        return """
             Privionyx can't reach its database (\(error.localizedDescription)). It's running \
             without saving — anything you add now will be lost when you close the app.
             """

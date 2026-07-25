@@ -1,7 +1,19 @@
 import Foundation
 
 #if canImport(LiteRTLM)
-import LiteRTLM
+// Pre-concurrency because the package declares `swift-tools-version: 5.9` and adds no
+// concurrency settings, so it compiles in Swift 5 mode and none of its types carry Sendable
+// information. Its API guarantees that matters here: `Engine` is an actor whose
+// `createConversation()` returns a plain class, and `Conversation.sendMessage` is a
+// nonisolated `async` method — so a `Conversation` must leave one isolation domain to be
+// created and enter another to be used. Neither crossing is one this side can annotate away.
+//
+// What makes it safe is on this side: exactly one conversation exists at a time, it is
+// reached only through `LiteRTGemmaReceiptAssistant`, and that type is `@MainActor`, so calls
+// into the underlying C handle are ordered by the main actor rather than by luck. Drop this
+// attribute the day the package ships Swift 6 annotations — the compiler will then be able to
+// check what is asserted here.
+@preconcurrency import LiteRTLM
 #endif
 
 /// Assistant backed by Google's Gemma 4, running fully on-device through the LiteRT-LM
@@ -21,9 +33,9 @@ final class LiteRTGemmaReceiptAssistant: ReceiptAssistant {
     private var engine: Engine?
     /// URL the live engine was built from; a change means it must be rebuilt.
     private var engineModelURL: URL?
+    private var conversation: Conversation?
     /// Instructions the live conversation was grounded with; a mismatch means the receipt
     /// data changed and the conversation must be rebuilt so answers aren't stale.
-    private var conversation: Conversation?
     private var conversationInstructions: String?
     #endif
 

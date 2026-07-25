@@ -1,6 +1,6 @@
 import Foundation
 
-struct ReceiptParsingService {
+nonisolated struct ReceiptParsingService {
     private let mlExtractor: (any ReceiptMLExtractor)?
     private let sanitizer: ReceiptTextSanitizer
     private let amountExtractor: AmountExtractor

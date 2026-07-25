@@ -1,6 +1,6 @@
 import Foundation
 
-struct AmountExtractor {
+nonisolated struct AmountExtractor {
     private let sanitizer: ReceiptTextSanitizer
 
     init(sanitizer: ReceiptTextSanitizer = ReceiptTextSanitizer()) {

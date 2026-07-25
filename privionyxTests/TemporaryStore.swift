@@ -79,7 +79,7 @@ struct TemporaryStore {
 
     private func makeContext(using model: NSManagedObjectModel) throws -> NSManagedObjectContext {
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel: model)
-        try coordinator.addPersistentStore(type: .sqlite, at: url)
+        _ = try coordinator.addPersistentStore(type: .sqlite, at: url)
 
         let context = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
         context.persistentStoreCoordinator = coordinator

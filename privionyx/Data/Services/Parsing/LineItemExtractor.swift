@@ -10,7 +10,7 @@ import Foundation
 /// Items earn their keep twice over — they are worth showing, and their sum is a second,
 /// independent check on the subtotal, arrived at without reusing any figure from the
 /// totals block.
-struct LineItemExtractor {
+nonisolated struct LineItemExtractor {
     private let sanitizer: ReceiptTextSanitizer
 
     init(sanitizer: ReceiptTextSanitizer = ReceiptTextSanitizer()) {

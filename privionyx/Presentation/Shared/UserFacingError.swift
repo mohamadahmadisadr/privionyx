@@ -8,7 +8,7 @@ import Foundation
 /// or FileManager failure reads as "The operation couldn't be completed. (Cocoa error
 /// 133020.)". A disk-full save and a corrupt store were indistinguishable, and neither
 /// suggested an action.
-struct UserFacingError: Identifiable, Equatable {
+nonisolated struct UserFacingError: Identifiable, Equatable, Sendable {
     let id = UUID()
     let title: String
     let message: String
@@ -20,7 +20,7 @@ struct UserFacingError: Identifiable, Equatable {
 
 // MARK: - Operations
 
-extension UserFacingError {
+nonisolated extension UserFacingError {
     static func loadingReceipts(_ error: Error) -> Self {
         Self(
             title: "Couldn't load your receipts",
@@ -77,7 +77,7 @@ extension UserFacingError {
 
 // MARK: - Underlying causes
 
-private extension UserFacingError {
+private nonisolated extension UserFacingError {
     /// The message from an error that was written to be read by a person.
     ///
     /// The app's own error types conform to `LocalizedError` and carry real sentences.

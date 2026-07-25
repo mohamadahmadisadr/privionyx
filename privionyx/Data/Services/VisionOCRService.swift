@@ -2,7 +2,7 @@ import CoreGraphics
 import UIKit
 import Vision
 
-struct VisionOCRService {
+nonisolated struct VisionOCRService {
     private let imageProcessor: ReceiptImageProcessor
     private static let preferredLanguages = ["en-CA", "fr-CA", "en-US"]
 

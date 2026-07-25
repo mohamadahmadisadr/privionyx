@@ -1,6 +1,6 @@
 import Foundation
 
-struct ParsedReceiptData: Hashable {
+nonisolated struct ParsedReceiptData: Hashable, Sendable {
     var merchant: String
     var amount: Double
     var subtotal: Double?

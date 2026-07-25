@@ -1,6 +1,8 @@
 import Foundation
 
-enum ReceiptLineItemCoder {
+/// `nonisolated` because it runs inside the repository's background context, where line
+/// items are encoded on the way to a row and decoded on the way back.
+nonisolated enum ReceiptLineItemCoder {
     static func encode(_ items: [ReceiptLineItem]) -> String? {
         guard items.isEmpty == false,
               let data = try? JSONEncoder().encode(items),

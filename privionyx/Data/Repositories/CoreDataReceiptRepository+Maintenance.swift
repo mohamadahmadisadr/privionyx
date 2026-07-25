@@ -69,7 +69,7 @@ extension CoreDataReceiptRepository {
     /// image become permanently invisible. Cheap to check and expensive to miss, so it is
     /// checked every time and heals a store restored from an old backup.
     private func migrateLegacyImageBlobs() async throws {
-        try await stack.container.performBackgroundTask { context in
+        try await stack.container.performBackgroundTask { [fileStorage] context in
             let request = ReceiptManagedObject.fetchRequest()
             request.predicate = NSPredicate(format: "imagePath == nil AND imageData != nil")
 
@@ -80,7 +80,7 @@ extension CoreDataReceiptRepository {
                 defer { object.imageData = nil }
 
                 guard let data = object.imageData, data.isEmpty == false else { continue }
-                object.imagePath = try self.fileStorage.saveImageData(data, for: object.id, replacing: nil)
+                object.imagePath = try fileStorage.saveImageData(data, for: object.id, replacing: nil)
             }
 
             try context.save()

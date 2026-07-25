@@ -7,7 +7,7 @@ import Foundation
 /// "SUBTOTAL" and "228.02" are never returned as one result. A row here is those
 /// fragments joined back together in reading order, so `text` carries the label and its
 /// value the way the receipt prints them.
-struct OCRTextLine: Hashable {
+nonisolated struct OCRTextLine: Hashable, Sendable {
     let text: String
     let minX: CGFloat
     let maxX: CGFloat

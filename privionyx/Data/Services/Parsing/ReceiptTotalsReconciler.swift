@@ -10,7 +10,7 @@ import Foundation
 /// The reconciler only ever *fills in* or repairs a value it can prove wrong. It does not
 /// overwrite a figure that balances, because a confidently-read total is better evidence
 /// than a sum of two figures that may each be misread.
-struct ReceiptTotalsReconciler {
+nonisolated struct ReceiptTotalsReconciler {
     /// Receipts are written to the cent. The slack is for binary floating point, not for
     /// tolerating genuine disagreement.
     static let tolerance = 0.011

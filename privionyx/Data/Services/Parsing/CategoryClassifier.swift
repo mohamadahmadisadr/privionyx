@@ -1,6 +1,6 @@
 import Foundation
 
-struct CategoryClassifier {
+nonisolated struct CategoryClassifier {
     /// Keyword scoring covers the merchant plus the letterhead only. Scoring the whole
     /// receipt let item names decide the category — a restaurant that served "SPARKLING
     /// WATER" classified as Utilities off the word "water".

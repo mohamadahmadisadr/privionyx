@@ -1,6 +1,6 @@
 import Foundation
 
-struct MerchantExtractor {
+nonisolated struct MerchantExtractor {
     /// The merchant name lives in the letterhead. Searching the whole receipt lets a
     /// payment-network name or a footer mention outrank the actual header line.
     private static let headerDepth = 8

@@ -1,6 +1,6 @@
 import Foundation
 
-enum ReceiptCategory: String, CaseIterable, Identifiable {
+nonisolated enum ReceiptCategory: String, CaseIterable, Identifiable, Sendable {
     case housing = "Housing"
     case bills = "Bills"
     case gas = "Gas"

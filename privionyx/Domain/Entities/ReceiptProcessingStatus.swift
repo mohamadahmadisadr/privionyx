@@ -1,6 +1,6 @@
 import Foundation
 
-enum ReceiptProcessingStatus: String {
+nonisolated enum ReceiptProcessingStatus: String, Sendable {
     case scanned = "Scanned"
     case reviewed = "Reviewed"
     case flagged = "Needs Review"

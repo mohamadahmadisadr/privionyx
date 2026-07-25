@@ -1,6 +1,6 @@
 import Foundation
 
-struct ReceiptDraft: Identifiable, Hashable {
+nonisolated struct ReceiptDraft: Identifiable, Hashable, Sendable {
     let id: UUID
     var merchant: String
     var amount: Double
