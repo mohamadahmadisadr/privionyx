@@ -1,0 +1,31 @@
+{
+  "notes": "An invoice-style receipt that never prints the word TOTAL — the figure is labelled AMOUNT DUE, and BALANCE FORWARD above it is a larger number that belongs to the account rather than this purchase. Tests that the total is found by its own label and not by being the biggest figure on the page.",
+  "rawText": [
+    "MIDTOWN AUTO SERVICE",
+    "1120 YONGE ST",
+    "TORONTO ON",
+    "",
+    "INVOICE 20514",
+    "",
+    "OIL CHANGE SYNTHETIC        89.95",
+    "CABIN FILTER                42.00",
+    "LABOUR 0.5H                 55.00",
+    "--------------------------------",
+    "BALANCE FORWARD            940.00",
+    "SUBTOTAL                   186.95",
+    "HST 13%                     24.30",
+    "AMOUNT DUE                 211.25",
+    "",
+    "2026-03-05"
+  ],
+  "expected": {
+    "merchant": "Midtown Auto Service",
+    "date": "2026-03-05",
+    "total": 211.25,
+    "subtotal": 186.95,
+    "tax": 24.30,
+    "tip": null,
+    "category": "Bills",
+    "lineItemSum": null
+  }
+}

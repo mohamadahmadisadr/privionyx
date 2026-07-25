@@ -1,0 +1,29 @@
+{
+  "notes": "A member discount prints as a negative row between the items and the subtotal. lineItemSum is deliberately not asserted: the extractor does not model negative rows, so demanding a figure here would assert something the pipeline is not trying to do. What matters is that the discount does not become a field of its own and that the subtotal reflects it.",
+  "rawText": [
+    "SPORTS OUTLET",
+    "3401 DUFFERIN ST",
+    "TORONTO ON",
+    "",
+    "RUNNING SHOES             159.99",
+    "SOCKS 3PK                  24.99",
+    "MEMBER DISCOUNT           -20.00",
+    "--------------------------------",
+    "SUBTOTAL                  164.98",
+    "HST 13%                    21.45",
+    "TOTAL                     186.43",
+    "DEBIT                     186.43",
+    "",
+    "2026-03-07"
+  ],
+  "expected": {
+    "merchant": "Sports Outlet",
+    "date": "2026-03-07",
+    "total": 186.43,
+    "subtotal": 164.98,
+    "tax": 21.45,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}

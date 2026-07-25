@@ -1,0 +1,30 @@
+{
+  "notes": "The purchase timestamp shares its line with a clock time, and a return-by deadline is printed above it in larger type — the layout a plain top-down date scan reads in the wrong order. Also carries a transaction number whose digit groups have the shape of currency.",
+  "rawText": [
+    "LATE NIGHT PHARMACY",
+    "500 QUEEN ST W",
+    "TORONTO ON",
+    "",
+    "RETURN BY 04/10/2026",
+    "",
+    "IBUPROFEN 200MG            12.49",
+    "THROAT LOZENGES             6.99",
+    "--------------------------------",
+    "SUBTOTAL                   19.48",
+    "HST 13%                     2.53",
+    "TOTAL                      22.01",
+    "",
+    "TRANS 004821 TERM 07",
+    "03/11/2026 23:47"
+  ],
+  "expected": {
+    "merchant": "Late Night Pharmacy",
+    "date": "2026-03-11",
+    "total": 22.01,
+    "subtotal": 19.48,
+    "tax": 2.53,
+    "tip": null,
+    "category": "Health",
+    "lineItemSum": null
+  }
+}

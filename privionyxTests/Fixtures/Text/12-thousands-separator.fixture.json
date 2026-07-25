@@ -1,0 +1,27 @@
+{
+  "notes": "Four-figure amounts, so every value carries a thousands separator. Exercises currency parsing where the comma is a grouping mark rather than a decimal point — the opposite reading to the Quebec fixture, and the two cannot both be resolved by a single rule about commas.",
+  "rawText": [
+    "APPLIANCE WAREHOUSE",
+    "870 CALEDONIA RD",
+    "TORONTO ON",
+    "",
+    "REFRIGERATOR 26CF        1,899.00",
+    "DELIVERY & INSTALL          99.00",
+    "--------------------------------",
+    "SUBTOTAL                 1,998.00",
+    "HST 13%                    259.74",
+    "TOTAL                    2,257.74",
+    "",
+    "2026-03-09"
+  ],
+  "expected": {
+    "merchant": "Appliance Warehouse",
+    "date": "2026-03-09",
+    "total": 2257.74,
+    "subtotal": 1998.00,
+    "tax": 259.74,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}

@@ -65,7 +65,23 @@ struct CategoryClassifier {
         (.grocery, [
             "whole foods", "trader joe", "aldi", "metro", "loblaws", "no frills",
             "market", "grocery", "supermarket", "kroger", "safeway", "produce",
-            "marche", "supermarche", "epicerie", "fruiterie", "depanneur"
+            "marche", "supermarche", "epicerie", "fruiterie", "depanneur",
+            "convenience"
+        ]),
+        (.health, [
+            "pharmacy", "pharmacie", "drug mart", "shoppers drug", "rexall",
+            "jean coutu", "clinic", "clinique", "dental", "dentist", "optical",
+            "optometry", "medical", "hospital", "physio"
+        ]),
+        (.bills, [
+            "invoice", "insurance", "premium", "policy", "assurance", "facture"
+        ]),
+        (.entertainment, [
+            "cinema", "cineplex", "theatre", "theater", "netflix", "spotify",
+            "concert", "ticketmaster"
+        ]),
+        (.housing, [
+            "rent", "landlord", "property management", "storage", "loyer"
         ]),
         (.dining, [
             "coffee", "restaurant", "cafe", "tim hortons", "starbucks", "pizza",

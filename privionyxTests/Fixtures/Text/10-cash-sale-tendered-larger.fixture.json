@@ -1,0 +1,32 @@
+{
+  "notes": "Zero-rated groceries, so there is no subtotal and no tax line — just items, a total, and the cash exchange. This shape is why the magnitude-vs-label bug in amount scoring stayed invisible: reconciliation rescues a receipt whenever a subtotal exists, and every other fixture has one. Here nothing corroborates the total, so the tendered 80.00 is the only thing standing between the scorer and a wrong answer.",
+  "rawText": [
+    "BLOOR CONVENIENCE",
+    "1450 BLOOR ST W",
+    "TORONTO ON M6P 3L4",
+    "",
+    "MILK 2L                     5.49",
+    "BREAD WHOLE WHEAT           3.99",
+    "EGGS LARGE DOZEN            6.29",
+    "BANANAS 1.2KG               2.87",
+    "RICE 5KG                   18.99",
+    "CHICKEN BREAST 1.5KG       21.45",
+    "TOMATOES 1KG                5.49",
+    "--------------------------------",
+    "TOTAL                      64.57",
+    "CASH                       80.00",
+    "CHANGE                     15.43",
+    "",
+    "2026-03-11"
+  ],
+  "expected": {
+    "merchant": "Bloor Convenience",
+    "date": "2026-03-11",
+    "total": 64.57,
+    "subtotal": null,
+    "tax": null,
+    "tip": null,
+    "category": "Grocery",
+    "lineItemSum": null
+  }
+}

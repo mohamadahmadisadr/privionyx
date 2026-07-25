@@ -1,0 +1,28 @@
+{
+  "notes": "A pump pre-authorises a round amount before the fill and prints it on the receipt, so the largest figure on the page is not the total and never was. There is no subtotal to reconcile against, which is normal for fuel where tax is already in the posted price.",
+  "rawText": [
+    "PETRO-CANADA",
+    "2255 DUNDAS ST W",
+    "TORONTO ON",
+    "",
+    "PUMP 04",
+    "UNLEADED 87",
+    "42.11 L @ 1.549/L",
+    "",
+    "TOTAL                      65.23",
+    "PRE-AUTH                  100.00",
+    "VISA ************4821",
+    "APPROVED  00-471",
+    "",
+    "2026-03-11 08:14"
+  ],
+  "expected": {
+    "merchant": "Petro-Canada",
+    "date": "2026-03-11",
+    "total": 65.23,
+    "subtotal": null,
+    "tax": null,
+    "tip": null,
+    "category": "Gas"
+  }
+}
