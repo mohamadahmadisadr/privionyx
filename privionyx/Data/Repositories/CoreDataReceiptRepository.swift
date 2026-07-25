@@ -20,11 +20,10 @@ final class CoreDataReceiptRepository: ReceiptRepository {
     /// A read, and only a read. The legacy image-blob conversion used to happen here, which
     /// meant a query could mutate rows and save — so any fetch could fail on a write error,
     /// and two concurrent fetches could conflict. It runs in `performMaintenance()` now.
-    func fetchReceipts(matching query: SpendingQuery?) async throws -> [ReceiptItem] {
+    func fetchReceipts() async throws -> [ReceiptItem] {
         try await stack.container.performBackgroundTask { context in
             let request = ReceiptManagedObject.fetchRequest()
             request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
-            request.predicate = Self.makePredicate(for: query)
 
             return try context.fetch(request).map(Self.map)
         }
@@ -83,48 +82,6 @@ final class CoreDataReceiptRepository: ReceiptRepository {
             try context.save()
             try self.fileStorage.deleteImage(at: imagePath)
         }
-    }
-
-    private static func makePredicate(for query: SpendingQuery?) -> NSPredicate? {
-        guard let query else { return nil }
-
-        var predicates: [NSPredicate] = []
-
-        if let category = query.category {
-            predicates.append(NSPredicate(format: "category == %@", category.rawValue))
-        }
-
-        if let searchText = query.searchText, searchText.isEmpty == false {
-            predicates.append(
-                NSCompoundPredicate(
-                    orPredicateWithSubpredicates: [
-                        NSPredicate(format: "merchant CONTAINS[cd] %@", searchText),
-                        NSPredicate(format: "notes CONTAINS[cd] %@", searchText),
-                        NSPredicate(format: "customCategoryName CONTAINS[cd] %@", searchText),
-                        NSPredicate(format: "tagsText CONTAINS[cd] %@", searchText),
-                        NSPredicate(format: "rawText CONTAINS[cd] %@", searchText)
-                    ]
-                )
-            )
-        }
-
-        if let dateInterval = query.dateInterval {
-            predicates.append(NSPredicate(format: "date >= %@ AND date < %@", dateInterval.start as NSDate, dateInterval.end as NSDate))
-        }
-
-        if let minimumAmount = query.minimumAmount {
-            predicates.append(NSPredicate(format: "amount >= %lf", minimumAmount))
-        }
-
-        if let maximumAmount = query.maximumAmount {
-            predicates.append(NSPredicate(format: "amount <= %lf", maximumAmount))
-        }
-
-        if predicates.isEmpty {
-            return nil
-        }
-
-        return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
     }
 
     /// Maps a row without touching its image. The bytes are read on demand through

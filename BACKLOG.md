@@ -163,17 +163,21 @@ isolated static method called from a nonisolated context) and
 
 Expect this to be wide but mechanical.
 
-## 6. `SpendingQuery` dead predicate layer — *needs a decision*
+## 6. `SpendingQuery` dead predicate layer — *done, deleted*
 
-`CoreDataReceiptRepository.makePredicate` builds a complete predicate that nothing calls. All
-filtering happens in memory over `PrivionyxAppState.receipts`.
+Deleted, and further than this entry proposed. `makePredicate` was the visible half; the
+parameter feeding it was dead too. Every call site — three use-case callers and six tests —
+passed `nil`, so `SpendingQuery` itself had no consumers once the predicate went. All of it is
+gone: the type, the parameter, and the predicate builder. `fetchReceipts()` now takes nothing
+and the protocol says why.
 
-**Recommendation: delete it.** Every receipt is already resident, so routing search through
-Core Data would be slower per keystroke and would add a second source of truth. It only earns
-its place as part of moving the dashboard, analytics *and* assistant onto paged fetches —
-a far larger change than the layer itself, and one nothing currently demands.
-
-Decide the paged-fetch question first; the layer's fate follows from it.
+Paged fetches were the decision this hinged on, and the answer is no. Every receipt is already
+resident in `PrivionyxAppState.receipts`, so a store-side predicate would be slower per
+keystroke and would be a second answer to a question already answered. It only earns its place
+as part of moving the dashboard, analytics *and* assistant onto paged fetches together — far
+larger than the layer itself, and nothing currently demands it. Should that day come, this is
+a page of straightforward `NSPredicate` construction to write back, against a much clearer
+starting point than a builder nobody called.
 
 ---
 

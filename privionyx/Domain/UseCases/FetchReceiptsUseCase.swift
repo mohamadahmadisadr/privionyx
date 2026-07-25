@@ -7,7 +7,7 @@ struct FetchReceiptsUseCase {
         self.repository = repository
     }
 
-    func execute(query: SpendingQuery? = nil) async throws -> [ReceiptItem] {
-        try await repository.fetchReceipts(matching: query)
+    func execute() async throws -> [ReceiptItem] {
+        try await repository.fetchReceipts()
     }
 }

@@ -29,7 +29,7 @@ struct PersistenceRoundTripTests {
         // Second launch: brand-new stack over the same on-disk store.
         let secondStack = CoreDataStack(inMemory: false)
         let secondRepo = CoreDataReceiptRepository(stack: secondStack)
-        let fetched = try await secondRepo.fetchReceipts(matching: nil)
+        let fetched = try await secondRepo.fetchReceipts()
 
         let survivor = fetched.first { $0.merchant == marker }
 

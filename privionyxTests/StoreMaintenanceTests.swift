@@ -27,7 +27,7 @@ struct StoreMaintenanceTests {
         let repository = Self.makeRepository(for: store, fileStorage: fileStorage)
         try await repository.performMaintenance()
 
-        let migrated = try #require(try await repository.fetchReceipts(matching: nil).first)
+        let migrated = try #require(try await repository.fetchReceipts().first)
         defer { try? fileStorage.deleteImage(at: migrated.imagePath) }
 
         // fetchReceipts no longer falls back to reading the blob, so this is the only way
@@ -60,7 +60,7 @@ struct StoreMaintenanceTests {
         let repository = Self.makeRepository(for: store, fileStorage: fileStorage, defaults: defaults)
         try await repository.performMaintenance()
 
-        let migrated = try #require(try await repository.fetchReceipts(matching: nil).first)
+        let migrated = try #require(try await repository.fetchReceipts().first)
         defer { try? fileStorage.deleteImage(at: migrated.imagePath) }
 
         #expect(migrated.hasImage, "conversion must not be skipped on later launches")
@@ -79,7 +79,7 @@ struct StoreMaintenanceTests {
         let repository = Self.makeRepository(for: store)
         try await repository.performMaintenance()
 
-        #expect(try await repository.fetchReceipts(matching: nil).isEmpty)
+        #expect(try await repository.fetchReceipts().isEmpty)
     }
 
     /// The predicate once matched real merchant names and generic notes, which deleted
@@ -98,7 +98,7 @@ struct StoreMaintenanceTests {
         let repository = Self.makeRepository(for: store)
         try await repository.performMaintenance()
 
-        let survivors = try await repository.fetchReceipts(matching: nil).map(\.merchant)
+        let survivors = try await repository.fetchReceipts().map(\.merchant)
         #expect(Set(survivors) == Set(real))
     }
 
@@ -119,7 +119,7 @@ struct StoreMaintenanceTests {
         let repository = Self.makeRepository(for: store, defaults: defaults)
         try await repository.performMaintenance()
 
-        #expect(try await repository.fetchReceipts(matching: nil).count == 1)
+        #expect(try await repository.fetchReceipts().count == 1)
     }
 
     // MARK: - Helpers
