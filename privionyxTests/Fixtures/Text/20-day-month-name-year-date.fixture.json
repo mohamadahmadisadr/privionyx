@@ -1,0 +1,29 @@
+{
+  "notes": "The date prints as 11-MAR-2026. Hyphen-separated with an abbreviated month name is what several payment terminals emit, and it is the only date on the receipt.",
+  "rawText": [
+    "BLUEBIRD OPTICAL",
+    "1440 BATHURST ST",
+    "TORONTO ON",
+    "",
+    "LENS CLEANING KIT           14.00",
+    "MICROFIBRE CLOTHS 3PK        9.00",
+    "--------------------------------",
+    "SUBTOTAL                    23.00",
+    "HST 13%                      2.99",
+    "TOTAL                       25.99",
+    "VISA                        25.99",
+    "",
+    "11-MAR-2026 15:04",
+    "TERM 0417 APPR 004512"
+  ],
+  "expected": {
+    "merchant": "Bluebird Optical",
+    "date": "2026-03-11",
+    "total": 25.99,
+    "subtotal": 23.00,
+    "tax": 2.99,
+    "tip": null,
+    "category": "Health",
+    "lineItemSum": null
+  }
+}

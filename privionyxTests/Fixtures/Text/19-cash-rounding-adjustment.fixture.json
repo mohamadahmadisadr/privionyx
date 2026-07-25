@@ -1,0 +1,30 @@
+{
+  "notes": "Canada stopped minting the penny, so a cash sale prints a rounding adjustment below the total and the amount actually handed over differs from the total by a cent or two. The total is the transaction's own figure — the one that balances against subtotal and tax — not the rounded cash figure below it.",
+  "rawText": [
+    "HARBOUR CONVENIENCE",
+    "88 LAKESHORE RD",
+    "TORONTO ON",
+    "",
+    "CHIPS LARGE                  5.49",
+    "BOTTLED WATER                2.27",
+    "--------------------------------",
+    "SUBTOTAL                     7.76",
+    "HST 13%                      1.01",
+    "TOTAL                        8.77",
+    "CASH ROUNDING               -0.02",
+    "CASH TENDERED               10.00",
+    "CHANGE                       1.25",
+    "",
+    "03/05/2026 21:14"
+  ],
+  "expected": {
+    "merchant": "Harbour Convenience",
+    "date": "2026-03-05",
+    "total": 8.77,
+    "subtotal": 7.76,
+    "tax": 1.01,
+    "tip": null,
+    "category": "Grocery",
+    "lineItemSum": null
+  }
+}

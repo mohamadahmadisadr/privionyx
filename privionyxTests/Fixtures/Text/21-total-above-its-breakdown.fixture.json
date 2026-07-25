@@ -1,0 +1,31 @@
+{
+  "notes": "An invoice-style receipt prints what is owed at the top and the breakdown underneath, so the subtotal and tax appear below the total rather than above it and the total is not near the bottom of the page. The amount is labelled 'TOTAL DUE' rather than plain 'TOTAL'.",
+  "rawText": [
+    "MAPLEWOOD DENTAL CLINIC",
+    "2200 BAYVIEW AVE",
+    "TORONTO ON",
+    "",
+    "INVOICE 20418",
+    "DATE 03/12/2026",
+    "",
+    "TOTAL DUE                  231.00",
+    "",
+    "BREAKDOWN",
+    "EXAM AND CLEANING          180.00",
+    "FLUORIDE TREATMENT          40.00",
+    "SUBTOTAL                   220.00",
+    "GST 5%                      11.00",
+    "",
+    "PAID BY VISA               231.00"
+  ],
+  "expected": {
+    "merchant": "Maplewood Dental Clinic",
+    "date": "2026-03-12",
+    "total": 231.00,
+    "subtotal": 220.00,
+    "tax": 11.00,
+    "tip": null,
+    "category": "Health",
+    "lineItemSum": null
+  }
+}

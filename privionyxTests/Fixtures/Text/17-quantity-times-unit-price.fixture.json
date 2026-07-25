@@ -1,0 +1,31 @@
+{
+  "notes": "Weighed and multi-buy items print their arithmetic on a continuation row, so the item's name and its price are on different lines and each row carries two or three figures that are not the line total. Tax is charged on one taxable item rather than on the whole subtotal, so the tax is not the subtotal times a rate.",
+  "rawText": [
+    "FRESHCO SUPERMARKET",
+    "2280 EGLINTON AVE E",
+    "SCARBOROUGH ON",
+    "",
+    "BANANAS",
+    "  2.15 kg @ 1.52 /kg          3.27",
+    "YOGURT CUPS",
+    "  4 @ 1.29                    5.16",
+    "GROUND COFFEE                11.99",
+    "----------------------------------",
+    "SUBTOTAL                     20.42",
+    "HST 13%                       1.56",
+    "TOTAL                        21.98",
+    "DEBIT                        21.98",
+    "",
+    "03/06/2026 17:41"
+  ],
+  "expected": {
+    "merchant": "Freshco Supermarket",
+    "date": "2026-03-06",
+    "total": 21.98,
+    "subtotal": 20.42,
+    "tax": 1.56,
+    "tip": null,
+    "category": "Grocery",
+    "lineItemSum": null
+  }
+}

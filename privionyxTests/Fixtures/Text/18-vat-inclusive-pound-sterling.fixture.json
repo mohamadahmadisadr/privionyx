@@ -1,0 +1,28 @@
+{
+  "notes": "A UK receipt: amounts carry a pound sign rather than a dollar sign, the date is day-first, and VAT is already inside the total rather than added to a subtotal. The subtotal ground truth is the one judgement call here — nothing labelled 'subtotal' is printed, so the defensible reading is the net of VAT (12.10 - 2.02), which is what the receipt means even though it does not say it.",
+  "rawText": [
+    "THE GRAINGER CAFE",
+    "14 GRAINGER STREET",
+    "NEWCASTLE UPON TYNE NE1",
+    "",
+    "FLAT WHITE                  £3.40",
+    "SOURDOUGH TOAST             £5.95",
+    "ORANGE JUICE                £2.75",
+    "",
+    "TOTAL                      £12.10",
+    "VAT INCLUDED @ 20%          £2.02",
+    "",
+    "CARD PAYMENT               £12.10",
+    "14/03/2026 09:12"
+  ],
+  "expected": {
+    "merchant": "The Grainger Cafe",
+    "date": "2026-03-14",
+    "total": 12.10,
+    "subtotal": 10.08,
+    "tax": 2.02,
+    "tip": null,
+    "category": "Dining",
+    "lineItemSum": null
+  }
+}

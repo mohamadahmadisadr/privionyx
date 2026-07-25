@@ -1,0 +1,32 @@
+{
+  "notes": "Paid partly by gift card and partly by Visa, and the card's remaining balance is printed between the two — a figure larger than the total that carries a word the scorer treats as a positive signal ('balance', meant for 'balance due'). Two payment rows also mean the total is no longer the last money on the receipt.",
+  "rawText": [
+    "NORTHSIDE HARDWARE",
+    "1180 QUEEN ST W",
+    "TORONTO ON",
+    "",
+    "PAINT ROLLER SET           18.99",
+    "DROP SHEET 9X12            12.49",
+    "PRIMER 1L                  24.99",
+    "--------------------------------",
+    "SUBTOTAL                   56.47",
+    "HST 13%                     7.34",
+    "TOTAL                      63.81",
+    "GIFT CARD 6612             50.00",
+    "BALANCE REMAINING          86.19",
+    "VISA                       13.81",
+    "CHANGE                      0.00",
+    "",
+    "03/09/2026 11:26"
+  ],
+  "expected": {
+    "merchant": "Northside Hardware",
+    "date": "2026-03-09",
+    "total": 63.81,
+    "subtotal": 56.47,
+    "tax": 7.34,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}
