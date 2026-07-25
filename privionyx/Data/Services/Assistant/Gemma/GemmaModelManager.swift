@@ -43,10 +43,45 @@ final class GemmaModelManager {
     /// download started by a previous launch is reattached rather than restarted.
     private static let backgroundSessionIdentifier = "com.privionyx.gemma-model-download"
 
-    init(spec: GemmaModelSpec? = GemmaModelCatalog.modelForCurrentDevice()) {
+    /// Whether the user has opted into spending cellular data on the model.
+    ///
+    /// Absent means `false`, which is the default worth having: 2.6 GB is more than many
+    /// monthly allowances, and a background session will happily spend it without ever
+    /// surfacing the cost. Read from defaults at download time rather than cached, so the
+    /// toggle in Settings takes effect on the next attempt without any wiring between them.
+    static let allowsCellularDownloadKey = "privionyx.gemma.allowsCellularDownload"
+
+    private let defaults: UserDefaults
+
+    var allowsCellularDownload: Bool {
+        defaults.bool(forKey: Self.allowsCellularDownloadKey)
+    }
+
+    init(
+        spec: GemmaModelSpec? = GemmaModelCatalog.modelForCurrentDevice(),
+        defaults: UserDefaults = .standard
+    ) {
         self.spec = spec
+        self.defaults = defaults
         state = spec == nil ? .unsupported : .notDownloaded
         refreshState()
+    }
+
+    /// The request the download runs as.
+    ///
+    /// The constraint goes on the request rather than the session configuration because the
+    /// background session is created once and cached for the lifetime of the process — its
+    /// configuration is fixed long before the user can change their mind, and a resumed task
+    /// carries the original request's constraints with it.
+    ///
+    /// `allowsConstrainedNetworkAccess` is `false` regardless of the preference: Low Data Mode
+    /// is the user asking for restraint in the one place the system provides to ask, and a
+    /// multi-gigabyte download is exactly what they meant.
+    nonisolated static func makeRequest(for spec: GemmaModelSpec, allowsCellular: Bool) -> URLRequest {
+        var request = URLRequest(url: spec.remoteURL)
+        request.allowsExpensiveNetworkAccess = allowsCellular
+        request.allowsConstrainedNetworkAccess = false
+        return request
     }
 
     // MARK: - Derived
@@ -94,7 +129,7 @@ final class GemmaModelManager {
 
         let session = makeSession(for: spec)
         let task = resumeData.map { session.downloadTask(withResumeData: $0) }
-            ?? session.downloadTask(with: spec.remoteURL)
+            ?? session.downloadTask(with: Self.makeRequest(for: spec, allowsCellular: allowsCellularDownload))
         resumeData = nil
         self.task = task
         task.resume()

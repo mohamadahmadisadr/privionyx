@@ -165,9 +165,12 @@ empty and honestly so.
 
 Still open before a submission:
 
-- **A 2.6 GB download over cellular.** `URLSessionConfiguration.background` allows it by
-  default. `allowsExpensiveNetworkAccess = false` would confine it to Wi-Fi. This is a product
-  decision, not a bug — but a user who spent their data plan on it will say so in a review.
+- ~~**A 2.6 GB download over cellular.**~~ *Done.* Wi-Fi by default, with an opt-in toggle in
+  Settings. The constraint goes on the `URLRequest`, not the session configuration: the
+  background session is created once and cached for the process, so its configuration is fixed
+  before the user can change their mind, and a resumed task carries the original request's
+  constraints. `allowsConstrainedNetworkAccess` is `false` either way — Low Data Mode is the one
+  place the system gives a user to ask for restraint, and 2.6 GB is what they meant by it.
 - **Gemma's licence.** The weights are Apache-2.0 and ungated, but Google's Gemma Terms of Use
   travel with the model and want attribution. Where that notice belongs on screen is unsettled.
 - **The screenshot problem.** Review runs on a device with no receipts and no model

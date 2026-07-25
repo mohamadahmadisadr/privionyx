@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage(AssistantBackend.storageKey) private var assistantBackend: AssistantBackend = .fallback
     @State private var assistantAvailability: [AssistantBackend: AssistantAvailability] = [:]
     @State private var gemma = GemmaModelManager.shared
+    @AppStorage(GemmaModelManager.allowsCellularDownloadKey) private var allowsCellularGemmaDownload = false
 
     var body: some View {
         NavigationStack {
@@ -138,9 +139,14 @@ struct SettingsView: View {
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
 
             if backend == .localGemma {
-                gemmaDownloadControl
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 14)
+                VStack(alignment: .leading, spacing: 10) {
+                    gemmaDownloadControl
+                    if gemmaShowsNetworkPreference {
+                        gemmaCellularToggle
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
             }
         }
     }
@@ -209,6 +215,39 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    /// Only while there is a download left to do. Once the weights are on disk the preference
+    /// governs nothing, and a toggle that changes nothing is worse than no toggle.
+    private var gemmaShowsNetworkPreference: Bool {
+        switch gemma.state {
+        case .notDownloaded, .downloading, .failed: true
+        case .ready, .unsupported: false
+        }
+    }
+
+    private var gemmaCellularToggle: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: $allowsCellularGemmaDownload) {
+                Text("Allow download over cellular")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+            }
+            .tint(PrivionyxTheme.Colors.accent)
+
+            // Named in gigabytes rather than described as "large", because the number is the
+            // whole argument and most monthly allowances are smaller than it.
+            Text(allowsCellularGemmaDownload
+                 ? "\(gemmaSizeText) will be taken from your data plan. Low Data Mode is still respected."
+                 : "Waits for Wi-Fi. \(gemmaSizeText) is more than many monthly data allowances.")
+                .font(.system(size: 12))
+                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var gemmaSizeText: String {
+        gemma.spec.map(GemmaModelCatalog.sizeDescription) ?? "The model"
     }
 
     private var gemmaMemoryFloorText: String {

@@ -110,3 +110,50 @@ struct GemmaDownloadVerificationTests {
         #expect(try GemmaModelManager.sha256(ofFileAt: url) == inOneGo)
     }
 }
+
+/// A 2.6 GB download over cellular is not something to do quietly. The default is Wi-Fi, and
+/// Low Data Mode overrides the preference either way — it is the one place the system gives a
+/// user to ask for restraint, and a multi-gigabyte transfer is what they meant by it.
+@Suite("Gemma download network policy")
+struct GemmaDownloadNetworkPolicyTests {
+    private let spec = GemmaModelSpec.gemma4E2B
+
+    @Test("Cellular is refused by default")
+    func cellularRefusedByDefault() {
+        let request = GemmaModelManager.makeRequest(for: spec, allowsCellular: false)
+        #expect(request.allowsExpensiveNetworkAccess == false)
+    }
+
+    @Test("Cellular is allowed once the user opts in")
+    func cellularAllowedWhenOptedIn() {
+        let request = GemmaModelManager.makeRequest(for: spec, allowsCellular: true)
+        #expect(request.allowsExpensiveNetworkAccess)
+    }
+
+    @Test("Low Data Mode is respected whichever way the preference is set", arguments: [true, false])
+    func constrainedAccessAlwaysRefused(allowsCellular: Bool) {
+        let request = GemmaModelManager.makeRequest(for: spec, allowsCellular: allowsCellular)
+        #expect(request.allowsConstrainedNetworkAccess == false)
+    }
+
+    @MainActor
+    @Test("A manager with no stored preference does not use cellular")
+    func preferenceDefaultsToWiFiOnly() throws {
+        let suite = "privionyx.tests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        #expect(GemmaModelManager(spec: spec, defaults: defaults).allowsCellularDownload == false)
+    }
+
+    @MainActor
+    @Test("The stored preference is what the manager reads")
+    func preferenceIsReadFromDefaults() throws {
+        let suite = "privionyx.tests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(true, forKey: GemmaModelManager.allowsCellularDownloadKey)
+
+        #expect(GemmaModelManager(spec: spec, defaults: defaults).allowsCellularDownload)
+    }
+}
