@@ -149,6 +149,30 @@ Covered by `MerchantExtractorTests`, weighted toward the cases where the fallbac
 silent. `restaurant-primerib`, the image fixture that carries no merchant anywhere, still
 reports none.
 
+## App Store submission — *privacy manifest done, rest open*
+
+`privionyx/PrivacyInfo.xcprivacy` ships at the root of the app bundle, and
+`ITSAppUsesNonExemptEncryption` is `NO` in the generated Info.plist (verified in the built
+product, not just the build setting).
+
+The manifest was the one automated blocker: since spring 2024 App Store Connect rejects an
+upload that calls a required-reason API without declaring it, by email, before a human sees
+it. Three apply here and each names a real call site — `attributesOfItem` for the model file
+(`C617.1`), `volumeAvailableCapacityForImportantUsage` before the download (`E174.1`), and
+`UserDefaults` for the budget, merchant rules and migration flags (`CA92.1`). Boot time and
+active keyboards are not touched. Nothing is collected and nothing tracks, so those arrays are
+empty and honestly so.
+
+Still open before a submission:
+
+- **A 2.6 GB download over cellular.** `URLSessionConfiguration.background` allows it by
+  default. `allowsExpensiveNetworkAccess = false` would confine it to Wi-Fi. This is a product
+  decision, not a bug — but a user who spent their data plan on it will say so in a review.
+- **Gemma's licence.** The weights are Apache-2.0 and ungated, but Google's Gemma Terms of Use
+  travel with the model and want attribution. Where that notice belongs on screen is unsettled.
+- **The screenshot problem.** Review runs on a device with no receipts and no model
+  downloaded. Whatever a reviewer sees on first launch is what the app is judged on.
+
 ## 5. Swift 6 language mode
 
 `SWIFT_VERSION = 5.0` while the code is annotated as though it were 6, so none of the

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Nothing leaves the device. Receipts are parsed on-device by Vision and the built-in
+	     extractors, and the assistant is either Apple's on-device model or Gemma running
+	     locally. The only outbound request the app makes is the model download, which is a
+	     GET for a public file and carries no user data. -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!-- Required-reason APIs. Apple rejects an upload that uses one of these without a
+	     declaration, so each entry names a real call site rather than a plausible one. -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- GemmaModelManager reads the size of the downloaded model, both to verify a
+			     finished transfer and to decide on launch whether one is already installed.
+			     C617.1 covers metadata of files inside the app's own container, which is
+			     where Application Support/Privionyx/Models sits. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- GemmaModelManager.freeDiskSpace, called before starting a 2.6 GB download so
+			     the app can refuse rather than fill the device. E174.1 is exactly that: a
+			     check for sufficient space before writing files. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!-- The monthly budget, learned merchant rules, and the flags recording which
+			     one-off migrations have run. All of it this app's own, read back only by this
+			     app: CA92.1. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

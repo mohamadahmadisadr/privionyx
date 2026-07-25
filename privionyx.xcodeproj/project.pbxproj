@@ -345,6 +345,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/privionyx",
 				);
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Privionyx uses the camera to scan paper receipts entirely on your device.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Privionyx accesses your photo library so you can import receipt images for on-device processing.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -384,6 +385,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/privionyx",
 				);
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Privionyx uses the camera to scan paper receipts entirely on your device.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Privionyx accesses your photo library so you can import receipt images for on-device processing.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
