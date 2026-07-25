@@ -4,24 +4,55 @@ import Testing
 
 @Suite("Gemma model selection")
 struct GemmaModelCatalogTests {
-    private let sixGB: UInt64 = 6 * 1_073_741_824
-    private let fourGB: UInt64 = 4 * 1_073_741_824
-    private let sixteenGB: UInt64 = 16 * 1_073_741_824
-
-    @Test("A device at the memory floor gets the E2B model")
-    func atFloorIsSupported() {
-        let spec = GemmaModelCatalog.modelForCurrentDevice(physicalMemory: sixGB)
+    /// Figures as `ProcessInfo.physicalMemory` reports them, not as devices are marketed.
+    ///
+    /// The distinction is the whole point of this suite. It previously fed the floor its own
+    /// constant back — `6 * 1_073_741_824` against a floor of `6 * 1_073_741_824` — which is
+    /// an arithmetic identity rather than a device, and it passed while every real phone of
+    /// that tier was turned away.
+    @Test("A device that can run the model is offered it", arguments: [
+        // 6 GB tier: iPhone 15, 15 Plus, 14 Pro, 13 Pro.
+        5_500_000_000 as UInt64,
+        5_900_000_000,
+        // 8 GB tier: iPhone 15 Pro and later.
+        7_900_000_000,
+        16_000_000_000
+    ])
+    func supportedDeviceGetsModel(physicalMemory: UInt64) {
+        let spec = GemmaModelCatalog.modelForCurrentDevice(physicalMemory: physicalMemory)
         #expect(spec?.id == GemmaModelSpec.gemma4E2B.id)
     }
 
-    @Test("A high-memory device gets a supported model")
-    func highMemoryIsSupported() {
-        #expect(GemmaModelCatalog.modelForCurrentDevice(physicalMemory: sixteenGB) != nil)
+    @Test("A device that cannot run the model is not offered it", arguments: [
+        // 4 GB tier: iPhone 12, 13, 14, SE. The upper figure is what a 4 GB device reports
+        // when it reserves almost nothing, and it still has to fall below the floor.
+        3_700_000_000 as UInt64,
+        4_000_000_000,
+        3_000_000_000
+    ])
+    func unsupportedDeviceGetsNothing(physicalMemory: UInt64) {
+        #expect(GemmaModelCatalog.modelForCurrentDevice(physicalMemory: physicalMemory) == nil)
     }
 
-    @Test("A device below the floor is unsupported")
-    func belowFloorIsUnsupported() {
-        #expect(GemmaModelCatalog.modelForCurrentDevice(physicalMemory: fourGB) == nil)
+    /// A floor written in binary gigabytes is unreachable by the tier it names: 6 GiB is
+    /// 6.44 GB in decimal, which is more RAM than a "6 GB" phone contains. This is the
+    /// mistake that made the whole tier unsupported, so it is worth stating outright.
+    @Test("The floor is reachable by the smallest tier it admits")
+    func floorIsBelowNominalSixGigabytes() throws {
+        let floor = try #require(GemmaModelCatalog.lowestMemoryFloor)
+
+        #expect(floor < 6_000_000_000, "a 6 GB device can never report 6 GB or more")
+    }
+
+    @Test("The reported memory is shown exactly, not only rounded")
+    func memoryDescriptionCarriesTheByteCount() {
+        let text = GemmaModelCatalog.memoryDescription(5_500_000_000)
+
+        // The rounded figure is what makes it readable; the byte count is what makes a
+        // wrong verdict diagnosable. Compared without separators, which are the reader's
+        // locale's business rather than this test's.
+        #expect(text.filter(\.isNumber).contains("5500000000"))
+        #expect(text.contains("GB"))
     }
 
     @Test("The E2B spec points at the ungated LiteRT-LM file")

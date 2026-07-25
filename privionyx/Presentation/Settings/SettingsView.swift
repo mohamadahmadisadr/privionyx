@@ -152,7 +152,9 @@ struct SettingsView: View {
         switch gemma.state {
         case .unsupported:
             gemmaStatusRow(icon: "exclamationmark.triangle.fill", tint: PrivionyxTheme.Colors.tertiaryInk) {
-                Text("Not supported on this device — it doesn't have enough memory to run Gemma.")
+                // Both figures, because the verdict was wrong once and nothing on screen
+                // showed what was being compared.
+                Text("Not supported on this device — Gemma needs \(gemmaMemoryFloorText) and this device reports \(GemmaModelCatalog.memoryDescription()).")
                     .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
             }
 
@@ -207,6 +209,10 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    private var gemmaMemoryFloorText: String {
+        GemmaModelCatalog.lowestMemoryFloor.map(GemmaModelCatalog.memoryDescription) ?? "more memory"
     }
 
     private var gemmaSizeSuffix: String {
