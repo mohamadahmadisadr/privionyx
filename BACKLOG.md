@@ -47,10 +47,12 @@ before concluding anything is unused.
 
 ## Where things stand
 
-- Text corpus: **26 fixtures, 96% fully correct.** 100% on every field except merchant, which
-  is at 96%. The one open failure is item 4 below.
+- Text corpus: **26 fixtures, 100% fully correct**, every field at 100%.
 - Image corpus: 9 fixtures, all passing.
 - Full suite green.
+
+At 100% the corpus has stopped telling us anything until it grows. See "Corpus shapes still
+uncovered" — the last two batches returned two real bugs and then three.
 
 Fixture rules worth knowing before writing more: `lineItemSum` must be `null` on text
 fixtures, because line items need geometry and the raw-text path returns `[]` by design. When
@@ -117,19 +119,25 @@ reach a `1O2` buried inside `REF#1O2`.
 Covered by `ReceiptTextSanitizerTests`, which pins the tokens that must *not* change
 (`12oz`, `H2O`, `NO5`, separator rows) as firmly as the ones that must.
 
-## 4. Merchant name only in the footer
+## 4. Merchant name only in the footer — *done*
 
-Fixture `26-merchant-only-in-footer` — committed and failing. Extracts `MERCHANT COPY`.
+Fixture `26-merchant-only-in-footer` passes. `"merchant copy"` joined `"customer copy"` in
+`blockedTokens`, and `MerchantExtractor.signOffMerchant` reads the footer when the letterhead
+has produced nothing.
 
-Two problems, and fixing only the first makes the output worse:
+The footer is not scanned freely — that was the risk this entry named, and it is real:
+`INTERAC CHIP` and `APPROVED` both read as convincingly like a name as the vendor does. The
+fallback is anchored to the sign-off instead. A greeting that trails off on `AT` or `CHEZ` is
+a sentence whose object is the next line, and that next line is the only one it will consider.
+A plain `THANK YOU` introduces nobody and yields nothing. `"approval"` widened to `"approv"`
+on the way, so the terminal's `APPROVED` is blocked as well.
 
-- `MerchantExtractor.blockedTokens` knows `"customer copy"` but not `"merchant copy"`. The
-  line is uppercase, short and first, so it scores 32 against a threshold of 10.
-- The real name is in the footer sign-off, outside the 8-line header window. Blocking the
-  token alone yields "Unknown Merchant".
+The per-line rules moved into a shared `merchantCandidate`; position scoring stayed behind in
+`heuristicMerchant`, since it only means anything read from the top.
 
-A real fix needs a footer fallback when the header scores nothing — carefully, because
-footers carry payment-network names that would win just as easily.
+Covered by `MerchantExtractorTests`, weighted toward the cases where the fallback must stay
+silent. `restaurant-primerib`, the image fixture that carries no merchant anywhere, still
+reports none.
 
 ## 5. Swift 6 language mode
 
@@ -176,7 +184,9 @@ Decide the paged-fetch question first; the layer's fate follows from it.
 - **The image corpus is 9 fixtures against 26 text ones.** The end-to-end path is far less
   measured than parsing is.
 - **The corpus measures rather than gates.** Thresholds were deferred while the numbers were
-  still moving. At 92% with a known failure set, a regression floor is finally meaningful.
+  still moving. They have stopped: both corpora are at 100% with no known failures, so a
+  regression floor now costs nothing to set and is the only thing that would catch a
+  regression at all.
 
 ## Corpus shapes still uncovered
 
