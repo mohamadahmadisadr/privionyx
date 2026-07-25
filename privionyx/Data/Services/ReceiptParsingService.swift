@@ -69,10 +69,15 @@ struct ReceiptParsingService {
             tax: tax ?? mlExtraction?.tax,
             tip: tip ?? mlExtraction?.tip
         )
-        let resolvedAmount = reconciled.total ?? .zero
-        let subtotal = reconciled.subtotal
-        let resolvedTax = reconciled.tax
-        let resolvedTip = reconciled.tip
+        // Sign is applied after reconciliation, not before it. Every guard in the reconciler
+        // — "a subtotal above the total cannot be right", "tax beyond a fifth of the subtotal
+        // is a misread" — is written about magnitudes, and a return's figures balance exactly
+        // as a purchase's do. So the block is checked as printed and then flipped whole.
+        let sign: Double = amountExtractor.isRefund(from: structuredLines, positionedLines: positionedLines) ? -1 : 1
+        let resolvedAmount = reconciled.total.map { $0 * sign } ?? .zero
+        let subtotal = reconciled.subtotal.map { $0 * sign }
+        let resolvedTax = reconciled.tax.map { $0 * sign }
+        let resolvedTip = reconciled.tip.map { $0 * sign }
         let date = dateExtractor.extractDate(from: structuredLines) ?? mlExtraction?.date ?? .now
         let category = categoryClassifier.categorize(merchant: merchant, lines: structuredLines)
         let notes = ""

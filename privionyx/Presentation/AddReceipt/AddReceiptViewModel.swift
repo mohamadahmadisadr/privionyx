@@ -215,7 +215,10 @@ final class AddReceiptViewModel {
 
     func saveReceipt() async {
         let trimmedMerchant = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let amountValue = PrivionyxCurrencyParser.amount(from: amount), amountValue > 0, trimmedMerchant.isEmpty == false else {
+        // Non-zero rather than positive: a refund is a real receipt with a negative total, and
+        // rejecting it would leave the one case the parser now reads correctly unsaveable.
+        // Zero stays refused — that is a half-typed amount, not a transaction.
+        guard let amountValue = PrivionyxCurrencyParser.amount(from: amount), amountValue != 0, trimmedMerchant.isEmpty == false else {
             appState.lastError = .incompleteReceipt
             return
         }

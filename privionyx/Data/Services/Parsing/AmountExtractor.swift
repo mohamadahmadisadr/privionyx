@@ -67,6 +67,15 @@ struct AmountExtractor {
     }
 
     func extractAmounts(in line: String) -> [Double] {
+        signedAmounts(in: line).map(abs)
+    }
+
+    /// The amounts on a line, keeping the minus sign of any written negative.
+    ///
+    /// Everything that reads figures off a receipt wants magnitudes — a discount row and a
+    /// tax row are both just numbers to the scorer — so `extractAmounts` drops the sign.
+    /// Only `isRefund` needs it, to tell a return from a purchase.
+    func signedAmounts(in line: String) -> [Double] {
         let normalizedLine = line
             // Receipts print "12 34" for 12.34, but a run of digits followed by a date or
             // time separator is an identifier, not a price. "2026 05:43PM" became a 2026.05
@@ -81,7 +90,7 @@ struct AmountExtractor {
         // receipt prints a version string that recognition returned as "V124.03", which is
         // indistinguishable from currency by shape alone and won the total on a receipt
         // whose real total is 33.25.
-        let pattern = #"(?<![A-Za-z0-9])\$?\s*\d+(?:[,\s]\d{3})*(?:[.,]\d{2})"#
+        let pattern = #"(?<![A-Za-z0-9])(-\s*)?\$?\s*\d+(?:[,\s]\d{3})*(?:[.,]\d{2})"#
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
         let range = NSRange(normalizedLine.startIndex..<normalizedLine.endIndex, in: normalizedLine)
         return regex.matches(in: normalizedLine, range: range).compactMap { match in
@@ -89,6 +98,34 @@ struct AmountExtractor {
             return parseCurrencyValue(String(normalizedLine[matchRange]))
         }
     }
+
+    /// True when the receipt's bottom line is printed negative — a return rather than a sale.
+    ///
+    /// Only the total's own row is consulted, and only by word. A negative figure among the
+    /// items is an adjustment to a purchase that still cost money: a member discount, a
+    /// penny-rounding line. "subtotal" is one word, so it does not match either — a receipt
+    /// whose bottom line is missing should not be read as a refund on the strength of the row
+    /// above it.
+    func isRefund(from lines: [String], positionedLines: [OCRTextLine]) -> Bool {
+        let sources = positionedLines.isEmpty ? lines : positionedLines.map(\.text)
+
+        return sources.contains { line in
+            let normalized = sanitizer.normalizedTokenLine(line)
+            guard Self.totalsBlockTokens.contains(where: { MerchantExtractor.containsWord($0, in: normalized) })
+            else { return false }
+            // "TOTAL SAVINGS" and "TOTAL REWARDS" carry the word without being the bottom
+            // line, and both are routinely printed negative.
+            guard Self.notTheBottomLine.contains(where: normalized.contains) == false else { return false }
+            guard let last = signedAmounts(in: line).last else { return false }
+            return last < 0
+        }
+    }
+
+    private static let totalsBlockTokens = ["total", "amount due", "balance due"]
+
+    private static let notTheBottomLine = [
+        "saved", "savings", "discount", "reward", "loyalty", "points", "change"
+    ]
 
     func extractValue(from lines: [String], positionedLines: [OCRTextLine], matching tokens: [String]) -> Double? {
         if positionedLines.isEmpty == false,
