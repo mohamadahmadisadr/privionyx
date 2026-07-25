@@ -12,11 +12,27 @@ struct GemmaModelSpec: Identifiable, Equatable, Sendable {
     let repo: String
     /// The `.litertlm` file to download from that repo.
     let filename: String
-    /// Direct, ungated download URL for `filename`.
+    /// Direct, ungated download URL for `filename`, pinned to a repository revision rather
+    /// than a branch. A branch moves; `expectedBytes` and `sha256` describe one specific set
+    /// of bytes, and pointing at `main` would let the file change out from under both of them
+    /// and turn every download into a verification failure.
     let remoteURL: URL
-    /// Expected size on disk. Used for the progress denominator (when the server omits a
-    /// content length) and to reject a truncated or error-page download.
-    let approxBytes: Int64
+    /// Exact size on disk, in bytes. Used for the progress denominator when the server omits
+    /// a content length, to check free space before starting, and as the first and cheapest
+    /// rejection of a truncated download.
+    let expectedBytes: Int64
+    /// SHA-256 of `filename` at the pinned revision, lower-case hex.
+    ///
+    /// Size alone was the only check, and it passed anything over half the expected length —
+    /// so a truncated transfer reported `.ready` and failed later at load, where the cause is
+    /// invisible. A resumable background transfer makes truncation more likely rather than
+    /// less, since a resume that lands wrong produces a file of plausible length.
+    ///
+    /// Taken from Hugging Face's LFS metadata for the revision
+    /// (`/api/models/{repo}/tree/{revision}` → `lfs.oid`), which is the SHA-256 of the file's
+    /// contents. Verified once on install, never on launch: hashing 2.6 GB every time the
+    /// Settings screen appears would cost seconds for no new information.
+    let sha256: String
     /// Physical-RAM floor below which the model won't load reliably on-device.
     ///
     /// Compared against `ProcessInfo.physicalMemory`, which reports what the kernel leaves
@@ -33,8 +49,9 @@ struct GemmaModelSpec: Identifiable, Equatable, Sendable {
         displayName: "Gemma 4 E2B",
         repo: "litert-community/gemma-4-E2B-it-litert-lm",
         filename: "gemma-4-E2B-it.litertlm",
-        remoteURL: URL(string: "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm?download=true")!,
-        approxBytes: 2_600_000_000,
+        remoteURL: URL(string: "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/9262660a1676eed6d0c477ab1a86344430854664/gemma-4-E2B-it.litertlm?download=true")!,
+        expectedBytes: 2_588_147_712,
+        sha256: "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
         // Loading a ~2.6 GB model needs headroom, so this is the 6 GB tier and up. Set
         // between what the two tiers actually report rather than at either nominal figure:
         // a 4 GB device reports around 3.7-4.0 GB and a 6 GB device around 5.5-5.9 GB, so
@@ -65,7 +82,7 @@ enum GemmaModelCatalog {
 
     /// A human-readable size like "2.6 GB" for the given spec, for the download button.
     static func sizeDescription(for spec: GemmaModelSpec) -> String {
-        ByteCountFormatter.string(fromByteCount: spec.approxBytes, countStyle: .file)
+        ByteCountFormatter.string(fromByteCount: spec.expectedBytes, countStyle: .file)
     }
 
     /// What the device says it has, exact bytes included.

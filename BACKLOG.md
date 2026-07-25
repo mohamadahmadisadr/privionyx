@@ -88,19 +88,29 @@ which *are* charged to the process; and the KV cache and activations are anonymo
 or in GPU buffers under the Metal backend. Evidence the hardware is capable: Google's Edge
 Gallery runs the same model on an iPhone 15.
 
-## 2. Gemma: download checksum — *blocked*
+## 2. Gemma: download checksum — *done*
 
-`GemmaModelManager` validates a finished download by size alone
-(`downloadedSize > spec.approxBytes / 2`). A file over half the expected size reports
-`.ready` and then fails at load, and the resumable background transfer makes truncation more
-likely rather than less.
+It was never blocked. The digest did not need the file: Hugging Face publishes the SHA-256 of
+every LFS-backed file in its repository metadata, and
+`GET /api/models/{repo}/tree/{revision}` returns it as `lfs.oid` for a few kilobytes of JSON.
 
-Needs a SHA-256 on `GemmaModelSpec` for `gemma-4-E2B-it.litertlm` (~2.6 GB) from
-`litert-community/gemma-4-E2B-it-litert-lm`.
+`gemma-4-E2B-it.litertlm` is `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c`,
+exactly 2,588,147,712 bytes — not the 2,600,000,000 the spec had been guessing.
 
-**Blocked on a decision:** a digest cannot be verified for a file that hasn't been fetched,
-and inventing one is worse than the size check. Either supply the digest or approve the
-download.
+Three changes followed from having an exact figure:
+
+- `approxBytes` became `expectedBytes` and the install check became equality. The old
+  `> approxBytes / 2` would have passed a file 1.3 GB short.
+- The digest is verified once, on install, streamed a megabyte at a time inside the download
+  delegate — the only moment the file can still be rejected before the user has been told it
+  is ready. Never on launch: hashing 2.6 GB on every appearance of Settings would cost seconds
+  to learn nothing.
+- `remoteURL` is pinned to revision `9262660a`, not `main`. A digest describes one set of
+  bytes; a branch that moves would turn every download in the shipped app into a verification
+  failure.
+
+If the model is ever changed or a second one added, the digest and the size come from that
+same endpoint — there is no reason to fetch gigabytes to learn them.
 
 ## 3. Glyph repair misses an O beside the decimal point — *done*
 

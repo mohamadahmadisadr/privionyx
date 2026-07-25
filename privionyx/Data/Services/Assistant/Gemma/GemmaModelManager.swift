@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Observation
 
@@ -84,7 +85,7 @@ final class GemmaModelManager {
             break
         }
 
-        if let free = freeDiskSpace(), free < spec.approxBytes + 500_000_000 {
+        if let free = freeDiskSpace(), free < spec.expectedBytes + 500_000_000 {
             state = .failed("Not enough free space. Free up about \(GemmaModelCatalog.sizeDescription(for: spec)) and try again.")
             return
         }
@@ -156,17 +157,27 @@ final class GemmaModelManager {
         modelsDirectory().appendingPathComponent(spec.filename)
     }
 
-    /// Moves a freshly downloaded temp file into place, rejecting a truncated or error-page
-    /// download by size, and excludes the large blob from iCloud backup. Runs synchronously
-    /// inside the download delegate because the source temp file is deleted once the
-    /// callback returns.
+    /// Moves a freshly downloaded temp file into place once its bytes are confirmed to be the
+    /// ones the spec names, and excludes the large blob from iCloud backup. Runs synchronously
+    /// inside the download delegate because the source temp file is deleted once the callback
+    /// returns — which is also the only moment the download can be rejected without having
+    /// already told the user it is ready.
+    ///
+    /// Size is checked first because it is free and catches the ordinary truncation. The
+    /// digest is what catches the rest: a resumed transfer that stitched together the wrong
+    /// ranges, a captive-portal HTML page padded to length, a mirror serving a different
+    /// build. All of those used to reach `.ready` and fail at load, where nothing on screen
+    /// could explain why.
     nonisolated static func installDownload(from location: URL, spec: GemmaModelSpec) throws -> URL {
         let fileManager = FileManager.default
         let directory = modelsDirectory()
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let downloadedSize = (try? fileManager.attributesOfItem(atPath: location.path))?[.size] as? Int64 ?? 0
-        guard downloadedSize > spec.approxBytes / 2 else {
+        guard downloadedSize == spec.expectedBytes else {
+            throw GemmaDownloadError.corrupted
+        }
+        guard try sha256(ofFileAt: location).caseInsensitiveCompare(spec.sha256) == .orderedSame else {
             throw GemmaDownloadError.corrupted
         }
 
@@ -183,11 +194,33 @@ final class GemmaModelManager {
         return destination
     }
 
+    /// Hex SHA-256 of a file, read a megabyte at a time.
+    ///
+    /// Streamed rather than `Data(contentsOf:)` because the file is 2.6 GB and the whole point
+    /// of the runtime mapping it is that it never has to be resident.
+    nonisolated static func sha256(ofFileAt url: URL) throws -> String {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+
+        var hasher = SHA256()
+        while let chunk = try handle.read(upToCount: 1 << 20), chunk.isEmpty == false {
+            hasher.update(data: chunk)
+        }
+        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+    }
+
+    /// Whether the file on disk is the one that was installed.
+    ///
+    /// Size only. The digest was checked when the file was written and nothing but this app
+    /// writes to the directory, so re-hashing 2.6 GB on every appearance of the Settings
+    /// screen would buy nothing. Exact equality rather than a fraction: an install that
+    /// passed verification has exactly this length, so anything else is a file that was
+    /// truncated or replaced afterwards.
     private func isCompleteFile(at url: URL, spec: GemmaModelSpec) -> Bool {
         guard let size = (try? fileManager.attributesOfItem(atPath: url.path)[.size]) as? Int64 else {
             return false
         }
-        return size > spec.approxBytes / 2
+        return size == spec.expectedBytes
     }
 
     private func freeDiskSpace() -> Int64? {
@@ -259,7 +292,7 @@ final class GemmaModelManager {
         task = downloadTask
         let expected = downloadTask.countOfBytesExpectedToReceive > 0
             ? downloadTask.countOfBytesExpectedToReceive
-            : spec.approxBytes
+            : spec.expectedBytes
         let fraction = expected > 0 ? Double(downloadTask.countOfBytesReceived) / Double(expected) : 0
         state = .downloading(progress: min(max(fraction, 0), 1))
     }
@@ -300,7 +333,7 @@ private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unc
         totalBytesWritten: Int64,
         totalBytesExpectedToWrite: Int64
     ) {
-        let expected = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : spec.approxBytes
+        let expected = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : spec.expectedBytes
         let progress = expected > 0 ? Double(totalBytesWritten) / Double(expected) : 0
         Task { @MainActor [manager] in manager?.handleProgress(progress) }
     }

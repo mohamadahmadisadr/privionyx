@@ -63,6 +63,32 @@ struct GemmaModelCatalogTests {
         #expect(spec.remoteURL.absoluteString.hasSuffix("gemma-4-E2B-it.litertlm?download=true"))
     }
 
+    /// A digest describes one set of bytes. Pointing at a branch would let the repository push
+    /// a new build and turn every download from that moment on into a verification failure —
+    /// a shipped app breaking because somebody else committed.
+    @Test("The download URL is pinned to a revision rather than a branch")
+    func specPinsARevision() throws {
+        let url = GemmaModelSpec.gemma4E2B.remoteURL.absoluteString
+        let revision = try #require(
+            url.components(separatedBy: "/resolve/").last?.components(separatedBy: "/").first
+        )
+
+        let isHex = revision.allSatisfy(\.isHexDigit)
+
+        #expect(revision != "main")
+        #expect(revision.count == 40, "expected a full commit hash, got \(revision)")
+        #expect(isHex)
+    }
+
+    @Test("The E2B spec carries a full SHA-256")
+    func specCarriesADigest() {
+        let digest = GemmaModelSpec.gemma4E2B.sha256
+        let isLowerHex = digest.allSatisfy { $0.isHexDigit && $0.isUppercase == false }
+
+        #expect(digest.count == 64)
+        #expect(isLowerHex)
+    }
+
     @Test("Size description is human-readable")
     func sizeDescriptionIsFriendly() {
         let text = GemmaModelCatalog.sizeDescription(for: .gemma4E2B)
