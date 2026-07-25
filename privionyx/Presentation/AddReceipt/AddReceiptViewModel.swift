@@ -37,7 +37,7 @@ final class AddReceiptViewModel {
     /// for manual entry and for receipts opened from the list, where there is nothing to learn.
     private var recognizedMerchant = ""
     var notes = ""
-    var processingState = "Ready"
+    var stage: ReceiptCaptureStage = .idle
     var parsingProgress = 0.0
     var previewImage: UIImage?
     var showSavedToast = false
@@ -84,7 +84,7 @@ final class AddReceiptViewModel {
             rawText = initialDraft.rawText ?? ""
             notes = initialDraft.notes
             previewImage = initialDraft.imageData.flatMap(UIImage.init(data:))
-            processingState = "Ready For Review"
+            stage = .readyForReview
         }
     }
 
@@ -106,7 +106,7 @@ final class AddReceiptViewModel {
 
     var canSave: Bool {
         merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-        && parsedCurrencyAmount(amount).map { $0 > 0 } == true
+        && PrivionyxCurrencyParser.amount(from: amount).map { $0 > 0 } == true
     }
 
     var displayCategoryName: String {
@@ -126,91 +126,52 @@ final class AddReceiptViewModel {
     }
 
     var parsedAmount: Double? {
-        parsedCurrencyAmount(amount)
+        PrivionyxCurrencyParser.amount(from: amount)
     }
 
     var parsedSubtotal: Double? {
-        parsedCurrencyAmount(subtotal)
+        PrivionyxCurrencyParser.amount(from: subtotal)
     }
 
     var parsedTax: Double? {
-        parsedCurrencyAmount(tax)
+        PrivionyxCurrencyParser.amount(from: tax)
     }
 
     var parsedTip: Double? {
-        parsedCurrencyAmount(tip)
+        PrivionyxCurrencyParser.amount(from: tip)
     }
 
-    var reviewHints: [String] {
-        var hints: [String] = []
-
-        if merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            hints.append("Merchant needs a quick check.")
-        }
-
-        if parsedAmount == nil || parsedAmount == 0 {
-            hints.append("Total amount was not detected.")
-        }
-
-        if rawTextLineCount > 0, rawTextLineCount < 5 {
-            hints.append("Only a few text lines were found. The crop or lighting may need another pass.")
-        }
-
-        // A calculated figure is only as good as the two it came from, so name it rather
-        // than presenting it with the same confidence as something read off the paper.
-        // A total with no subtotal or tax beside it cannot be checked against anything.
-        // The figure may well be right, but nothing on the receipt corroborates it, and that
-        // is worth saying rather than presenting it with the same weight as one that adds up.
-        if totalsStatus == .unverified, parsedAmount != nil, parsedSubtotal == nil, parsedTax == nil {
-            hints.append("Only a total was found — there was nothing on the receipt to check it against.")
-        }
-
-        if derivedTotals.contains(.total) {
-            hints.append("Total was calculated from the subtotal and tax — the total line was not readable.")
-        }
-        if derivedTotals.contains(.subtotal) {
-            hints.append("Subtotal was calculated from the total and tax.")
-        }
-        if derivedTotals.contains(.tax) {
-            hints.append("Tax was calculated from the total and subtotal.")
-        }
-
-        if let parsedAmount, let parsedSubtotal {
-            let expected = parsedSubtotal + (parsedTax ?? 0) + (parsedTip ?? 0)
-            if abs(expected - parsedAmount) > 0.05 {
-                hints.append("Subtotal, tax, and tip do not fully match the total.")
-            }
-        }
-
-        return hints
+    /// Everything the review screen says about the extraction, derived purely from the
+    /// figures on the form. Lives in `ReceiptReviewAdvice` so it can be tested without a
+    /// view model, a container and a Core Data stack behind it.
+    var reviewAdvice: ReceiptReviewAdvice {
+        ReceiptReviewAdvice(
+            .init(
+                isManualEntry: stage == .manualEntry,
+                merchant: merchant,
+                total: parsedAmount,
+                subtotal: parsedSubtotal,
+                tax: parsedTax,
+                tip: parsedTip,
+                rawTextLineCount: rawTextLineCount,
+                derivedTotals: derivedTotals,
+                totalsStatus: totalsStatus
+            )
+        )
     }
 
-    var extractionTitle: String {
-        if processingState == "Manual Entry" {
-            return "Manual entry"
-        }
-        if reviewHints.isEmpty {
-            return "Extraction looks good"
-        }
-        return "Review recommended"
-    }
-
-    var extractionMessage: String {
-        if processingState == "Manual Entry" {
-            return "Fill in the receipt fields yourself, then save."
-        }
-        if reviewHints.isEmpty {
-            return "Merchant, total, and supporting details are ready for your confirmation."
-        }
-        return "OCR can be imperfect. Check the highlighted fields before saving."
-    }
+    var reviewHints: [String] { reviewAdvice.hints }
+    var extractionTitle: String { reviewAdvice.title }
+    var extractionMessage: String { reviewAdvice.message }
 
     var extractionIcon: String {
-        reviewHints.isEmpty ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+        reviewAdvice.confidence == .needsAttention ? "exclamationmark.triangle.fill" : "checkmark.seal.fill"
     }
 
     var extractionTint: Color {
-        reviewHints.isEmpty ? PrivionyxTheme.Colors.success : PrivionyxTheme.Colors.warning
+        reviewAdvice.confidence == .needsAttention
+            ? PrivionyxTheme.Colors.warning
+            : PrivionyxTheme.Colors.success
     }
 
     func presentPhotoPicker() {
@@ -228,7 +189,7 @@ final class AddReceiptViewModel {
     func startManualEntry() {
         recognizedMerchant = ""
         resetDraft()
-        processingState = "Manual Entry"
+        stage = .manualEntry
         isReviewPresented = true
     }
 
@@ -251,7 +212,7 @@ final class AddReceiptViewModel {
 
     func saveReceipt() async {
         let trimmedMerchant = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let amountValue = parsedCurrencyAmount(amount), amountValue > 0, trimmedMerchant.isEmpty == false else {
+        guard let amountValue = PrivionyxCurrencyParser.amount(from: amount), amountValue > 0, trimmedMerchant.isEmpty == false else {
             appState.lastErrorMessage = "Merchant and amount are required."
             return
         }
@@ -260,9 +221,9 @@ final class AddReceiptViewModel {
             id: editingReceiptID ?? UUID(),
             merchant: trimmedMerchant,
             amount: amountValue,
-            subtotal: parsedCurrencyAmount(subtotal),
-            tax: parsedCurrencyAmount(tax),
-            tip: parsedCurrencyAmount(tip),
+            subtotal: PrivionyxCurrencyParser.amount(from: subtotal),
+            tax: PrivionyxCurrencyParser.amount(from: tax),
+            tip: PrivionyxCurrencyParser.amount(from: tip),
             date: date,
             category: selectedCategory,
             customCategoryName: customCategoryName.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
@@ -289,7 +250,7 @@ final class AddReceiptViewModel {
                 )
             }
             didSaveSuccessfully = true
-            processingState = "Saved"
+            stage = .saved
 
             // Editing is its own screen that dismisses on success (the view observes
             // `didSaveSuccessfully`). Leave the fields intact and let it close, rather than
@@ -363,7 +324,7 @@ final class AddReceiptViewModel {
         cropQuadrilateral = .default
         isCropEditorPresented = true
         isDetectingCrop = true
-        processingState = "Adjust Crop"
+        stage = .adjustingCrop
 
         Task {
             let detectedQuadrilateral = await perspectiveService.detectReceiptQuadrilateral(in: normalizedImage)
@@ -403,7 +364,7 @@ final class AddReceiptViewModel {
         tagsText = ""
         rawText = ""
         notes = ""
-        processingState = "Ready"
+        stage = .idle
         parsingProgress = 0
         previewImage = nil
         ocrSourceImage = nil
@@ -424,37 +385,9 @@ final class AddReceiptViewModel {
             .filter { $0.isEmpty == false }
     }
 
-    private func parsedCurrencyAmount(_ text: String) -> Double? {
-        var value = text
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: #"[^0-9,.\-]"#, with: "", options: .regularExpression)
-
-        guard value.isEmpty == false, value != "-", value != ".", value != "," else {
-            return nil
-        }
-
-        if value.contains(","), value.contains(".") {
-            let commaIndex = value.lastIndex(of: ",") ?? value.startIndex
-            let dotIndex = value.lastIndex(of: ".") ?? value.startIndex
-            if commaIndex > dotIndex {
-                value = value.replacingOccurrences(of: ".", with: "")
-                value = value.replacingOccurrences(of: ",", with: ".")
-            } else {
-                value = value.replacingOccurrences(of: ",", with: "")
-            }
-        } else if let commaIndex = value.lastIndex(of: ",") {
-            let decimalDigits = value.distance(from: value.index(after: commaIndex), to: value.endIndex)
-            value = decimalDigits == 2
-                ? value.replacingOccurrences(of: ",", with: ".")
-                : value.replacingOccurrences(of: ",", with: "")
-        }
-
-        return Double(value)
-    }
-
     private func analyzeReceipt(from image: UIImage) {
         isParsingPresented = true
-        processingState = "Extracting Fields"
+        stage = .extracting
         parsingProgress = 0.2
 
         Task {
@@ -467,13 +400,13 @@ final class AddReceiptViewModel {
                 apply(draft: draft)
                 recognizedMerchant = draft.merchant
                 isParsingPresented = false
-                processingState = "Ready For Review"
+                stage = .readyForReview
                 parsingProgress = 1
                 try? await Task.sleep(for: .milliseconds(120))
                 isReviewPresented = true
             } catch {
                 isParsingPresented = false
-                processingState = "Needs Review"
+                stage = .needsReview
                 parsingProgress = 0
                 appState.lastErrorMessage = error.localizedDescription
             }
