@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Gemma's weights are ~2.6 GB. LiteRT-LM maps the .litertlm file with mmap(MAP_PRIVATE,
+	     PROT_READ|PROT_WRITE) and parses the flatbuffer in place, so the weight pages start out
+	     clean and file-backed and are not charged to the process footprint. That is not the whole
+	     story: the mapping is writable, so anything the runtime mutates in place becomes a dirty
+	     copy-on-write page at full cost; the Metal backend uploads weights into GPU buffers, which
+	     are charged to the process; and the KV cache and activations are anonymous throughout.
+	     Against a default limit of roughly 3 GB on a 6 GB device, that is too little headroom.
+	     This entitlement raises the limit and needs no review to use. -->
+	<key>com.apple.developer.kernel.increased-memory-limit</key>
+	<true/>
+</dict>
+</plist>
