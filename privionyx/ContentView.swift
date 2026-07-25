@@ -25,22 +25,24 @@ struct ContentView: View {
             await appState.initializeIfNeeded()
         }
         .preferredColorScheme(appearanceMode.colorScheme)
+            // Titled by what failed rather than by the app's name, so the first line already
+            // tells the user which of their actions didn't take effect.
             .alert(
-                "Privionyx",
+                appState.lastError?.title ?? "Privionyx",
                 isPresented: Binding<Bool>(
-                    get: { appState.lastErrorMessage != nil },
+                    get: { appState.lastError != nil },
                     set: { newValue in
                         if newValue == false {
-                            appState.lastErrorMessage = nil
+                            appState.lastError = nil
                         }
                     }
                 )
             ) {
                 Button("OK", role: .cancel) {
-                    appState.lastErrorMessage = nil
+                    appState.lastError = nil
                 }
             } message: {
-                Text(appState.lastErrorMessage ?? "")
+                Text(appState.lastError?.message ?? "")
             }
     }
 }

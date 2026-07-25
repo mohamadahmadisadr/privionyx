@@ -17,7 +17,9 @@ final class PrivionyxAppState {
     private(set) var isLaunching = false
     private(set) var launchProgress: Double = 0
     private(set) var launchStatusText = "Preparing app..."
-    var lastErrorMessage: String?
+    /// The most recent failure, in the form the user should see it. Cleared when the
+    /// alert is dismissed.
+    var lastError: UserFacingError?
 
     var viewContext: NSManagedObjectContext {
         container.viewContext
@@ -40,14 +42,14 @@ final class PrivionyxAppState {
             // with whatever it managed to load.
             hasBootstrapped = true
         } catch {
-            lastErrorMessage = error.localizedDescription
+            lastError = .loadingReceipts(error)
         }
 
         // Reported after loading rather than before, so it isn't overwritten by a load error
         // and so the user sees it against the receipts actually on screen. A reset store is
         // not something to discover by noticing an empty list.
         if let storeLoadFailure = container.storeLoadFailure {
-            lastErrorMessage = storeLoadFailure
+            lastError = .storeUnavailable(storeLoadFailure)
         }
     }
 
@@ -82,7 +84,7 @@ final class PrivionyxAppState {
         do {
             try await loadReceipts()
         } catch {
-            lastErrorMessage = error.localizedDescription
+            lastError = .loadingReceipts(error)
         }
     }
 

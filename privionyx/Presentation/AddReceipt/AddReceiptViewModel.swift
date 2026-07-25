@@ -183,7 +183,7 @@ final class AddReceiptViewModel {
 
     func presentCamera() {
         guard VNDocumentCameraViewController.isSupported else {
-            appState.lastErrorMessage = "Document scanning is not supported on this device."
+            appState.lastError = .scanningUnsupported
             return
         }
         isDocumentScannerPresented = true
@@ -216,7 +216,7 @@ final class AddReceiptViewModel {
     func saveReceipt() async {
         let trimmedMerchant = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let amountValue = PrivionyxCurrencyParser.amount(from: amount), amountValue > 0, trimmedMerchant.isEmpty == false else {
-            appState.lastErrorMessage = "Merchant and amount are required."
+            appState.lastError = .incompleteReceipt
             return
         }
 
@@ -269,7 +269,7 @@ final class AddReceiptViewModel {
                 showSavedToast = false
             }
         } catch {
-            appState.lastErrorMessage = error.localizedDescription
+            appState.lastError = .savingReceipt(error)
         }
     }
 
@@ -406,7 +406,7 @@ final class AddReceiptViewModel {
             } catch {
                 isParsingPresented = false
                 stage = .needsReview
-                appState.lastErrorMessage = error.localizedDescription
+                appState.lastError = .readingReceipt(error)
             }
         }
     }
