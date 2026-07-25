@@ -47,8 +47,8 @@ before concluding anything is unused.
 
 ## Where things stand
 
-- Text corpus: **26 fixtures, 92% fully correct.** 100% on total, date, category and tip;
-  96% on merchant, subtotal and tax. The two open failures are items 3 and 4 below.
+- Text corpus: **26 fixtures, 96% fully correct.** 100% on every field except merchant, which
+  is at 96%. The one open failure is item 4 below.
 - Image corpus: 9 fixtures, all passing.
 - Full suite green.
 
@@ -100,17 +100,22 @@ Needs a SHA-256 on `GemmaModelSpec` for `gemma-4-E2B-it.litertlm` (~2.6 GB) from
 and inventing one is worse than the size check. Either supply the digest or approve the
 download.
 
-## 3. Glyph repair misses an O beside the decimal point
+## 3. Glyph repair misses an O beside the decimal point — *done*
 
-Fixture `24-faded-print-glyph-damage` — committed and failing. Subtotal and tax both come
-back `nil`.
+Fixture `24-faded-print-glyph-damage` passes. `ReceiptTextSanitizer.repairedDigitGlyphs` is
+now shared with `DateExtractor`, which no longer keeps its own copy.
 
-`ReceiptTextSanitizer.cleanedReceiptLine` repairs `(?<=\d)[oO](?=\d)` — a zero *between* two
-digits. Faded thermal print puts it at the edge instead: `2.O2`, `7.5O`, `15.5O`. The
-lookbehind sees a period and declines.
+Not done the way this entry proposed. Lifting `DateExtractor`'s `(?<=\d)(o|O)\b` in verbatim
+would have turned `H2O` into `H20` — a word boundary fires against a space as readily as
+against a decimal point, and the O ends the token in `H2O` exactly as it does in `7.5O`. What
+tells them apart is the rest of the token, so the edge repair is token-scoped: a
+whitespace-delimited token made only of digits, `oOlI` and numeric punctuation, carrying at
+least one surviving digit, is a figure and gets repaired; anything with another letter in it
+is left alone. The between-digits rules stayed, because they run over the whole line and still
+reach a `1O2` buried inside `REF#1O2`.
 
-`DateExtractor` already carries the rule this needs (`(?<=\d)(o|O)\b` → `0`); the fix is to
-lift that idea into the sanitizer so both paths share it. Smallest item on this list.
+Covered by `ReceiptTextSanitizerTests`, which pins the tokens that must *not* change
+(`12oz`, `H2O`, `NO5`, separator rows) as firmly as the ones that must.
 
 ## 4. Merchant name only in the footer
 

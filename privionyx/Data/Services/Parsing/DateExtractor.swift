@@ -1,6 +1,8 @@
 import Foundation
 
 struct DateExtractor {
+    private let sanitizer = ReceiptTextSanitizer()
+
     /// Labels marking a date that is not the transaction's own. On an LCBO receipt the
     /// return-by date is printed lower and larger than the purchase timestamp, and a plain
     /// top-down scan reaches it first.
@@ -52,9 +54,10 @@ struct DateExtractor {
         let formatter = makePOSIXFormatter()
 
         for line in lines {
-            let sanitizedLine = line
-                .replacingOccurrences(of: #"(?i)\b(o|O)(?=\d)"#, with: "0", options: .regularExpression)
-                .replacingOccurrences(of: #"(?<=\d)(o|O)\b"#, with: "0", options: .regularExpression)
+            // Callers usually hand over lines the sanitizer has already been through, but not
+            // always — the Core ML path and the tests pass raw ones — so the repair is applied
+            // here too. It is idempotent, so running twice costs nothing.
+            let sanitizedLine = sanitizer.repairedDigitGlyphs(line)
                 .replacingOccurrences(of: ",", with: " ")
             let slashCandidates = sanitizedLine.split(whereSeparator: \.isWhitespace)
 
