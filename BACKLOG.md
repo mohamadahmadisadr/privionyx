@@ -171,8 +171,12 @@ Still open before a submission:
   before the user can change their mind, and a resumed task carries the original request's
   constraints. `allowsConstrainedNetworkAccess` is `false` either way — Low Data Mode is the one
   place the system gives a user to ask for restraint, and 2.6 GB is what they meant by it.
-- **Gemma's licence.** The weights are Apache-2.0 and ungated, but Google's Gemma Terms of Use
-  travel with the model and want attribution. Where that notice belongs on screen is unsettled.
+- ~~**Gemma's licence.**~~ *Done.* `AcknowledgementsView`, reached from the About card, credits
+  Gemma 4 E2B and LiteRT-LM (both Google, both Apache-2.0 — confirmed from the Hugging Face
+  model card's `license:` field and the package's own `LICENSE`, and neither ships a `NOTICE`
+  file) and reproduces the Apache-2.0 text in full from `Resources/Apache-2.0.txt`. In full and
+  on-device rather than linked: a licence behind a network request is not a licence the user
+  has. Verified present at the bundle root of the built product.
 - **The screenshot problem.** Review runs on a device with no receipts and no model
   downloaded. Whatever a reviewer sees on first launch is what the app is judged on.
 
@@ -235,7 +239,23 @@ starting point than a builder nobody called.
 
 ---
 
-## Smaller things, noticed and deliberately left
+## An intermittent segv in the test run — *seen once, unexplained*
+
+One full-suite run died with `Test crashed with signal segv`: 25 tests passed, then everything
+after was reported failed at 0.000 seconds, which is the shape of the test process dying rather
+than of 175 assertions going wrong. The last test to actually run was
+`RuleBasedReceiptAssistantTests/saving()`.
+
+It did not reproduce — the same commit ran clean immediately before and immediately after (200
+passed, 0 failed), and the suite that reported the first failure passes alone. So it is not a
+regression from the change it happened during, and nothing was done about it.
+
+Worth writing down rather than dismissing: a segv is a real crash somewhere, and the suite runs
+in parallel across clones, so the likely candidates are the tests that touch shared process
+state — the `UserDefaults` suites created and torn down by the Gemma tests, the temporary Core
+Data stores, or `Task.detached` in the memory-footprint sampler. If it recurs, the way in is
+`xcrun xcresulttool get test-results summary` on the failing bundle, and then the crash log
+under the `.xcresult`.
 
 - **`DashboardViewModel` filters `amount > 0`** in three display spots (category breakdown,
   lowest-spending category, peak bucket). Now that refunds parse negative, a category whose

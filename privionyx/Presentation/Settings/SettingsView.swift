@@ -300,11 +300,28 @@ struct SettingsView: View {
             aboutRow(icon: "dollarsign.circle.fill", label: "Currency", value: PrivionyxCurrencyFormatter.currentCurrencyCode)
             GlassRowDivider()
             aboutRow(icon: "info.circle.fill", label: "Version", value: appVersionText)
+            GlassRowDivider()
+            NavigationLink {
+                AcknowledgementsView()
+            } label: {
+                aboutRow(
+                    icon: "text.document.fill",
+                    label: "Acknowledgements",
+                    value: "",
+                    showsChevron: true
+                )
+            }
+            .buttonStyle(.plain)
         }
         .privionyxGlass(cornerRadius: 16)
     }
 
-    private func aboutRow(icon: String, label: String, value: String) -> some View {
+    private func aboutRow(
+        icon: String,
+        label: String,
+        value: String,
+        showsChevron: Bool = false
+    ) -> some View {
         HStack(spacing: 12) {
             GlassIconTile(systemImage: icon, size: 30, isAccented: false)
 
@@ -317,8 +334,15 @@ struct SettingsView: View {
             Text(value)
                 .font(.system(size: 13.5, weight: .semibold))
                 .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+            }
         }
         .padding(14)
+        .contentShape(Rectangle())
     }
 
     private var appVersionText: String {
