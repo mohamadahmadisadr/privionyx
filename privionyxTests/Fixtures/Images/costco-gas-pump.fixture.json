@@ -1,0 +1,14 @@
+{
+  "notes": "User-reported: wrong data. A Costco GAS BAR transaction record, photographed sideways - the paper runs left to right while its text reads bottom to top, and the photo carries no EXIF rotation to say so. The category trap is the point: 'costco' is a Shopping keyword, and the classifier only fell through to the structural gas signals ('Pump #', 'Litres', 'Unleaded', 'Price/Litre') when keyword scoring scored nothing, so a fill-up landed in Shopping. No 'Total' label anywhere - the amount is carried by 'Fuel Sale', 'Amount' and 'Amount due'. HST 5.81 is included in the 50.46 rather than added to it; the subtotal is therefore the net of tax, derived rather than printed, matching the reading 18-vat-inclusive-pound-sterling settles on.",
+  "image": "costco-gas-pump.heic",
+  "expected": {
+    "merchant": "Costco",
+    "date": "2026-04-08",
+    "total": 50.46,
+    "subtotal": 44.65,
+    "tax": 5.81,
+    "tip": null,
+    "category": "Gas",
+    "lineItemSum": null
+  }
+}

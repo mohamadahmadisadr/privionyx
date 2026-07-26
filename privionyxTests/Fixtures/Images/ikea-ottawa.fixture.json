@@ -1,0 +1,14 @@
+{
+  "notes": "User-reported: wrong data. Photographed sideways, and the paper is printed edge to edge with a repeating 'IKEA. IKEA. IKEA.' watermark band along the bottom that OCR reads as body text. Traps: 'Total items: 2' sits directly under 'Total 11.50' and is a count, not money; the store-hours header 'MON-FRI 10-9, SAT 10-8, SUN 10-6' and the phone number 1-866-666-4532 are digit runs near the top; the footer's '90 days' return policy and 'HST # R102453032' compete with the real 22 Nov 2025 transaction date.",
+  "image": "ikea-ottawa.heic",
+  "expected": {
+    "merchant": "IKEA",
+    "date": "2025-11-22",
+    "total": 11.50,
+    "subtotal": 10.18,
+    "tax": 1.32,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}

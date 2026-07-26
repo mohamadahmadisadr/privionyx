@@ -234,6 +234,16 @@ nonisolated struct AmountExtractor {
         let expectedFromSubtotal = explicitSubtotal.map { $0 + (tax ?? 0) + (tip ?? 0) }
         let expectedFromItems = lineItemSum > 0 ? lineItemSum + (tax ?? 0) + (tip ?? 0) : nil
 
+        // Whether the items can be trusted to be *all* of the items. Recognition drops an
+        // item row often enough that this cannot be assumed: an IKEA receipt whose second
+        // article never reached OCR summed to 3.99, and that was enough to strike out its
+        // printed "total 11.50" in favour of the one item that had been read. An explicit
+        // subtotal the items add up to is the receipt vouching for the list; without it the
+        // sum is a lower bound, and a lower bound must not veto a labelled total.
+        let itemsAreCorroborated = explicitSubtotal.map {
+            abs(lineItemSum - $0) <= ReceiptTotalsReconciler.tolerance
+        } ?? false
+
         return candidates
             .map { candidate in
                 var score = candidate.score
@@ -244,7 +254,7 @@ nonisolated struct AmountExtractor {
 
                 if let expectedFromItems {
                     score -= Int(abs(candidate.amount - expectedFromItems) * 6)
-                    if candidate.amount > expectedFromItems * 2.2 {
+                    if itemsAreCorroborated, candidate.amount > expectedFromItems * 2.2 {
                         score -= 120
                     }
                 }

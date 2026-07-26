@@ -190,6 +190,13 @@ nonisolated struct MerchantExtractor {
         ("Metro", ["metro"]),
         ("No Frills", ["no frills", "nofrills"]),
         ("Loblaws", ["loblaws"]),
-        ("Amazon", ["amazon"])
+        ("Amazon", ["amazon"]),
+        // Chains whose letterhead the heuristic reads but names wrong: IKEA prints its
+        // address on the same row as its greeting, and Lindt prints a tagline under the
+        // brand that scores higher than the brand does.
+        ("IKEA", ["ikea"]),
+        ("Old Navy", ["old navy", "oldnavy"]),
+        ("LCBO", ["lcbo"]),
+        ("Lindt", ["lindt"])
     ]
 }

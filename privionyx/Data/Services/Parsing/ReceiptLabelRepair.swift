@@ -25,9 +25,16 @@ nonisolated enum ReceiptLabelRepair {
         "deposit", "purchase", "charge", "change", "gratuity"
     ]
 
-    /// Short words are excluded: at four characters or fewer, an edit distance of one
+    /// Short words are excluded: at three characters or fewer, an edit distance of one
     /// reaches too many unrelated words to be safe ("tax" would swallow "tab" and "max").
-    private static let minimumLength = 5
+    ///
+    /// Four is admitted because of what it can actually reach. A four-letter word is within
+    /// one edit only of a five-letter entry, and "total" is the only one — so the words this
+    /// opens up are exactly "otal", "ttal", "toal", "totl" and "tota", none of which is a
+    /// word in its own right. An IKEA receipt lost its total to precisely this: recognition
+    /// dropped the leading glyph, "otal 11.50" matched no rule, and an item price stood in
+    /// as the total.
+    private static let minimumLength = 4
 
     static func repaired(_ text: String) -> String {
         text

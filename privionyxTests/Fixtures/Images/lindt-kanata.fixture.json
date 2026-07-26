@@ -1,0 +1,14 @@
+{
+  "notes": "User-reported: wrong data. Receipt lies SIDEWAYS in the frame - the paper runs left to right while the text reads bottom to top. Traps: cash tendered 42.00 is larger and more prominent than the 41.29 total; a 'You save C$9.13' promo line and a '-9.13' P&M Promo row are both negative-ish amounts; the weight lines print '0.539 kg Gross' style quantities and '89.90 CAD/kg', which are not money; 'Rounding -0.01' adjusts the cash tender, not the total.",
+  "image": "lindt-kanata.heic",
+  "expected": {
+    "merchant": "Lindt",
+    "date": "2026-04-18",
+    "total": 41.29,
+    "subtotal": 36.54,
+    "tax": 4.75,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}

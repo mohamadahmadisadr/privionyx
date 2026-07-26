@@ -73,11 +73,12 @@ nonisolated struct VisionOCRService {
             .map(Locale.Language.init(identifier:))
 
         let observations = try await request.perform(on: cgImage, orientation: nil)
-        return observations.flatMap { observation in
+        let quads = observations.flatMap { observation in
             observation.document.text.lines.compactMap { line in
-                Self.fragment(text: line.transcript, box: line.boundingRegion.boundingBox.cgRect)
+                Self.quad(text: line.transcript, corners: line.boundingRegion.normalizedPoints)
             }
         }
+        return Self.uprightFragments(from: quads)
     }
 
     private static func recognizedTextFragments(in cgImage: CGImage) throws -> [RecognizedFragment] {
@@ -91,23 +92,126 @@ nonisolated struct VisionOCRService {
 
         try VNImageRequestHandler(cgImage: cgImage, options: [:]).perform([request])
 
-        return (request.results ?? []).compactMap { observation in
+        let quads = (request.results ?? []).compactMap { observation -> RecognizedQuad? in
             guard let candidate = observation.topCandidates(1).first else { return nil }
-            return Self.fragment(text: candidate.string, box: observation.boundingBox)
+            return Self.quad(
+                text: candidate.string,
+                topLeft: observation.topLeft,
+                topRight: observation.topRight,
+                bottomRight: observation.bottomRight,
+                bottomLeft: observation.bottomLeft
+            )
         }
+        return Self.uprightFragments(from: quads)
     }
 
-    private static func fragment(text: String, box: CGRect) -> RecognizedFragment? {
+    private static func quad(text: String, corners: [SIMD2<Float>]) -> RecognizedQuad? {
+        // Vision orders a region's points from its top-left, clockwise in the text's frame.
+        guard corners.count == 4 else { return nil }
+        let points = corners.map { CGPoint(x: CGFloat($0.x), y: CGFloat($0.y)) }
+        return Self.quad(
+            text: text,
+            topLeft: points[0],
+            topRight: points[1],
+            bottomRight: points[2],
+            bottomLeft: points[3]
+        )
+    }
+
+    private static func quad(
+        text: String,
+        topLeft: CGPoint,
+        topRight: CGPoint,
+        bottomRight: CGPoint,
+        bottomLeft: CGPoint
+    ) -> RecognizedQuad? {
         let cleaned = Self.cleanedOCRText(text)
         guard cleaned.isEmpty == false else { return nil }
 
-        return RecognizedFragment(
+        return RecognizedQuad(
             text: cleaned,
-            minX: box.minX,
-            maxX: box.maxX,
-            midY: box.midY,
-            height: box.height
+            topLeft: topLeft,
+            topRight: topRight,
+            bottomRight: bottomRight,
+            bottomLeft: bottomLeft
         )
+    }
+
+    // MARK: - Page rotation
+
+    /// Rewrites every line's geometry into the frame the text itself reads in.
+    ///
+    /// A receipt is a long strip, so it is routinely photographed lying sideways — and a
+    /// sideways photo of an upright phone carries no EXIF rotation to correct it. Vision
+    /// transcribes such a page perfectly well, because it detects each line's rotation on
+    /// its own, but it reports the boxes in image coordinates. Row assembly groups by `y`,
+    /// so on a sideways page every line shares a `y` and the whole receipt collapses into
+    /// one row: a 50-row receipt arrived at the parser as a single line reading
+    /// "and $50.46 $50.46 $5.81 $50.46 $1.729 29.186 Unleaded", from which it took the
+    /// litre count as the total.
+    ///
+    /// The corner order is what makes this recoverable. Vision labels the corners in the
+    /// text's own frame, so `topLeft → topRight` runs along the reading direction whatever
+    /// the paper was doing, and rotating every corner by that angle restores a page whose
+    /// rows run left to right. Nothing is re-recognized — the transcripts were already
+    /// right, only their coordinates were in the wrong frame.
+    static func uprightFragments(from quads: [RecognizedQuad]) -> [RecognizedFragment] {
+        let direction = Self.readingDirection(of: quads)
+        return Self.framedToPaper(quads.map { $0.rotated(onto: direction) })
+    }
+
+    /// Rescales the page so its coordinates measure the receipt rather than the photograph.
+    ///
+    /// Everything downstream reads these numbers as positions on the paper: the totals block
+    /// sits below `midY` 0.42, the amount column reaches past `maxX` 0.58. That only holds
+    /// when the receipt fills the frame. A strip photographed on a table with margins around
+    /// it spanned x 0.29 to 0.57, so its amount column failed the 0.58 test on every single
+    /// row — the totals block was never identified as one, and an item price was returned as
+    /// the total of the receipt.
+    ///
+    /// The two axes are scaled independently on purpose. Aspect ratio carries no meaning
+    /// here; each rule reads one axis alone, and each wants a fraction of the receipt.
+    private static func framedToPaper(_ fragments: [RecognizedFragment]) -> [RecognizedFragment] {
+        guard fragments.isEmpty == false else { return fragments }
+
+        let minX = fragments.map(\.minX).min() ?? 0
+        let maxX = fragments.map(\.maxX).max() ?? 1
+        let minY = fragments.map { $0.midY - $0.height / 2 }.min() ?? 0
+        let maxY = fragments.map { $0.midY + $0.height / 2 }.max() ?? 1
+
+        // A receipt too narrow to have columns, or a single recognized row, has no spread to
+        // normalize against; stretching it would turn rounding noise into layout.
+        let spanX = maxX - minX
+        let spanY = maxY - minY
+        guard spanX > 0.05, spanY > 0.05 else { return fragments }
+
+        return fragments.map { fragment in
+            RecognizedFragment(
+                text: fragment.text,
+                minX: (fragment.minX - minX) / spanX,
+                maxX: (fragment.maxX - minX) / spanX,
+                midY: (fragment.midY - minY) / spanY,
+                height: fragment.height / spanY
+            )
+        }
+    }
+
+    /// The page's reading direction, snapped to the nearest quarter turn.
+    ///
+    /// Baselines are summed rather than averaged by angle so that longer lines, which carry
+    /// far more directional evidence than a stray one-glyph fragment, dominate the result.
+    /// Snapping is safe because a page is either upright or laid on its side; the residual
+    /// few degrees of skew is what `assembleRows` already tolerates.
+    private static func readingDirection(of quads: [RecognizedQuad]) -> CGVector {
+        let baseline = quads.reduce(into: CGVector.zero) { total, quad in
+            total.dx += quad.topRight.x - quad.topLeft.x
+            total.dy += quad.topRight.y - quad.topLeft.y
+        }
+
+        if abs(baseline.dx) >= abs(baseline.dy) {
+            return CGVector(dx: baseline.dx < 0 ? -1 : 1, dy: 0)
+        }
+        return CGVector(dx: 0, dy: baseline.dy < 0 ? -1 : 1)
     }
 
     // MARK: - Row assembly
@@ -204,6 +308,52 @@ struct RecognizedFragment {
     let maxX: CGFloat
     let midY: CGFloat
     let height: CGFloat
+}
+
+/// One recognized line, kept as the quadrilateral it occupies rather than an upright box.
+///
+/// The corners are ordered in the text's own frame — top-left, top-right, bottom-right,
+/// bottom-left as the reader sees them — which is the only reason the page's rotation can
+/// be recovered from them at all.
+nonisolated struct RecognizedQuad {
+    let text: String
+    let topLeft: CGPoint
+    let topRight: CGPoint
+    let bottomRight: CGPoint
+    let bottomLeft: CGPoint
+
+    /// Projects the quad onto a frame whose x axis is `direction`, collapsing it back to
+    /// the upright box the rest of the pipeline expects. A `direction` of (1, 0) is the
+    /// identity, so an already-upright page pays nothing for this.
+    ///
+    /// The result is rebased into the unit square. Rotating alone sends half the quarter
+    /// turns into negative coordinates, and downstream rules read those numbers as absolute
+    /// positions on the page — "the totals block sits below `midY` 0.42", "the amount column
+    /// reaches past `maxX` 0.58". A page whose x ran from -0.71 to -0.40 failed the second
+    /// of those on every row, so the totals block was never recognized as one.
+    func rotated(onto direction: CGVector) -> RecognizedFragment {
+        // The text's "up" is its reading direction turned a quarter turn counter-clockwise.
+        let up = CGVector(dx: -direction.dy, dy: direction.dx)
+        // A quarter turn of the unit square lands it in [-1, 0] exactly when the axis it
+        // maps onto points backwards, so undoing it is a translation by one whole square.
+        let xOffset: CGFloat = direction.dx + direction.dy < 0 ? 1 : 0
+        let yOffset: CGFloat = up.dx + up.dy < 0 ? 1 : 0
+
+        let corners = [topLeft, topRight, bottomRight, bottomLeft]
+        let xs = corners.map { $0.x * direction.dx + $0.y * direction.dy + xOffset }
+        let ys = corners.map { $0.x * up.dx + $0.y * up.dy + yOffset }
+
+        let minY = ys.min() ?? 0
+        let maxY = ys.max() ?? 0
+
+        return RecognizedFragment(
+            text: text,
+            minX: xs.min() ?? 0,
+            maxX: xs.max() ?? 0,
+            midY: (minY + maxY) / 2,
+            height: maxY - minY
+        )
+    }
 }
 
 extension VisionOCRService: OCRService {}

@@ -1,0 +1,14 @@
+{
+  "notes": "User-reported: wrong data. Photographed sideways. Every item carries two or three markdown rows ('Item Discount 40.0%', 'TANGER25, 25% Off'), and the totals block prints 'Total Discount -129.09' immediately above 'Subtotal 44.86' - a large number on a line whose label starts with 'Total'. Cash 60.00 and 'Total Tender 60.00' are both larger than the 50.69 total, and 'Change Due -9.31' follows them.",
+  "image": "old-navy-discounts.heic",
+  "expected": {
+    "merchant": "Old Navy",
+    "date": "2026-04-18",
+    "total": 50.69,
+    "subtotal": 44.86,
+    "tax": 5.83,
+    "tip": null,
+    "category": "Shopping",
+    "lineItemSum": null
+  }
+}
