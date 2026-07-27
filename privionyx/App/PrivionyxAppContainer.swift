@@ -44,7 +44,10 @@ struct PrivionyxAppContainer {
             ocrService: ocrService,
             parser: parser,
             resolveCategory: resolveCategoryUseCase,
-            resolveMerchant: resolveMerchantUseCase
+            resolveMerchant: resolveMerchantUseCase,
+            // Present unconditionally: the resolver is what decides whether any model is
+            // usable, and it answers "none, use the parser" on a device that cannot run one.
+            engineResolver: ReceiptExtractionEngineResolver()
         )
 
         return PrivionyxAppContainer(

@@ -447,6 +447,11 @@ nonisolated struct AmountExtractor {
         if normalized.contains("tip") || normalized.contains("gratuity") { score -= 55 }
         if normalized.contains("change") { score -= 80 }
         if normalized.contains("saved") || normalized.contains("savings") { score -= 110 }
+        // "Total Discount -129.09" sits in the totals block and opens with the word "total",
+        // which was worth +240 between the label bonus and the prefix bonus — enough to beat
+        // the real total three rows below it. The sibling scorer already discounts this;
+        // this one only knew about "saved" and "savings".
+        if normalized.contains("discount") { score -= 140 }
         if normalized.contains("ct money") || normalized.contains("triangle") { score -= 130 }
         if normalized.contains("loyalty") || normalized.contains("reward") { score -= 110 }
         if normalized.contains("cash") || normalized.contains("debit") || normalized.contains("credit") || normalized.contains("visa") || normalized.contains("mastercard") { score -= 24 }

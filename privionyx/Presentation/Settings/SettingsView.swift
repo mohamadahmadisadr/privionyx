@@ -4,6 +4,8 @@ struct SettingsView: View {
     @Environment(PrivionyxAppState.self) private var appState
     @AppStorage(AppearanceMode.storageKey) private var appearanceMode: AppearanceMode = .system
     @AppStorage(AssistantBackend.storageKey) private var assistantBackend: AssistantBackend = .fallback
+    @AppStorage(ReceiptExtractionConsent.storageKey) private var extractionConsent: ReceiptExtractionConsent = .useModelWhenAvailable
+    @AppStorage(ReceiptExtractionConsent.downloadPromptSuppressedKey) private var downloadPromptSuppressed = false
     @State private var assistantAvailability: [AssistantBackend: AssistantAvailability] = [:]
     @State private var gemma = GemmaModelManager.shared
     @AppStorage(GemmaModelManager.allowsCellularDownloadKey) private var allowsCellularGemmaDownload = false
@@ -24,6 +26,9 @@ struct SettingsView: View {
                         GlassEyebrow("Appearance")
                         appearanceCard
 
+                        GlassEyebrow("Receipt Scanning")
+                        extractionCard
+
                         GlassEyebrow("Assistant")
                         assistantCard
 
@@ -41,6 +46,60 @@ struct SettingsView: View {
                 await loadAssistantAvailability()
             }
         }
+    }
+
+    // MARK: - Receipt scanning
+
+    /// Where a "don't ask again" gets taken back.
+    ///
+    /// The prompt during a scan writes the same preference this reads, so a user who ticked
+    /// the box has somewhere to go — without this, the checkbox would be a decision they
+    /// could make once and never revisit.
+    private var extractionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(ReceiptExtractionConsent.allCases) { option in
+                extractionOption(option)
+            }
+
+            if downloadPromptSuppressed, extractionConsent != .alwaysUseBuiltIn {
+                Button("Re-enable the Gemma download prompt") {
+                    downloadPromptSuppressed = false
+                }
+                .font(.system(size: 12.5, weight: .semibold))
+                .padding(.top, 2)
+            }
+        }
+        .padding(14)
+        .privionyxGlass(cornerRadius: 18)
+    }
+
+    private func extractionOption(_ option: ReceiptExtractionConsent) -> some View {
+        let isSelected = extractionConsent == option
+
+        return Button {
+            extractionConsent = option
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(isSelected ? PrivionyxTheme.Colors.accent : PrivionyxTheme.Colors.secondaryInk)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(option.title)
+                        .font(.system(size: 14.5, weight: .semibold))
+                        .foregroundStyle(PrivionyxTheme.Colors.ink)
+
+                    Text(option.detail)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Appearance

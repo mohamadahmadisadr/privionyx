@@ -136,7 +136,11 @@ nonisolated struct CoreMLReceiptExtractionService {
     }
 }
 
-private nonisolated extension ReceiptMLExtraction {
+/// Internal rather than fileprivate: every extraction engine — this one, Apple Intelligence,
+/// Gemma — has to answer the same question before returning, which is whether it read
+/// anything at all. An engine that found nothing must say so rather than hand back an empty
+/// shell that overwrites the parser's work with blanks.
+nonisolated extension ReceiptMLExtraction {
     var hasUsefulValues: Bool {
         merchant?.isEmpty == false ||
         amount != nil ||

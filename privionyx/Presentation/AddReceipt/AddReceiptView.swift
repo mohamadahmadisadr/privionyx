@@ -87,6 +87,25 @@ struct AddReceiptView: View {
                     .zIndex(10)
             }
         }
+        .sheet(item: $viewModel.pendingDownloadPrompt) { prompt in
+            GemmaDownloadPromptView(
+                prompt: prompt,
+                suppressFuturePrompts: $viewModel.suppressFutureEnginePrompts,
+                onAccept: { viewModel.acceptDownloadPrompt() },
+                onDecline: { viewModel.declineDownloadPrompt() }
+            )
+        }
+        .overlay {
+            if viewModel.isGemmaDownloadInProgress {
+                GemmaDownloadProgressView(
+                    progress: viewModel.gemmaDownloadProgress,
+                    sizeDescription: viewModel.gemmaDownloadSizeDescription,
+                    onCancel: { viewModel.cancelGemmaDownload() }
+                )
+                .transition(.opacity)
+                .zIndex(20)
+            }
+        }
     }
 
     // MARK: - Capture
