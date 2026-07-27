@@ -15,6 +15,7 @@ enum AssistantSuggestions {
         var suggestions: [String] = []
 
         if let merchant = analytics.matchMerchant(in: q) {
+            suggestions.append("Show my \(merchant) receipts")
             suggestions.append("What's my biggest purchase at \(merchant)?")
             suggestions.append("How much at \(merchant) this year?")
         }

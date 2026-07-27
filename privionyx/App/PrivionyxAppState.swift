@@ -6,6 +6,11 @@ import Foundation
 @Observable
 final class PrivionyxAppState {
     let container: PrivionyxAppContainer
+    /// What the user has bought, and the only authority on whether ads may show.
+    let purchases: any PurchaseStore
+    /// Where a banner comes from, if one comes from anywhere. `NoBannerAds` until an ad SDK
+    /// and a unit id are both in place, at which point the app is exactly as it was before.
+    let bannerAds: any BannerAdProviding
     private var hasCompletedInitialLoad = false
     /// Set once bootstrap has succeeded. Distinct from "there are no receipts": an empty
     /// library is a perfectly normal state, not a signal that the work still needs doing.
@@ -25,8 +30,23 @@ final class PrivionyxAppState {
         container.viewContext
     }
 
-    init(container: PrivionyxAppContainer) {
+    /// AdMob when the SDK is linked, nothing at all when it isn't.
+    static func defaultBannerAds() -> any BannerAdProviding {
+        #if canImport(GoogleMobileAds)
+        GoogleBannerAdProvider()
+        #else
+        NoBannerAds()
+        #endif
+    }
+
+    init(
+        container: PrivionyxAppContainer,
+        purchases: any PurchaseStore = StoreKitPurchaseStore(),
+        bannerAds: any BannerAdProviding = PrivionyxAppState.defaultBannerAds()
+    ) {
         self.container = container
+        self.purchases = purchases
+        self.bannerAds = bannerAds
     }
 
     func bootstrapIfNeeded() async {
@@ -98,6 +118,10 @@ final class PrivionyxAppState {
 
         await bootstrapIfNeeded()
         launchProgress = 0.48
+
+        // Reconciled during launch so an existing purchase is known before the first screen
+        // draws — a paying user must never see a banner flash by on the way in.
+        await purchases.refresh()
 
         launchStatusText = "Preparing app..."
         launchProgress = 1

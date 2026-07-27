@@ -144,6 +144,10 @@ struct AddReceiptView: View {
                     subtitle: "Add the details yourself.",
                     icon: "keyboard"
                 ) {
+                    // Set before presenting so the sheet opens straight on the form, with no
+                    // frame of the (empty) result summary and no detent jump.
+                    isEditingDetails = true
+                    reviewDetent = .large
                     viewModel.startManualEntry()
                 }
             }
@@ -192,7 +196,7 @@ struct AddReceiptView: View {
             PrivionyxTheme.appBackground.ignoresSafeArea()
 
             ScrollView(showsIndicators: false) {
-                if isEditingDetails {
+                if isEditingDetails || viewModel.isManualEntry {
                     reviewEditor
                         .padding(20)
                 } else {
@@ -214,7 +218,8 @@ struct AddReceiptView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large], selection: $reviewDetent)
+        // A form is not usable at half height, so manual entry gets the full sheet only.
+        .presentationDetents(viewModel.isManualEntry ? [.large] : [.medium, .large], selection: $reviewDetent)
         .presentationDragIndicator(.visible)
     }
 
@@ -223,7 +228,7 @@ struct AddReceiptView: View {
     private var reviewEditor: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(viewModel.merchant.isEmpty ? "Review receipt" : viewModel.merchant)
+                Text(viewModel.merchant.isEmpty ? (viewModel.isManualEntry ? "New receipt" : "Review receipt") : viewModel.merchant)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(PrivionyxTheme.Colors.ink)
 

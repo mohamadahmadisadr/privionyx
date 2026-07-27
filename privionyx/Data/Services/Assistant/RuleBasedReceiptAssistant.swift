@@ -21,6 +21,9 @@ struct RuleBasedReceiptAssistant: ReceiptAssistant {
         }
         if let topMerchant = analytics.byMerchant(context.receipts).first {
             prompts.append("How much at \(topMerchant.name)?")
+            // Offered up front because nothing else on the screen says the assistant can
+            // pull up the receipts themselves, not just totals about them.
+            prompts.append("Find my \(topMerchant.name) receipts")
         }
         prompts.append("How am I doing this month?")
         prompts.append("Where can I save?")

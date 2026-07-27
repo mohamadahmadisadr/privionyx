@@ -4,6 +4,9 @@ struct AssistantView: View {
     @State private var viewModel: AssistantViewModel
     @AppStorage(AssistantBackend.storageKey) private var backend: AssistantBackend = .fallback
     @FocusState private var isComposerFocused: Bool
+    /// The receipt card the user tapped in the transcript, opened over the conversation so
+    /// the chat is still there when it closes.
+    @State private var selectedReceipt: ReceiptItem?
 
     init(appState: PrivionyxAppState) {
         _viewModel = State(initialValue: AssistantViewModel(appState: appState))
@@ -26,6 +29,12 @@ struct AssistantView: View {
 
                 transcript
 
+                // Between the conversation and the controls under it, never inside the
+                // transcript: an ad in the middle of a thread of replies reads as one of them.
+                BannerAdSlot(placement: .assistant)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+
                 if viewModel.suggestions.isEmpty == false {
                     suggestionRow
                         .padding(.bottom, 10)
@@ -39,6 +48,13 @@ struct AssistantView: View {
         }
         .task(id: backend) {
             await viewModel.prepare(backend: backend)
+        }
+        .sheet(item: $selectedReceipt) { receipt in
+            // Its own stack: the Assistant tab has none, and the detail screen pushes the
+            // editor and shares from a toolbar that needs one.
+            NavigationStack {
+                ReceiptDetailView(receipt: receipt)
+            }
         }
     }
 
@@ -128,28 +144,32 @@ struct AssistantView: View {
     @ViewBuilder
     private func bubble(for message: AssistantMessage) -> some View {
         if message.isAssistant {
-            HStack(alignment: .bottom, spacing: 8) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(PrivionyxTheme.Colors.accent)
-                    .frame(width: 22, height: 22)
-                    .background(PrivionyxTheme.Colors.accentSoft, in: Circle())
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .bottom, spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(PrivionyxTheme.Colors.accent)
+                        .frame(width: 22, height: 22)
+                        .background(PrivionyxTheme.Colors.accentSoft, in: Circle())
 
-                Text(message.text)
-                    .font(.system(size: 14))
-                    .foregroundStyle(PrivionyxTheme.Colors.ink)
-                    .padding(.vertical, 11)
-                    .padding(.horizontal, 14)
-                    .background(
-                        PrivionyxTheme.Colors.accentSoft,
-                        in: UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 4, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous)
-                    )
-                    .overlay(
-                        UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 4, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous)
-                            .stroke(PrivionyxTheme.Colors.accent.opacity(0.22), lineWidth: 1)
-                    )
+                    Text(message.text)
+                        .font(.system(size: 14))
+                        .foregroundStyle(PrivionyxTheme.Colors.ink)
+                        .padding(.vertical, 11)
+                        .padding(.horizontal, 14)
+                        .background(
+                            PrivionyxTheme.Colors.accentSoft,
+                            in: UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 4, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous)
+                        )
+                        .overlay(
+                            UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 4, bottomTrailingRadius: 16, topTrailingRadius: 16, style: .continuous)
+                                .stroke(PrivionyxTheme.Colors.accent.opacity(0.22), lineWidth: 1)
+                        )
 
-                Spacer(minLength: 24)
+                    Spacer(minLength: 24)
+                }
+
+                receiptMatches(for: message)
             }
         } else {
             HStack {
@@ -166,6 +186,83 @@ struct AssistantView: View {
                     )
             }
         }
+    }
+
+    // MARK: - Matched receipts
+
+    /// The receipts an answer is about, listed under it as rows that open the real receipt.
+    /// Nothing is rendered for answers that aren't pointing at any.
+    @ViewBuilder
+    private func receiptMatches(for message: AssistantMessage) -> some View {
+        let receipts = viewModel.matchedReceipts(in: message)
+
+        if let matched = message.matchedReceipts, receipts.isEmpty == false {
+            VStack(alignment: .leading, spacing: 7) {
+                Text(caption(for: matched, showing: receipts.count))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+                    .padding(.leading, 4)
+
+                GlassRowGroup(cornerRadius: 14) {
+                    ForEach(Array(receipts.enumerated()), id: \.element.id) { index, receipt in
+                        Button {
+                            isComposerFocused = false
+                            selectedReceipt = receipt
+                        } label: {
+                            receiptRow(receipt)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens this receipt")
+
+                        if index < receipts.count - 1 {
+                            GlassRowDivider()
+                        }
+                    }
+                }
+            }
+            // Indented to the bubble's text, not the avatar, so the cards read as part of
+            // the same answer rather than as a new message.
+            .padding(.leading, 30)
+            .padding(.trailing, 24)
+        }
+    }
+
+    private func caption(for matched: AssistantMessage.ReceiptMatches, showing count: Int) -> String {
+        guard matched.hiddenCount > 0 else { return matched.caption.uppercased() }
+        return "\(matched.caption) · showing \(count) of \(count + matched.hiddenCount)".uppercased()
+    }
+
+    private func receiptRow(_ receipt: ReceiptItem) -> some View {
+        HStack(spacing: 11) {
+            InitialTile(text: receipt.merchant, tint: PrivionyxTheme.Colors.accent, size: 34, foreground: PrivionyxTheme.Colors.onAccent)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(receipt.merchant)
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    .lineLimit(1)
+
+                Text("\(receipt.displayCategoryName) · \(receipt.date.formatted(.dateTime.month(.abbreviated).day()))")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 6)
+
+            Text(PrivionyxCurrencyFormatter.string(for: receipt.amount))
+                .font(.system(size: 13.5, weight: .bold))
+                .foregroundStyle(PrivionyxTheme.Colors.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Input

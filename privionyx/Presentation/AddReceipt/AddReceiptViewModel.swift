@@ -141,6 +141,12 @@ final class AddReceiptViewModel {
         editingReceiptID != nil
     }
 
+    /// The user is typing the receipt in by hand. There is nothing extracted to summarise,
+    /// so the review sheet has to open on the editable form rather than the result summary.
+    var isManualEntry: Bool {
+        stage == .manualEntry
+    }
+
     var hasExtractedFields: Bool {
         merchant.isEmpty == false || amount.isEmpty == false
     }
@@ -196,7 +202,7 @@ final class AddReceiptViewModel {
     var reviewAdvice: ReceiptReviewAdvice {
         ReceiptReviewAdvice(
             .init(
-                isManualEntry: stage == .manualEntry,
+                isManualEntry: isManualEntry,
                 merchant: merchant,
                 total: parsedAmount,
                 subtotal: parsedSubtotal,

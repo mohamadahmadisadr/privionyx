@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var gemma = GemmaModelManager.shared
     @AppStorage(GemmaModelManager.allowsCellularDownloadKey) private var allowsCellularGemmaDownload = false
     @State private var isRemovingSamples = false
+    @State private var isRemoveAdsPresented = false
 
     var body: some View {
         NavigationStack {
@@ -31,6 +32,13 @@ struct SettingsView: View {
 
                         GlassEyebrow("Assistant")
                         assistantCard
+
+                        BannerAdSlot(placement: .settings)
+
+                        if appState.purchases.entitlement.removesAds == false, appState.bannerAds.isConfigured {
+                            GlassEyebrow("Ads")
+                            removeAdsCard
+                        }
 
                         GlassEyebrow("About")
                         aboutCard
@@ -352,6 +360,46 @@ struct SettingsView: View {
     }
 
     // MARK: - About
+
+    /// Buying silence, and getting it back on a new device.
+    ///
+    /// Restore sits beside the purchase rather than behind it: guideline 3.1.1 requires a
+    /// restore path for a non-consumable, and a user who reinstalls has no other way to stop
+    /// paying twice for the same thing.
+    private var removeAdsCard: some View {
+        VStack(spacing: 0) {
+            Button {
+                isRemoveAdsPresented = true
+            } label: {
+                aboutRow(
+                    icon: "nosign",
+                    label: "Remove Ads",
+                    value: appState.purchases.displayPrice ?? "",
+                    showsChevron: true
+                )
+            }
+            .buttonStyle(.plain)
+
+            GlassRowDivider()
+
+            Button {
+                Task { await appState.purchases.restorePurchases() }
+            } label: {
+                aboutRow(
+                    icon: "arrow.clockwise",
+                    label: "Restore Purchases",
+                    value: appState.purchases.isBusy ? "Checking…" : ""
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(appState.purchases.isBusy)
+        }
+        .privionyxGlass(cornerRadius: 16)
+        .sheet(isPresented: $isRemoveAdsPresented) {
+            RemoveAdsSheet()
+        }
+        .task { await appState.purchases.refresh() }
+    }
 
     private var aboutCard: some View {
         VStack(spacing: 0) {

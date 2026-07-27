@@ -24,6 +24,10 @@ struct DashboardView: View {
                             emptyState
                         } else {
                             insightsSection
+                            // Below the fold, between two of the user's own sections: seen
+                            // on the way down the page rather than sitting in front of the
+                            // figures they opened the app to read.
+                            BannerAdSlot(placement: .dashboard)
                             budgetSection
                             subscriptionsSection
                             categorySection

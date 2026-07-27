@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D15F8C2C3017038500D821A4 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = D15F8C2B3017038500D821A4 /* GoogleMobileAds */; };
 		D18C88F83011BA5A00AD6365 /* LiteRTLM in Frameworks */ = {isa = PBXBuildFile; productRef = D18C88F73011BA5A00AD6365 /* LiteRTLM */; };
 /* End PBXBuildFile section */
 
@@ -43,6 +44,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D15F8C2C3017038500D821A4 /* GoogleMobileAds in Frameworks */,
 				D18C88F83011BA5A00AD6365 /* LiteRTLM in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -96,6 +98,7 @@
 			name = privionyx;
 			packageProductDependencies = (
 				D18C88F73011BA5A00AD6365 /* LiteRTLM */,
+				D15F8C2B3017038500D821A4 /* GoogleMobileAds */,
 			);
 			productName = privionyx;
 			productReference = D158BC9F2F8365A7009C004D /* privionyx.app */;
@@ -152,6 +155,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				D18C88F63011BA5A00AD6365 /* XCLocalSwiftPackageReference "LiteRT-LM/LiteRT-LM" */,
+				D15F8C2A3017038500D821A4 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D158BCA02F8365A7009C004D /* Products */;
@@ -345,6 +349,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/privionyx",
 				);
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Privionyx uses the camera to scan paper receipts entirely on your device.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Privionyx accesses your photo library so you can import receipt images for on-device processing.";
@@ -385,6 +390,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/privionyx",
 				);
+				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Privionyx uses the camera to scan paper receipts entirely on your device.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Privionyx accesses your photo library so you can import receipt images for on-device processing.";
@@ -493,7 +499,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		D15F8C2A3017038500D821A4 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		D15F8C2B3017038500D821A4 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D15F8C2A3017038500D821A4 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
 		D18C88F73011BA5A00AD6365 /* LiteRTLM */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LiteRTLM;

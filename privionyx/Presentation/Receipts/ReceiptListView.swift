@@ -20,6 +20,9 @@ struct ReceiptListView: View {
             summaryCard
             searchField
             filters
+            // Between the controls and the results, so it never separates a receipt from
+            // the row above it or lands under a thumb reaching for one.
+            BannerAdSlot(placement: .receipts)
             receiptGroups
         }
         .task(id: viewModel.queryKey) {

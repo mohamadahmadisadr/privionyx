@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Everything else in this app's Info.plist is generated from INFOPLIST_KEY_* build
+	     settings and merged into this file at build time. This file exists only for the keys
+	     that mechanism cannot express: GADApplicationIdentifier must be present at launch or
+	     the Google Mobile Ads SDK deliberately crashes the app, and SKAdNetworkItems is an
+	     array of dictionaries, which no build setting can carry.
+
+	     Deliberately outside privionyx/, which is a file-system synchronized group: a plist
+	     in there is both the target's Info.plist and one of its bundled resources, and the
+	     build fails with two commands producing the same output. -->
+
+	<!-- The AdMob app id. Not a secret — it identifies the app to Google's ad server and is
+	     visible in any build. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-7526873529830557~7223025642</string>
+
+	<!-- Lets advertisers attribute installs through Apple's SKAdNetwork, which is what makes
+	     the inventory worth bidding on. Google's own network is listed here; the full list of
+	     buyers Google works with is published at
+	     https://developers.google.com/admob/ios/data-disclosure and can be pasted in below —
+	     it changes often enough that copying it from the docs beats freezing a stale copy. -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
+</dict>
+</plist>

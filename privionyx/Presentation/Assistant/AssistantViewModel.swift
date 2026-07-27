@@ -108,6 +108,10 @@ final class AssistantViewModel {
             suggestions = AssistantSuggestions.followUps(to: text, context: makeContext())
         }
 
+        // Resolved up front from the question, not from the answer: whichever engine is
+        // selected, the cards under the reply are the user's actual receipts.
+        let matches = receiptMatches(for: text)
+
         // Streaming engines emit the answer so far; the reply bubble is inserted on the
         // first chunk and rewritten in place after that.
         let replyID = UUID()
@@ -115,23 +119,48 @@ final class AssistantViewModel {
         do {
             for try await partial in assistant.streamReply(to: text, context: makeContext()) {
                 guard partial.isEmpty == false else { continue }
-                upsertReply(id: replyID, text: partial)
+                upsertReply(id: replyID, text: partial, matchedReceipts: matches)
             }
         } catch is CancellationError {
             return
         } catch {
-            await recoverWithBuiltIn(after: error, prompt: text, replyID: replyID)
+            await recoverWithBuiltIn(after: error, prompt: text, replyID: replyID, matches: matches)
         }
 
         if messages.contains(where: { $0.id == replyID }) == false {
-            upsertReply(id: replyID, text: "I couldn't come up with an answer for that one.")
+            upsertReply(id: replyID, text: "I couldn't come up with an answer for that one.", matchedReceipts: matches)
         }
+    }
+
+    /// The receipts a question is asking to see, if it is asking to see any.
+    private func receiptMatches(for prompt: String) -> AssistantMessage.ReceiptMatches? {
+        guard let result = ReceiptSearch(context: makeContext()).results(for: prompt) else { return nil }
+
+        return AssistantMessage.ReceiptMatches(
+            ids: result.receipts.map(\.id),
+            caption: result.label,
+            hiddenCount: result.totalCount - result.receipts.count
+        )
+    }
+
+    /// The saved receipts behind a reply's cards, re-read on every render so an edit or a
+    /// deletion in the meantime is reflected rather than opening a receipt that is gone.
+    func matchedReceipts(in message: AssistantMessage) -> [ReceiptItem] {
+        guard let matched = message.matchedReceipts else { return [] }
+
+        let byID = Dictionary(appState.receipts.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return matched.ids.compactMap { byID[$0] }
     }
 
     /// A device can report an engine as available and still fail to generate. Rather
     /// than hand the user an error, answer with the built-in engine and switch to it so
     /// the next question works too.
-    private func recoverWithBuiltIn(after error: Error, prompt: String, replyID: UUID) async {
+    private func recoverWithBuiltIn(
+        after error: Error,
+        prompt: String,
+        replyID: UUID,
+        matches: AssistantMessage.ReceiptMatches?
+    ) async {
         guard backend != .fallback else {
             upsertReply(id: replyID, text: error.localizedDescription)
             return
@@ -147,11 +176,11 @@ final class AssistantViewModel {
         assistant = builtIn
         suggestions = builtIn.suggestedPrompts(for: makeContext())
         fallbackNotice = "\(error.localizedDescription) Switched to the built-in engine."
-        upsertReply(id: replyID, text: recovered)
+        upsertReply(id: replyID, text: recovered, matchedReceipts: matches)
     }
 
-    private func upsertReply(id: UUID, text: String) {
-        let message = AssistantMessage(id: id, role: .assistant, text: text)
+    private func upsertReply(id: UUID, text: String, matchedReceipts: AssistantMessage.ReceiptMatches? = nil) {
+        let message = AssistantMessage(id: id, role: .assistant, text: text, matchedReceipts: matchedReceipts)
 
         if let index = messages.firstIndex(where: { $0.id == id }) {
             messages[index] = message
