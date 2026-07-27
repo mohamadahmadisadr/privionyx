@@ -189,6 +189,6 @@ struct SubscriptionsView: View {
 
 #Preview {
     NavigationStack {
-        SubscriptionsView(appState: PrivionyxAppState(container: .preview))
+        SubscriptionsView(appState: PrivionyxAppState.preview)
     }
 }

@@ -64,6 +64,18 @@ final class ReceiptListViewModel {
     private var appliedSearchText = ""
     private var hasAttemptedRecoveryLoad = false
 
+    /// False until `refresh()` has produced results once.
+    ///
+    /// Without it the screen reads its own empty starting state as an answer and tells the
+    /// user they have saved no receipts, in the moment before it has looked at any.
+    private(set) var hasLoadedOnce = false
+
+    /// Whether the screen should be drawing placeholders instead of results — either the
+    /// library itself hasn't been read yet, or it has and this screen hasn't filtered it.
+    var isLoading: Bool {
+        appState.isLoadingLibrary || hasLoadedOnce == false
+    }
+
     /// How long typing has to settle before the list is rebuilt. `.task(id:)` cancels the
     /// previous run when the query changes, so a wait at the top of `refresh()` is all the
     /// debounce needed — an abandoned keystroke never reaches the filter.
@@ -157,6 +169,7 @@ final class ReceiptListViewModel {
             dateInterval: selectedDateFilter.interval()
         )
         groupedReceipts = Self.grouped(filteredReceipts)
+        hasLoadedOnce = true
     }
 
     private func rebuildSearchIndexIfNeeded() {

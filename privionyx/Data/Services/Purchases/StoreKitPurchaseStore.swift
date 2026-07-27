@@ -2,6 +2,9 @@ import Foundation
 import Observation
 import StoreKit
 
+/// Thrown when the App Store takes longer to answer than anyone should be asked to wait.
+private struct ProductLoadTimeout: Error {}
+
 /// The real store, on StoreKit 2.
 ///
 /// No receipt validation server and no server-side entitlement: `Transaction.currentEntitlements`
@@ -11,9 +14,18 @@ import StoreKit
 @Observable
 final class StoreKitPurchaseStore: PurchaseStore {
     private(set) var entitlement: AdEntitlement = .none
+    private(set) var availability: PurchaseAvailability = .loading
     private(set) var displayPrice: String?
     private(set) var isBusy = false
     var lastFailure: String?
+
+    /// How long to wait for the App Store before calling it unavailable.
+    ///
+    /// StoreKit's own patience outlasts anyone's: on a device with no App Store account, or
+    /// a captive-portal network that accepts connections and answers nothing, the request
+    /// can hang for minutes. A button that says "Loading…" for minutes is indistinguishable
+    /// from one that is broken.
+    private static let productTimeout = Duration.seconds(12)
 
     @ObservationIgnored private var product: Product?
     /// Watches for transactions that happen outside a purchase call — a family member's
@@ -35,8 +47,8 @@ final class StoreKitPurchaseStore: PurchaseStore {
     }
 
     func refresh() async {
-        await loadProduct()
         await refreshEntitlement()
+        await loadProduct()
     }
 
     @discardableResult
@@ -50,7 +62,8 @@ final class StoreKitPurchaseStore: PurchaseStore {
         if product == nil { await loadProduct() }
 
         guard let product else {
-            lastFailure = "The store is unavailable right now. Please try again in a moment."
+            lastFailure = availability.unavailableReason
+                ?? "The store is unavailable right now. Please try again in a moment."
             return false
         }
 
@@ -106,22 +119,47 @@ final class StoreKitPurchaseStore: PurchaseStore {
     // MARK: - StoreKit
 
     private func loadProduct() async {
+        if product == nil { availability = .loading }
+
         do {
-            product = try await Product.products(for: [PrivionyxProduct.removeAds]).first
+            let loaded = try await Self.products(timeout: Self.productTimeout)
+            product = loaded.first
             displayPrice = product?.displayPrice
 
             if product == nil {
-                // Almost always a configuration problem rather than a runtime one: the
-                // product is missing, not approved, or the Paid Applications Agreement is
-                // unsigned. Left silent for the user; the button simply stays unavailable.
-                lastFailure = nil
+                // Nothing came back. On a developer's machine this is almost always the
+                // scheme's StoreKit configuration not being applied — a `simctl launch`
+                // bypasses it entirely. In the wild it is the product being unapproved, or
+                // the Paid Applications Agreement unsigned. The user gets a plain statement
+                // either way rather than a spinner that never resolves.
+                availability = .unavailable("The upgrade isn't available on this device right now.")
+            } else {
+                availability = .available
             }
+        } catch is ProductLoadTimeout {
+            availability = .unavailable("The App Store didn't respond. Check your connection and try again.")
         } catch {
-            lastFailure = "Couldn't load the upgrade. \(error.localizedDescription)"
+            availability = .unavailable("Couldn't load the upgrade. \(error.localizedDescription)")
         }
     }
 
-    private func refreshEntitlement() async {
+    /// `Product.products(for:)`, but bounded.
+    private static func products(timeout: Duration) async throws -> [Product] {
+        try await withThrowingTaskGroup(of: [Product].self) { group in
+            group.addTask {
+                try await Product.products(for: [PrivionyxProduct.removeAds])
+            }
+            group.addTask {
+                try await Task.sleep(for: timeout)
+                throw ProductLoadTimeout()
+            }
+
+            defer { group.cancelAll() }
+            return try await group.next() ?? []
+        }
+    }
+
+    func refreshEntitlement() async {
         for await result in Transaction.currentEntitlements {
             guard case let .verified(transaction) = result else { continue }
             if transaction.productID == PrivionyxProduct.removeAds, transaction.revocationDate == nil {

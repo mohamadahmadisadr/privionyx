@@ -56,15 +56,26 @@ struct ReceiptListView: View {
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(viewModel.totalSummary)
-                .font(.system(size: 30, weight: .heavy))
-                .foregroundStyle(PrivionyxTheme.Colors.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
+            if viewModel.isLoading {
+                VStack(alignment: .leading, spacing: 0) {
+                    SkeletonBlock(width: 186, height: 30, cornerRadius: 8)
+                        .padding(.vertical, 2)
+                    SkeletonBlock(width: 104, height: 11)
+                        .padding(.top, 8)
+                }
+                .accessibilityElement()
+                .accessibilityLabel("Loading your receipt total")
+            } else {
+                Text(viewModel.totalSummary)
+                    .font(.system(size: 30, weight: .heavy))
+                    .foregroundStyle(PrivionyxTheme.Colors.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
 
-            Text(viewModel.countSummary)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+                Text(viewModel.countSummary)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
+            }
 
             if viewModel.hasActiveFilters {
                 Button("Clear filters") {
@@ -166,7 +177,14 @@ struct ReceiptListView: View {
 
     @ViewBuilder
     private var receiptGroups: some View {
-        if viewModel.filteredReceipts.isEmpty {
+        if viewModel.isLoading {
+            // Deliberately ahead of the empty-state branch below. "No receipts saved yet" is
+            // an answer, and the screen has not got one to give until the filter has run.
+            VStack(alignment: .leading, spacing: 12) {
+                SkeletonNotice(title: "Loading your receipts…")
+                SkeletonReceiptRows(count: 6)
+            }
+        } else if viewModel.filteredReceipts.isEmpty {
             // Offering samples only when the library is genuinely empty, not merely filtered
             // to nothing — the answer to "no receipts match these filters" is to change the
             // filters, and adding ten receipts instead would be a non-sequitur.
@@ -267,6 +285,6 @@ struct ReceiptListView: View {
 
 #Preview {
     NavigationStack {
-        ReceiptListView(appState: PrivionyxAppState(container: .preview))
+        ReceiptListView(appState: PrivionyxAppState.preview)
     }
 }

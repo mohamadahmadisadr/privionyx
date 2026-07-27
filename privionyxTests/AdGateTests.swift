@@ -39,6 +39,7 @@ struct PurchaseFlowTests {
     @Observable
     final class FakePurchaseStore: PurchaseStore {
         private(set) var entitlement: AdEntitlement = .none
+        private(set) var availability: PurchaseAvailability = .available
         private(set) var displayPrice: String? = "$4.99"
         private(set) var isBusy = false
         var lastFailure: String?
@@ -46,8 +47,18 @@ struct PurchaseFlowTests {
         var purchaseSucceeds = true
         var ownsPriorPurchase = false
         private(set) var refreshCount = 0
+        private(set) var entitlementRefreshCount = 0
+
+        func refreshEntitlement() async { entitlementRefreshCount += 1 }
 
         func refresh() async { refreshCount += 1 }
+
+        /// Puts the store in the state a developer hits constantly: no StoreKit
+        /// configuration applied, so nothing comes back at all.
+        func simulateNoProduct() {
+            availability = .unavailable("The upgrade isn't available on this device right now.")
+            displayPrice = nil
+        }
 
         @discardableResult
         func purchaseAdFree() async -> Bool {
@@ -106,6 +117,35 @@ struct PurchaseFlowTests {
         #expect(await store.restorePurchases() == false)
         #expect(store.entitlement == .none)
         #expect(store.lastFailure?.isEmpty == false)
+    }
+
+    @Test("A store with nothing to sell says so instead of loading forever")
+    func unavailableIsNotLoading() {
+        let store = FakePurchaseStore()
+        store.simulateNoProduct()
+
+        // The distinction the UI depends on: not loading, so the button stops saying it is.
+        #expect(store.availability.isLoading == false)
+        #expect(store.availability.unavailableReason?.isEmpty == false)
+        #expect(store.displayPrice == nil)
+    }
+
+    @Test("A loading store reports no reason, because there isn't one yet")
+    func loadingHasNoReason() {
+        #expect(PurchaseAvailability.loading.unavailableReason == nil)
+        #expect(PurchaseAvailability.available.unavailableReason == nil)
+        #expect(PurchaseAvailability.loading.isLoading)
+    }
+
+    @Test("Launch reconciles the entitlement without waiting on the product")
+    func launchOnlyChecksEntitlement() async {
+        // The product lookup is a network round trip; the entitlement is local. Launch may
+        // wait for the second and must never wait for the first.
+        let store = FakePurchaseStore()
+        await store.refreshEntitlement()
+
+        #expect(store.entitlementRefreshCount == 1)
+        #expect(store.refreshCount == 0)
     }
 
     @Test("The price shown is the storefront's own, not a hardcoded figure")

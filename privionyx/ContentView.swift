@@ -12,19 +12,15 @@ struct ContentView: View {
     @AppStorage(AppearanceMode.storageKey) private var appearanceMode: AppearanceMode = .system
 
     var body: some View {
-        Group {
-            if appState.isLaunching || appState.launchProgress < 1 {
-                LaunchSplashView(
-                    statusText: appState.launchStatusText
-                )
-            } else {
-                PrivionyxRootView()
+        // Straight to the app. There is no loading screen in front of this on purpose: the
+        // tab bar, the header and the quick actions do not depend on anything being read from
+        // disk, so making the user watch a spinner before they can tap "Scan" bought nothing.
+        // The screens underneath show placeholders for the parts still on their way.
+        PrivionyxRootView()
+            .task {
+                await appState.initializeIfNeeded()
             }
-        }
-        .task {
-            await appState.initializeIfNeeded()
-        }
-        .preferredColorScheme(appearanceMode.colorScheme)
+            .preferredColorScheme(appearanceMode.colorScheme)
             // Titled by what failed rather than by the app's name, so the first line already
             // tells the user which of their actions didn't take effect.
             .alert(
@@ -47,45 +43,8 @@ struct ContentView: View {
     }
 }
 
-private struct LaunchSplashView: View {
-    let statusText: String
-
-    var body: some View {
-        ZStack {
-            PrivionyxTheme.appBackground
-                .ignoresSafeArea()
-
-            VStack(spacing: 18) {
-                GlassIconTile(systemImage: "doc.text.viewfinder", size: 72)
-
-                VStack(spacing: 6) {
-                    Text("Privionyx")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(PrivionyxTheme.Colors.ink)
-
-                    Text("Turn receipts into clean expense records.")
-                        .font(.system(size: 13, weight: .medium))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(PrivionyxTheme.Colors.secondaryInk)
-                }
-
-                VStack(spacing: 8) {
-                    ProgressView()
-
-                    Text(statusText)
-                        .font(.system(size: 12))
-                        .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
-                }
-            }
-            .padding(30)
-            .frame(maxWidth: 320)
-            .privionyxCardStyle(cornerRadius: 28)
-        }
-    }
-}
-
 #Preview {
     ContentView()
-        .environment(PrivionyxAppState(container: .preview))
+        .environment(PrivionyxAppState.preview)
         .environment(AppCoordinator())
 }

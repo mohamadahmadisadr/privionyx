@@ -20,7 +20,12 @@ struct DashboardView: View {
                         summaryCard
                         quickActions
 
-                        if viewModel.receipts.isEmpty {
+                        // The header and the quick actions are above this and never wait:
+                        // "Scan" works from the first frame, which is the whole point of not
+                        // holding the app behind a loading screen.
+                        if appState.isLoadingLibrary {
+                            loadingSections
+                        } else if viewModel.receipts.isEmpty {
                             emptyState
                         } else {
                             insightsSection
@@ -86,29 +91,81 @@ struct DashboardView: View {
                 periodPicker
             }
 
-            HStack(alignment: .bottom, spacing: 10) {
-                Text(viewModel.totalSpent(for: selectedPeriod))
-                    .font(.system(size: 34, weight: .heavy))
-                    .foregroundStyle(PrivionyxTheme.Colors.ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+            if appState.isLoadingLibrary {
+                // Sized to the figure and the sparkline they stand in for, so the card is the
+                // right height from the first frame and nothing moves when the total arrives.
+                VStack(alignment: .leading, spacing: 0) {
+                    SkeletonBlock(width: 210, height: 34, cornerRadius: 8)
+                        .padding(.top, 10)
+                        .padding(.bottom, 4)
 
-                if let percentage = viewModel.comparisonPercentage(for: selectedPeriod) {
-                    TrendChip(percentage: percentage)
-                        .padding(.bottom, 6)
+                    SkeletonBlock(height: 44, cornerRadius: 10)
+                        .padding(.top, 14)
                 }
-            }
-            .padding(.top, 6)
+                .accessibilityElement()
+                .accessibilityLabel("Loading your spending total")
+            } else {
+                HStack(alignment: .bottom, spacing: 10) {
+                    Text(viewModel.totalSpent(for: selectedPeriod))
+                        .font(.system(size: 34, weight: .heavy))
+                        .foregroundStyle(PrivionyxTheme.Colors.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
 
-            // A series of all zeroes would draw a meaningless flat rule.
-            let sparklineValues = viewModel.sparklineValues(for: selectedPeriod)
-            if sparklineValues.contains(where: { $0 > 0 }) {
-                Sparkline(values: sparklineValues)
-                    .frame(height: 44)
-                    .padding(.top, 14)
+                    if let percentage = viewModel.comparisonPercentage(for: selectedPeriod) {
+                        TrendChip(percentage: percentage)
+                            .padding(.bottom, 6)
+                    }
+                }
+                .padding(.top, 6)
+
+                // A series of all zeroes would draw a meaningless flat rule.
+                let sparklineValues = viewModel.sparklineValues(for: selectedPeriod)
+                if sparklineValues.contains(where: { $0 > 0 }) {
+                    Sparkline(values: sparklineValues)
+                        .frame(height: 44)
+                        .padding(.top, 14)
+                }
             }
         }
         .privionyxCardStyle()
+    }
+
+    /// The page below the quick actions while the library is still being read.
+    ///
+    /// Two sections rather than one: the Dashboard's own shape is a run of titled groups, and
+    /// a single grey slab would not tell the user what is about to appear there.
+    private var loadingSections: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            SkeletonNotice(title: "Loading your receipts…")
+
+            VStack(alignment: .leading, spacing: 12) {
+                GlassSectionTitle("Insights")
+
+                VStack(spacing: 10) {
+                    ForEach(0..<2, id: \.self) { _ in
+                        HStack(spacing: 12) {
+                            SkeletonBlock(width: 38, height: 38, cornerRadius: 11)
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                SkeletonBlock(width: 168, height: 11)
+                                SkeletonBlock(width: 124, height: 9)
+                            }
+
+                            Spacer(minLength: 8)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 13)
+                        .privionyxGlass(cornerRadius: 16)
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                GlassSectionTitle("Recent Receipts")
+                SkeletonReceiptRows(count: 4)
+            }
+        }
     }
 
     private var periodPicker: some View {
@@ -475,6 +532,6 @@ struct DashboardView: View {
 
 #Preview {
     DashboardView(viewModel: DashboardViewModel(receipts: []))
-        .environment(PrivionyxAppState(container: .preview))
+        .environment(PrivionyxAppState.preview)
         .environment(AppCoordinator())
 }

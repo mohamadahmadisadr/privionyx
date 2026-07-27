@@ -58,7 +58,16 @@ enum PrivionyxTheme {
         endPoint: .bottomTrailing
     )
 
-    private static func dynamic(light: UIColor, dark: UIColor) -> Color {
+    /// A light/dark pair as one colour.
+    ///
+    /// `nonisolated` deliberately, and load-bearing. The target builds with
+    /// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, so without it this function — and with it
+    /// the provider closure below — is inferred `@MainActor`, and the compiler puts an
+    /// isolation check at the top of the closure. UIKit resolves a dynamic colour on
+    /// whichever thread asks for it, and SwiftUI asks from its own render thread
+    /// (`com.apple.SwiftUI.AsyncRenderer`) whenever a colour is resolved during an animation
+    /// rather than during a `body` pass. The check then fails and traps the process.
+    private nonisolated static func dynamic(light: UIColor, dark: UIColor) -> Color {
         Color(
             UIColor { traits in
                 traits.userInterfaceStyle == .dark ? dark : light

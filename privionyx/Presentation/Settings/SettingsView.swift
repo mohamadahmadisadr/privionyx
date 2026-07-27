@@ -503,5 +503,5 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
-        .environment(PrivionyxAppState(container: .preview))
+        .environment(PrivionyxAppState.preview)
 }

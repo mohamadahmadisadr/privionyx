@@ -466,5 +466,5 @@ struct AddReceiptView: View {
 }
 
 #Preview {
-    AddReceiptView(appState: PrivionyxAppState(container: .preview))
+    AddReceiptView(appState: PrivionyxAppState.preview)
 }

@@ -38,6 +38,14 @@ struct BannerAdSlot: View {
                 .frame(height: height)
                 .frame(maxWidth: .infinity)
 
+                // A hairline and its padding between the creative and this app's own
+                // control. Google treats a tappable element flush against an ad as an
+                // accidental-click risk, and accidental clicks are what get an account
+                // closed for invalid traffic.
+                Rectangle()
+                    .fill(PrivionyxTheme.Colors.separator)
+                    .frame(height: 1)
+
                 removeAdsLink
             }
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -57,7 +65,7 @@ struct BannerAdSlot: View {
             Text("Remove ads")
                 .font(.system(size: 10.5, weight: .semibold))
                 .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
-                .padding(.vertical, 5)
+                .padding(.vertical, 8)
                 .frame(maxWidth: .infinity)
                 .background(PrivionyxTheme.Colors.glassFillStrong)
                 .contentShape(Rectangle())
@@ -98,8 +106,8 @@ struct RemoveAdsSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                if let failure = appState.purchases.lastFailure {
-                    Text(failure)
+                if let message = appState.purchases.lastFailure ?? appState.purchases.availability.unavailableReason {
+                    Text(message)
                         .font(.system(size: 12))
                         .foregroundStyle(PrivionyxTheme.Colors.warning)
                         .multilineTextAlignment(.center)
@@ -110,11 +118,17 @@ struct RemoveAdsSheet: View {
 
                 GlassPrimaryButton(title: purchaseTitle) {
                     Task {
-                        if await appState.purchases.purchaseAdFree() { dismiss() }
+                        // An unavailable store is worth one more try — it is usually a
+                        // connection that has since come back — rather than a dead button.
+                        if canPurchase {
+                            if await appState.purchases.purchaseAdFree() { dismiss() }
+                        } else {
+                            await appState.purchases.refresh()
+                        }
                     }
                 }
-                .disabled(appState.purchases.isBusy || appState.purchases.displayPrice == nil)
-                .opacity(appState.purchases.isBusy || appState.purchases.displayPrice == nil ? 0.5 : 1)
+                .disabled(appState.purchases.isBusy || appState.purchases.availability.isLoading)
+                .opacity(appState.purchases.isBusy || appState.purchases.availability.isLoading ? 0.5 : 1)
 
                 GlassSecondaryButton(title: "Restore Purchases") {
                     Task {
@@ -129,10 +143,19 @@ struct RemoveAdsSheet: View {
         .task { await appState.purchases.refresh() }
     }
 
+    private var canPurchase: Bool {
+        appState.purchases.availability == .available && appState.purchases.displayPrice != nil
+    }
+
     /// Shows the real storefront price once known — "$4.99", "£4.49", "¥800" — rather than a
     /// hardcoded figure that would be wrong everywhere outside the United States.
+    ///
+    /// "Loading…" is only ever shown while something is actually loading. If the store has
+    /// nothing to sell, the button offers a retry and the reason is printed above it.
     private var purchaseTitle: String {
-        guard let price = appState.purchases.displayPrice else { return "Loading…" }
-        return "Remove Ads · \(price)"
+        if let price = appState.purchases.displayPrice, canPurchase {
+            return "Remove Ads · \(price)"
+        }
+        return appState.purchases.availability.isLoading ? "Loading…" : "Try Again"
     }
 }

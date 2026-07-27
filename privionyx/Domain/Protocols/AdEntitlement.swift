@@ -21,6 +21,29 @@ enum PrivionyxProduct {
     static let removeAds = "com.privionyx.app.privionyx.removeads"
 }
 
+/// Whether there is anything to sell, and if not, why not.
+///
+/// Needed because "no product came back" is not the same as "still loading", and the two
+/// used to be indistinguishable: an empty result left the button reading "Loading…" for as
+/// long as the user cared to watch it. StoreKit returns nothing for entirely mundane
+/// reasons — no App Store account on the device, the product not yet approved, the Paid
+/// Applications Agreement unsigned — and every one of them deserves a straight answer.
+enum PurchaseAvailability: Equatable, Sendable {
+    case loading
+    case available
+    case unavailable(String)
+
+    var isLoading: Bool { self == .loading }
+
+    /// Why the upgrade can't be bought, when it can't.
+    var unavailableReason: String? {
+        switch self {
+        case let .unavailable(reason): reason
+        case .loading, .available: nil
+        }
+    }
+}
+
 /// Purchasing, restoring, and reporting what the user owns.
 ///
 /// A protocol so the app can be built and tested against a store that never talks to Apple:
@@ -30,6 +53,9 @@ enum PrivionyxProduct {
 protocol PurchaseStore: AnyObject {
     /// What the user currently owns. Starts at `.none` and is corrected once the store answers.
     var entitlement: AdEntitlement { get }
+
+    /// Whether the upgrade can be bought at all right now.
+    var availability: PurchaseAvailability { get }
 
     /// The localized price to put on the button — "$4.99", "£4.49", "¥800".
     ///
@@ -44,6 +70,13 @@ protocol PurchaseStore: AnyObject {
     /// Set when a purchase or restore failed in a way worth telling the user about.
     /// A user-cancelled purchase is not one of those.
     var lastFailure: String? { get }
+
+    /// Reconciles what the user already owns, and nothing else.
+    ///
+    /// Separate from `refresh()` because it reads the device's own transaction records and
+    /// returns in milliseconds, where fetching the product is a network round trip to the
+    /// App Store. Launch waits for this one; it must never wait for the other.
+    func refreshEntitlement() async
 
     /// Loads the product and reconciles what the user already owns. Safe to call repeatedly.
     func refresh() async

@@ -37,6 +37,6 @@ struct PrivionyxRootView: View {
 
 #Preview {
     PrivionyxRootView()
-        .environment(PrivionyxAppState(container: .preview))
+        .environment(PrivionyxAppState.preview)
         .environment(AppCoordinator())
 }

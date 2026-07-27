@@ -12,6 +12,7 @@ final class PrivionyxAppState {
     /// and a unit id are both in place, at which point the app is exactly as it was before.
     let bannerAds: any BannerAdProviding
     private var hasCompletedInitialLoad = false
+    private var isInitializing = false
     /// Set once bootstrap has succeeded. Distinct from "there are no receipts": an empty
     /// library is a perfectly normal state, not a signal that the work still needs doing.
     private var hasBootstrapped = false
@@ -19,9 +20,29 @@ final class PrivionyxAppState {
     private(set) var receipts: [ReceiptItem] = []
     private(set) var receiptsVersion = 0
     private(set) var isBootstrapping = false
-    private(set) var isLaunching = false
-    private(set) var launchProgress: Double = 0
-    private(set) var launchStatusText = "Preparing app..."
+
+    /// True until the first read of the library has finished, successfully or not.
+    ///
+    /// Screens draw placeholders while it holds rather than their empty state. An empty
+    /// `receipts` array means two entirely different things — "you have saved nothing" and
+    /// "nobody has looked yet" — and showing the first while the second is true tells the
+    /// user their receipts are gone.
+    private(set) var isLoadingLibrary = true
+
+    /// The shortest time the placeholders stay up once the screen has drawn them.
+    ///
+    /// Not a delay for its own sake. A local library can come back in under a tenth of a
+    /// second, and placeholders that appear and vanish within a few frames leave the user
+    /// having seen nothing — which is the same as not telling them the app was working at
+    /// all. Held for long enough to be read as what it is.
+    private static let minimumPlaceholderDuration = Duration.milliseconds(400)
+
+    /// True from process start until the first pass has settled.
+    ///
+    /// Its one job is holding banners back: `AdGate` refuses to show one while this is set,
+    /// because until the entitlement has been reconciled the app does not yet know whether
+    /// the user has paid to never see one.
+    private(set) var isLaunching = true
     /// The most recent failure, in the form the user should see it. Cleared when the
     /// alert is dismissed.
     var lastError: UserFacingError?
@@ -49,10 +70,25 @@ final class PrivionyxAppState {
         self.bannerAds = bannerAds
     }
 
+    /// An in-memory state already past its first load.
+    ///
+    /// Previews never call `initializeIfNeeded()`, so without this every one of them would sit
+    /// under loading placeholders indefinitely instead of showing the content it was written
+    /// to show.
+    static var preview: PrivionyxAppState {
+        let state = PrivionyxAppState(container: .preview)
+        state.isLoadingLibrary = false
+        return state
+    }
+
     func bootstrapIfNeeded() async {
         guard hasBootstrapped == false, isBootstrapping == false else { return }
         isBootstrapping = true
         defer { isBootstrapping = false }
+
+        // The placeholders are already on screen — `isLoadingLibrary` starts true, so the very
+        // first frame the app draws is the loading one. This is where they came up.
+        let placeholdersShownAt = ContinuousClock.now
 
         do {
             try await container.repository.performMaintenance()
@@ -71,6 +107,16 @@ final class PrivionyxAppState {
         if let storeLoadFailure = container.storeLoadFailure {
             lastError = .storeUnavailable(storeLoadFailure)
         }
+
+        let shown = ContinuousClock.now - placeholdersShownAt
+        if shown < Self.minimumPlaceholderDuration {
+            try? await Task.sleep(for: Self.minimumPlaceholderDuration - shown)
+        }
+
+        // Cleared whether the read succeeded or failed. A load that failed has still been
+        // attempted, and leaving placeholders shimmering forever over an error the user has
+        // already been shown would be worse than showing them the empty library.
+        isLoadingLibrary = false
     }
 
     private func seedSampleDataIfRequested() async throws {
@@ -110,24 +156,34 @@ final class PrivionyxAppState {
         try await loadReceipts()
     }
 
+    /// Brings the app up. Nothing here gates the first screen — it is already on the glass by
+    /// the time this runs, and each piece fills itself in as it arrives.
     func initializeIfNeeded() async {
-        guard hasCompletedInitialLoad == false, isLaunching == false else { return }
-        isLaunching = true
-        launchProgress = 0.08
-        launchStatusText = "Loading saved receipts..."
+        guard hasCompletedInitialLoad == false, isInitializing == false else { return }
+        isInitializing = true
+        defer { isInitializing = false }
 
-        await bootstrapIfNeeded()
-        launchProgress = 0.48
-
-        // Reconciled during launch so an existing purchase is known before the first screen
-        // draws — a paying user must never see a banner flash by on the way in.
-        await purchases.refresh()
-
-        launchStatusText = "Preparing app..."
-        launchProgress = 1
+        // Concurrently, because neither needs the other's answer: reading the library is Core
+        // Data, and reconciling the entitlement is StoreKit's local transaction records. Run
+        // in series, the faster of the two used to wait behind the slower for no reason.
+        //
+        // The entitlement only. Fetching the product is a network round trip to the App
+        // Store, and nothing on screen at launch needs a price.
+        async let library: Void = bootstrapIfNeeded()
+        async let entitlement: Void = reconcileEntitlement()
+        _ = await (library, entitlement)
 
         hasCompletedInitialLoad = true
         isLaunching = false
+    }
+
+    /// `purchases.refreshEntitlement()`, reachable from a child task.
+    ///
+    /// A method rather than the call written inline above because `any PurchaseStore` is not
+    /// `Sendable`, so reading the property to start the task is not allowed to leave the main
+    /// actor — where going through `self`, which is `@MainActor` and therefore is, is.
+    private func reconcileEntitlement() async {
+        await purchases.refreshEntitlement()
     }
 
     func refreshReceipts() async {

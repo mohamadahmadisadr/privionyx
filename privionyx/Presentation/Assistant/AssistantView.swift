@@ -349,5 +349,5 @@ private struct TypingIndicator: View {
 }
 
 #Preview {
-    AssistantView(appState: PrivionyxAppState(container: .preview))
+    AssistantView(appState: PrivionyxAppState.preview)
 }

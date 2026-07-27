@@ -362,6 +362,6 @@ private struct ReceiptImagePreview: View {
                 status: .reviewed
             )
         )
-        .environment(PrivionyxAppState(container: .preview))
+        .environment(PrivionyxAppState.preview)
     }
 }

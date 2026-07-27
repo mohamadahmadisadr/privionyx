@@ -374,6 +374,6 @@ private struct BudgetEditorSheet: View {
 
 #Preview {
     NavigationStack {
-        BudgetsView(appState: PrivionyxAppState(container: .preview))
+        BudgetsView(appState: PrivionyxAppState.preview)
     }
 }
