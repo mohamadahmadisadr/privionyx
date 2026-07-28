@@ -22,6 +22,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D1B0000A2F8365A7009C004D /* Privionyx.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json.storekit; path = Privionyx.storekit; sourceTree = "<group>"; };
 		D158BC9F2F8365A7009C004D /* privionyx.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = privionyx.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D1A000012F8365A7009C004D /* privionyxTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = privionyxTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -64,6 +65,7 @@
 			children = (
 				D158BCA12F8365A7009C004D /* privionyx */,
 				D1A000022F8365A7009C004D /* privionyxTests */,
+				D1B0000A2F8365A7009C004D /* Privionyx.storekit */,
 				D158BCA02F8365A7009C004D /* Products */,
 			);
 			sourceTree = "<group>";
