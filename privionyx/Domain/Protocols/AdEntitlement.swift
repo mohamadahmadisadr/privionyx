@@ -18,16 +18,21 @@ enum AdEntitlement: Equatable, Sendable {
 enum PrivionyxProduct {
     /// Non-consumable: bought once, restorable forever, shared through Family Sharing if
     /// enabled in App Store Connect. Must match the product identifier registered there.
-    static let removeAds = "com.privionyx.app.privionyx.removeads"
+    static let removeAds = "dev.sadr.privionyx.removeads"
 }
 
 /// Whether there is anything to sell, and if not, why not.
 ///
-/// Needed because "no product came back" is not the same as "still loading", and the two
-/// used to be indistinguishable: an empty result left the button reading "Loading…" for as
-/// long as the user cared to watch it. StoreKit returns nothing for entirely mundane
-/// reasons — no App Store account on the device, the product not yet approved, the Paid
-/// Applications Agreement unsigned — and every one of them deserves a straight answer.
+/// Needed because "no product came back" is not the same as "still loading". StoreKit returns
+/// nothing for entirely mundane reasons — no App Store account on the device, the product not
+/// yet approved, the Paid Applications Agreement unsigned — and every one of them deserves a
+/// straight answer rather than a spinner that never resolves.
+///
+/// No view reads this. It is the store's own account of itself, and it reaches the user only
+/// through `purchaseAdFree()`, which uses `unavailableReason` as the failure it reports when a
+/// tap finds no product to buy. That is deliberate: see `PaywallStage`. A reason shown before
+/// the user asked for anything is a broken-looking app; the same reason shown in answer to a
+/// tap is an explanation.
 enum PurchaseAvailability: Equatable, Sendable {
     case loading
     case available
@@ -70,6 +75,14 @@ protocol PurchaseStore: AnyObject {
     /// Set when a purchase or restore failed in a way worth telling the user about.
     /// A user-cancelled purchase is not one of those.
     var lastFailure: String? { get }
+
+    /// Forgets the last failure.
+    ///
+    /// The paywall calls this before every attempt so the message it reads back afterwards
+    /// can only belong to that attempt. Without it, a failure from an earlier tap would be
+    /// re-shown after a later one the user simply cancelled — the store writes nothing for a
+    /// cancel, by design, so a stale message would survive and be misattributed.
+    func clearFailure()
 
     /// Reconciles what the user already owns, and nothing else.
     ///

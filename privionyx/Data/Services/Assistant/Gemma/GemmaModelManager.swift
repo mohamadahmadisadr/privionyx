@@ -41,7 +41,7 @@ final class GemmaModelManager {
 
     /// Stable across launches: recreating a session with the same identifier is how a
     /// download started by a previous launch is reattached rather than restarted.
-    private static let backgroundSessionIdentifier = "com.privionyx.gemma-model-download"
+    private static let backgroundSessionIdentifier = "dev.sadr.privionyx.gemma-model-download"
 
     /// Whether the user has opted into spending cellular data on the model.
     ///

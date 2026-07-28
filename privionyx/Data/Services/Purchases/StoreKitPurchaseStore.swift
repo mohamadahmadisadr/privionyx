@@ -17,7 +17,9 @@ final class StoreKitPurchaseStore: PurchaseStore {
     private(set) var availability: PurchaseAvailability = .loading
     private(set) var displayPrice: String?
     private(set) var isBusy = false
-    var lastFailure: String?
+    private(set) var lastFailure: String?
+
+    func clearFailure() { lastFailure = nil }
 
     /// How long to wait for the App Store before calling it unavailable.
     ///

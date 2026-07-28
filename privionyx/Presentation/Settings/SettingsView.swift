@@ -11,6 +11,12 @@ struct SettingsView: View {
     @AppStorage(GemmaModelManager.allowsCellularDownloadKey) private var allowsCellularGemmaDownload = false
     @State private var isRemovingSamples = false
     @State private var isRemoveAdsPresented = false
+    /// The result of the Restore row's own tap.
+    ///
+    /// Needed because the paywall no longer opens onto whatever the store last said: it
+    /// reports only what the user asked it to do. This row asks for something too, and gets
+    /// its own answer rather than borrowing the sheet's.
+    @State private var restoreResult: String?
 
     var body: some View {
         NavigationStack {
@@ -383,7 +389,13 @@ struct SettingsView: View {
             GlassRowDivider()
 
             Button {
-                Task { await appState.purchases.restorePurchases() }
+                Task {
+                    appState.purchases.clearFailure()
+                    let restored = await appState.purchases.restorePurchases()
+                    restoreResult = restored
+                        ? "Your purchase is back. Ads are off on this device."
+                        : appState.purchases.lastFailure
+                }
             } label: {
                 aboutRow(
                     icon: "arrow.clockwise",
@@ -397,6 +409,19 @@ struct SettingsView: View {
         .privionyxGlass(cornerRadius: 16)
         .sheet(isPresented: $isRemoveAdsPresented) {
             RemoveAdsSheet()
+        }
+        .alert(
+            "Restore Purchases",
+            // Written back rather than `.constant`, so any way the alert goes away — the
+            // button, or the system dismissing it — clears the message it was showing.
+            isPresented: Binding(
+                get: { restoreResult != nil },
+                set: { if $0 == false { restoreResult = nil } }
+            )
+        ) {
+            Button("OK") { restoreResult = nil }
+        } message: {
+            Text(restoreResult ?? "")
         }
         .task { await appState.purchases.refresh() }
     }

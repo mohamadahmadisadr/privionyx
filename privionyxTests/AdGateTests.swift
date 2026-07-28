@@ -42,9 +42,15 @@ struct PurchaseFlowTests {
         private(set) var availability: PurchaseAvailability = .available
         private(set) var displayPrice: String? = "$4.99"
         private(set) var isBusy = false
-        var lastFailure: String?
+        private(set) var lastFailure: String?
+
+        func clearFailure() { lastFailure = nil }
 
         var purchaseSucceeds = true
+        /// Stands in for StoreKit's `.userCancelled`: the purchase does not complete and
+        /// nothing is written to `lastFailure`, because the user made a decision rather than
+        /// hitting a problem.
+        var purchaseIsCancelled = false
         var ownsPriorPurchase = false
         private(set) var refreshCount = 0
         private(set) var entitlementRefreshCount = 0
@@ -62,6 +68,7 @@ struct PurchaseFlowTests {
 
         @discardableResult
         func purchaseAdFree() async -> Bool {
+            guard purchaseIsCancelled == false else { return false }
             guard purchaseSucceeds else {
                 lastFailure = "The purchase couldn't be completed."
                 return false

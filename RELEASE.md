@@ -1,7 +1,7 @@
 # Shipping Privionyx
 
 Everything between a green build and a live App Store listing. Written for the state of the
-repository as of the first release (bundle id `com.privionyx.app.privionyx`, version 1.0).
+repository as of the first release (bundle id `dev.sadr.privionyx`, version 1.0).
 
 Privionyx is an iOS app. Google Play does not apply to it — there is no Android target, and
 nothing in this repository could be submitted there. The equivalent gate is Apple's **App
@@ -25,6 +25,11 @@ Store Review Guidelines**, which is what the audit below is against.
 | Version shown in-app | Settings → About → Version |
 | No debug leftovers | No `TODO`, `print(`, `try!`, or `http://` in app sources |
 | Sample data cannot ship enabled | `PrivionyxSampleData.isRequested` is `#if DEBUG` only |
+
+Before submitting, buy the upgrade once against **Apple's sandbox** — run the
+**`privionyx (Sandbox)`** scheme on a device. The local StoreKit configuration file proves
+nothing about the product record in App Store Connect, and the sandbox is the same
+environment the reviewer will buy in. `SANDBOX.md` is the walkthrough.
 
 ### Decide before you submit
 
@@ -114,7 +119,7 @@ Do this once, before the first archive is uploaded.
 1. [developer.apple.com](https://developer.apple.com/account) → *Certificates, Identifiers &
    Profiles* → **Identifiers** → **+**.
 2. *App IDs* → *App*. Description: `Privionyx`. Bundle ID: **Explicit**,
-   `com.privionyx.app.privionyx` — it must match `PRODUCT_BUNDLE_IDENTIFIER` exactly.
+   `dev.sadr.privionyx` — it must match `PRODUCT_BUNDLE_IDENTIFIER` exactly.
 3. Capabilities: enable **Increased Memory Limit** (the app's entitlement). Nothing else is
    used — no push, no iCloud, no App Groups.
 4. Register.
@@ -141,6 +146,44 @@ Do this once, before the first archive is uploaded.
 - **Description / keywords / promotional text:** describe on-device processing plainly.
   Do not name other apps and do not claim compliance with regulations the app has not been
   audited against.
+
+### The in-app purchase
+
+The app sells one non-consumable, `dev.sadr.privionyx.removeads`. Until it exists
+here, **the store returns nothing** — in the sandbox, to a reviewer, and to every user — and
+the app correctly reports "The upgrade isn't available on this device right now."
+`Privionyx.storekit` is only a local mirror of this record; nothing in it reaches Apple.
+
+**First, the Paid Applications Agreement.** App Store Connect → **Business** → *Agreements*.
+Sign it, and complete the **tax forms and banking details**. Until the agreement is *Active*,
+`Product.products(for:)` returns an empty array with no error, in every environment including
+sandbox. This is the single most common reason a correctly written purchase looks broken, and
+it takes days to clear if the tax forms are wrong — start it before you need it.
+
+**Then create the product.** App Store Connect → your app → **Monetization → In-App
+Purchases** → **+**.
+
+| Field | Value | Why it matters |
+| --- | --- | --- |
+| Type | **Non-Consumable** | Bought once, restorable forever. A consumable would break restore, and subscriptions carry obligations this app does not want. |
+| Reference Name | `Remove Ads` | Internal only. |
+| Product ID | `dev.sadr.privionyx.removeads` | Must match `PrivionyxProduct.removeAds` **character for character**. A mismatch is silent — an empty product list, exactly like an unsigned agreement. |
+| Price | the $4.99 tier | Set one price point; Apple derives every other storefront. The app reads `displayPrice` and never formats currency itself. |
+| Display Name | `Remove Ads` | Shown in the App Store's purchase sheet, not by this app. |
+| Description | `Removes banner ads everywhere in Privionyx. One-time purchase.` | |
+| Family Sharing | **Off** | Must agree with `"familyShareable": false` in `Privionyx.storekit`, or the local loop and the real one disagree about what a purchase gives. |
+
+**The review screenshot is mandatory.** Upload one of the Remove Ads sheet (1284×2778 from a
+6.9" simulator is fine). Without it the product sits at *Missing Metadata* and cannot be
+submitted at all — it is not a warning, it is a hard block.
+
+**Attach it to the version.** On a first submission the purchase is reviewed *alongside* the
+app: open the version in App Store Connect and add the purchase under **In-App Purchases**.
+Skipping this is the classic mistake — the app ships, the product does not, and every user
+sees the upgrade as unavailable.
+
+A newly created product can take a few hours to start returning in the sandbox. An empty
+result immediately after creating it is not necessarily a bug.
 
 ### App Privacy (the nutrition label)
 
@@ -183,7 +226,31 @@ and the full licence text are in Settings → Acknowledgements.
 
 Camera access is used only to photograph paper receipts. Photo library access is
 used only to import an existing receipt image. Neither image ever leaves the device.
+
+About the in-app purchase:
+There is one non-consumable, "Remove Ads" (dev.sadr.privionyx.removeads).
+It removes the banner ads and nothing else — no feature of the app is behind it.
+
+To test it: Settings → Ads → Remove Ads, or the "Remove ads" link under any
+banner. "Restore Purchases" sits next to it on the same screen and also in
+Settings → Ads, as required by guideline 3.1.1.
+
+Your purchase runs against the sandbox and is not charged.
 ```
+
+**The reviewer's purchase runs in the sandbox automatically.** Nothing needs to be enabled,
+and no test account needs handing over — App Review's own account buys in the sandbox and is
+never charged. What their purchase actually depends on is entirely on your side:
+
+- the Paid Applications Agreement being *Active*,
+- the product existing with a **matching identifier**,
+- the product **attached to the version under review**,
+- a **restore path** reachable without buying first (Settings → Ads → Restore Purchases —
+  present, and its absence is a certain 3.1.1 rejection).
+
+Verify all four by buying it yourself in the sandbox first — see `SANDBOX.md`. A reviewer
+hitting "the upgrade isn't available" is a rejection, and it is the same failure the sandbox
+would have shown you a week earlier.
 
 ---
 

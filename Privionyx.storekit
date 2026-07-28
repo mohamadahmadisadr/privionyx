@@ -15,7 +15,7 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.privionyx.app.privionyx.removeads",
+      "productID" : "dev.sadr.privionyx.removeads",
       "referenceName" : "Remove Ads",
       "type" : "NonConsumable"
     }
