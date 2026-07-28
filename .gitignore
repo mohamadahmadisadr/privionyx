@@ -21,7 +21,17 @@ xcuserdata/
 # Swift Package Manager
 .build/
 .swiftpm/
-Package.resolved
+
+# NOT ignored: privionyx.xcodeproj/.../swiftpm/Package.resolved.
+#
+# Ignoring it is the convention for a Swift *package*, whose dependents are entitled to pick
+# their own versions. An app is the opposite case: it is the thing being shipped, and the
+# resolved file is the only record of which revision of the Google Mobile Ads SDK is inside
+# the binary users install. Without it every build resolves afresh and a shipped app is
+# whatever the SDK's authors tagged that morning.
+#
+# Xcode Cloud settles the argument regardless — it disables automatic resolution and fails
+# the build outright if this file is absent.
 
 # Local LiteRT-LM Swift package clone (on-device Gemma runtime).
 # Referenced as a local package by the Xcode project. Not committed (large, has its
