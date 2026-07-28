@@ -53,7 +53,12 @@ final class GoogleBannerAdProvider: BannerAdProviding {
     private var banners: [AdPlacement: BannerView] = [:]
 
     func preferredHeight() -> CGFloat {
-        Self.adSize(width: Self.availableWidth).size.height
+        // No width means no scene to measure, and `adSize` clamps to a 1pt width rather than
+        // dividing by zero — which would answer with a height for a banner that cannot exist.
+        // Nothing is reserved instead.
+        let width = Self.availableWidth
+        guard width > 0 else { return 0 }
+        return Self.adSize(width: width).size.height
     }
 
     func banner(placement: AdPlacement, onHeightChange: @escaping (CGFloat) -> Void) -> AnyView {
@@ -88,11 +93,23 @@ final class GoogleBannerAdProvider: BannerAdProviding {
     /// The width a full-bleed banner gets, read from the window rather than passed down from
     /// SwiftUI: the slot that hosts this is height-constrained, and a `GeometryReader` inside
     /// it reports a height of zero, which is exactly the state the SDK refuses to load into.
+    ///
+    /// Everything here hangs off one scene. The fallback used to be `UIScreen.main`, which
+    /// iOS 26 deprecated for a good reason: with external displays, Stage Manager and CarPlay
+    /// in the picture, "the main screen" stopped being a question with one answer. The scene
+    /// is the context that makes it answerable — and it is also the right answer for sizing,
+    /// since a banner belongs to the window it is in and not to whichever display the system
+    /// would have nominated.
+    ///
+    /// Zero when there is no scene at all, which collapses the slot and suppresses the ad
+    /// request rather than guessing a width. That state exists only before the first scene
+    /// connects, and the slot is already withheld during launch.
     static var availableWidth: CGFloat {
         let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-        let window = scenes.first { $0.activationState == .foregroundActive }?.keyWindow
-            ?? scenes.first?.keyWindow
-        return window?.bounds.width ?? UIScreen.main.bounds.width
+        guard let scene = scenes.first(where: { $0.activationState == .foregroundActive })
+            ?? scenes.first else { return 0 }
+
+        return scene.keyWindow?.bounds.width ?? scene.screen.bounds.width
     }
 
     /// A request that asks for non-personalized ads.
