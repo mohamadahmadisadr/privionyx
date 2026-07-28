@@ -12,7 +12,11 @@ import FoundationModels
 /// since the user can switch Apple Intelligence off between one receipt and the next.
 ///
 /// The whole runtime path is guarded by `#if canImport(FoundationModels)` so the app still
-/// builds against an SDK without it, mirroring `FoundationModelsReceiptAssistant`.
+/// builds against an SDK without it, and by `@available` because the framework is iOS 26 and
+/// later while the app deploys to iOS 18 — both mirroring `FoundationModelsReceiptAssistant`.
+/// On an older system `UnsupportedOSFieldExtractor` takes this one's place and the resolver
+/// moves on to Gemma or the parser.
+@available(iOS 26.0, *)
 @MainActor
 final class FoundationModelsFieldExtractor: ReceiptFieldExtracting {
     nonisolated let engine: ReceiptExtractionEngine = .appleIntelligence
@@ -85,6 +89,11 @@ final class FoundationModelsFieldExtractor: ReceiptFieldExtracting {
 /// answer with prose, a fenced code block, or a field this app did not ask for, because the
 /// framework builds its output against this type. Every field is optional so that "I could
 /// not read it" stays expressible — a required `total` would force a number to be invented.
+///
+/// `@Generable` expands into conformances on iOS 26 types, so the macro's output has to be
+/// gated as tightly as the framework itself — hence the attribute on the type rather than on
+/// the extractor alone.
+@available(iOS 26.0, *)
 @Generable(description: "The fields printed on a shop receipt.")
 struct GeneratedReceiptFields {
     @Guide(description: "The shop's name from the letterhead. Omit if not legible.")

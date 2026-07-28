@@ -33,10 +33,20 @@ environment the reviewer will buy in. `SANDBOX.md` is the walkthrough.
 
 ### Decide before you submit
 
-- **Deployment target is iOS 26.4.** That is a very narrow slice of devices — anyone on
-  26.0–26.3 cannot install the app. If nothing actually requires 26.4, dropping to 26.0
-  costs nothing and widens the audience considerably. This is a business call, not a
-  review risk.
+- **Deployment target is iOS 18.0**, down from 26.4. Everything that genuinely needs a newer
+  system is gated at runtime rather than in the build setting, so an iOS 26 device still gets
+  the newer path:
+  - **Apple Intelligence** (`FoundationModels`) is iOS 26 only. Below that,
+    `UnsupportedOSAssistant` and `UnsupportedOSFieldExtractor` stand in and report
+    "requires iOS 26 or later" through the same `availability()` channel Settings already
+    uses for an ineligible device. Extraction falls through to Gemma, then to the parser.
+  - **`RecognizeDocumentsRequest`** in `VisionOCRService` is iOS 26 only and was already
+    written as an upgrade over `VNRecognizeTextRequest`; it is now behind `if #available`.
+  - The **`apple.intelligence` SF Symbol** does not exist before iOS 26 and would draw
+    nothing, so it falls back to `sparkles`.
+
+  Test on a real iOS 18 device before shipping. The build proves the code compiles for 18;
+  it does not prove the layout holds up there.
 - **`MemoryFootprintTests/fullResolutionCaptureStaysWithinBudget` fails in full-suite
   runs** (it passes alone; it is sensitive to memory pressure from tests running in
   parallel). Xcode Cloud runs the full suite, so this will fail every build until it is
@@ -88,8 +98,9 @@ are true. It must stay at the repository root under `ci_scripts/`.
    a private repo is fine once the app is installed.
 3. **Start condition:** *Branch Changes* → `main`, any file. That is the "build on every
    push" part of the ask. Add a second condition for pull requests if you want PR checks.
-4. **Environment:** Xcode 26.x (match what you build with locally — the deployment target is
-   26.4), macOS latest. Leave "Clean" off; caching is what keeps builds inside the free tier.
+4. **Environment:** Xcode 26.x (match what you build with locally — the SDK must be 26.x even
+   though the deployment target is 18.0, since the iOS 26 paths compile against it), macOS
+   latest. Leave "Clean" off; caching is what keeps builds inside the free tier.
 5. **Actions:**
    - *Build* — scheme `privionyx`, configuration Release.
    - *Test* — destination iOS Simulator; see the `MemoryFootprintTests` caveat in §1 first.

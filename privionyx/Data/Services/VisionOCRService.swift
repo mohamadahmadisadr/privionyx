@@ -55,14 +55,21 @@ nonisolated struct VisionOCRService {
             throw OCRServiceError.unsupportedImage
         }
 
-        let documentFragments = try await recognizedDocumentFragments(in: cgImage)
-        if documentFragments.isEmpty == false {
-            return documentFragments
+        // `RecognizeDocumentsRequest` understands a receipt as a document — it groups text
+        // into lines itself and reads faded thermal paper markedly better. It is iOS 26 only,
+        // so it is an upgrade rather than a requirement: below that, and whenever it comes
+        // back with nothing, the classic text request underneath does the same job.
+        if #available(iOS 26.0, *) {
+            let documentFragments = try await recognizedDocumentFragments(in: cgImage)
+            if documentFragments.isEmpty == false {
+                return documentFragments
+            }
         }
 
         return try recognizedTextFragments(in: cgImage)
     }
 
+    @available(iOS 26.0, *)
     private static func recognizedDocumentFragments(in cgImage: CGImage) async throws -> [RecognizedFragment] {
         var request = RecognizeDocumentsRequest()
         request.textRecognitionOptions.useLanguageCorrection = true

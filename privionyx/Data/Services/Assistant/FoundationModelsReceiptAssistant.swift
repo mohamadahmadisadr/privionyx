@@ -11,6 +11,14 @@ import FoundationModels
 /// The session is kept alive across turns so the model can follow up on what was just
 /// asked. Receipt data lives in the session instructions, so the session is rebuilt
 /// whenever that data changes; otherwise the model would answer from a stale snapshot.
+///
+/// Two separate conditions have to hold before any of this compiles or runs, and they are
+/// guarded differently. `canImport` covers a build whose SDK has no FoundationModels at all.
+/// `@available` covers the ordinary case: the app deploys to iOS 18 and the framework starts
+/// at iOS 26, so on most systems this type is simply absent and `UnsupportedOSAssistant`
+/// takes its place. Marking the whole type is what keeps `session` — a stored property of an
+/// iOS 26 type — legal without erasing it to `Any`.
+@available(iOS 26.0, *)
 @MainActor
 final class FoundationModelsReceiptAssistant: ReceiptAssistant {
     #if canImport(FoundationModels)

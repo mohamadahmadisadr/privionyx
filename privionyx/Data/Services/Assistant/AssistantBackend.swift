@@ -45,7 +45,10 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
         case .rules:
             "function"
         case .appleIntelligence:
-            "apple.intelligence"
+            // `apple.intelligence` ships with iOS 26. An SF Symbol that does not exist on the
+            // running system draws nothing at all — the row would simply lose its icon on
+            // iOS 18 with no warning at build time, since the name is only a string.
+            if #available(iOS 26.0, *) { "apple.intelligence" } else { "sparkles" }
         case .localGemma:
             "cpu"
         }
@@ -56,7 +59,13 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
         case .rules:
             RuleBasedReceiptAssistant()
         case .appleIntelligence:
-            FoundationModelsReceiptAssistant()
+            // The framework is iOS 26 and later. Below that the stand-in reports why, which
+            // Settings shows beside the option exactly as it shows "device not eligible".
+            if #available(iOS 26.0, *) {
+                FoundationModelsReceiptAssistant()
+            } else {
+                UnsupportedOSAssistant()
+            }
         case .localGemma:
             LiteRTGemmaReceiptAssistant()
         }

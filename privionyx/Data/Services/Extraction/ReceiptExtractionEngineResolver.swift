@@ -27,8 +27,21 @@ struct ReceiptExtractionEngineResolver {
     private let gemma: any ReceiptFieldExtracting
     private let modelManager: GemmaModelManager
 
+    /// The Apple Intelligence extractor, or the stand-in that explains why there isn't one.
+    ///
+    /// A function rather than the expression written inline below, because a default argument
+    /// cannot carry an availability check. The choice still happens per construction, which
+    /// matters no more or less than the rest of this type's per-call resolution.
+    static func defaultAppleIntelligenceExtractor() -> any ReceiptFieldExtracting {
+        if #available(iOS 26.0, *) {
+            FoundationModelsFieldExtractor()
+        } else {
+            UnsupportedOSFieldExtractor()
+        }
+    }
+
     init(
-        appleIntelligence: any ReceiptFieldExtracting = FoundationModelsFieldExtractor(),
+        appleIntelligence: any ReceiptFieldExtracting = ReceiptExtractionEngineResolver.defaultAppleIntelligenceExtractor(),
         gemma: any ReceiptFieldExtracting = GemmaFieldExtractor(),
         modelManager: GemmaModelManager = .shared
     ) {
