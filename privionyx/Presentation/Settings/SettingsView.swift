@@ -443,6 +443,24 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .disabled(isRemovingSamples)
             }
+            // In About rather than under Ads, which is hidden once the upgrade is bought.
+            // Google requires this to stay reachable for as long as a consent decision is
+            // stored, and buying the ad-free upgrade does not erase the one already given.
+            // Absent entirely for users who were never shown a form, which is most of them.
+            if appState.adConsent.isPrivacyOptionsRequired {
+                GlassRowDivider()
+                Button {
+                    Task { await appState.adConsent.presentPrivacyOptions() }
+                } label: {
+                    aboutRow(
+                        icon: "hand.raised.fill",
+                        label: "Ad Privacy Options",
+                        value: "",
+                        showsChevron: true
+                    )
+                }
+                .buttonStyle(.plain)
+            }
             GlassRowDivider()
             NavigationLink {
                 AcknowledgementsView()

@@ -200,9 +200,48 @@ result immediately after creating it is not necessarily a bug.
 
 App Store Connect → your app → **App Privacy** → Get Started.
 
-Answer **"No, we do not collect data from this app."** That is accurate: receipts are parsed
-on-device, the assistant runs locally, and the only outbound request is an unauthenticated
-GET for a public model file. This must agree with `PrivacyInfo.xcprivacy`, and it does.
+**Do not answer "we do not collect data."** That was true before AdMob was linked and is not
+true now. Nothing Privionyx itself writes leaves the device — receipts are parsed on-device,
+the assistant runs locally, and the app's only outbound request is an unauthenticated GET for
+a public model file — but the label covers the whole binary, bundled SDKs included, and the
+Google Mobile Ads framework collects on its own account.
+
+Declare what Google publishes for the Mobile Ads SDK at
+<https://developers.google.com/admob/ios/data-disclosure>. Read it at submission time rather
+than trusting the summary here; the list changes. As of writing it covers Device ID,
+Product Interaction, Advertising Data, Other Usage Data, and the three Diagnostics types
+(Crash, Performance, Other), with Coarse Location depending on configuration.
+
+Two answers that are *not* the default and are correct for this app:
+
+- **Used for tracking: No.** Every request sets `npa=1` and the app never reads the IDFA, so
+  nothing is joined to a user across apps or websites. This is what lets the app ship without
+  an App Tracking Transparency prompt. It is a real constraint, not a form answer — see
+  `GoogleBannerAdProvider.nonPersonalizedRequest()`, and if that ever changes, this and
+  `NSPrivacyTracking` both have to change with it.
+- **Linked to the user's identity: No.** There is no account, no sign-in, and no user id.
+
+`PrivacyInfo.xcprivacy` stays as it is. It declares this app's own code, which collects
+nothing; the ad SDK ships its own manifest and Xcode aggregates them into the privacy report
+you can generate from the archive (Organizer → right-click the archive → Generate Privacy
+Report). Compare that report against the answers above before submitting.
+
+### Consent messaging (required before any EEA or UK revenue)
+
+The app ships the User Messaging Platform SDK and calls it on every launch
+(`GoogleAdConsentProvider`), but **UMP has nothing to show until a message is published in the
+AdMob console**. Until then `FormStatus` comes back `unavailable`, no form appears, and — for
+users in a regulated region — `canRequestAds` stays false and every slot silently stays empty.
+That failure looks exactly like poor fill, which is why it is worth confirming rather than
+assuming.
+
+AdMob console → **Privacy & messaging** → *GDPR* → create and publish a message for the app,
+then the same under *US states regulations*. Both take a few minutes and neither needs a new
+app release.
+
+To see the form on a device that isn't in Europe, run with the launch argument
+`-privionyxAdConsentEEA` (debug builds only; simulators always count as debug devices to UMP).
+`ConsentInformation.shared.reset()` clears a stored answer if you need to see the form twice.
 
 ### First upload
 

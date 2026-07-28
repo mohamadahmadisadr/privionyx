@@ -11,6 +11,8 @@ final class PrivionyxAppState {
     /// Where a banner comes from, if one comes from anywhere. `NoBannerAds` until an ad SDK
     /// and a unit id are both in place, at which point the app is exactly as it was before.
     let bannerAds: any BannerAdProviding
+    /// Whether an ad may be requested at all, and whether the user was ever asked.
+    let adConsent: any AdConsentProviding
     private var hasCompletedInitialLoad = false
     private var isInitializing = false
     /// Set once bootstrap has succeeded. Distinct from "there are no receipts": an empty
@@ -60,14 +62,25 @@ final class PrivionyxAppState {
         #endif
     }
 
+    /// UMP when the SDK is linked, an unconditional yes when it isn't.
+    static func defaultAdConsent() -> any AdConsentProviding {
+        #if canImport(UserMessagingPlatform)
+        GoogleAdConsentProvider()
+        #else
+        NoAdConsent()
+        #endif
+    }
+
     init(
         container: PrivionyxAppContainer,
         purchases: any PurchaseStore = StoreKitPurchaseStore(),
-        bannerAds: any BannerAdProviding = PrivionyxAppState.defaultBannerAds()
+        bannerAds: any BannerAdProviding = PrivionyxAppState.defaultBannerAds(),
+        adConsent: any AdConsentProviding = PrivionyxAppState.defaultAdConsent()
     ) {
         self.container = container
         self.purchases = purchases
         self.bannerAds = bannerAds
+        self.adConsent = adConsent
     }
 
     /// An in-memory state already past its first load.
@@ -169,12 +182,30 @@ final class PrivionyxAppState {
         //
         // The entitlement only. Fetching the product is a network round trip to the App
         // Store, and nothing on screen at launch needs a price.
+        //
+        // Consent joins them for the same reason. It is a network round trip and, for a user
+        // in a regulated region, a form they have to dismiss — neither of which the receipt
+        // list has any business waiting behind. `isLoadingLibrary` is cleared by
+        // `bootstrapIfNeeded` itself, so the app is fully usable underneath the form.
         async let library: Void = bootstrapIfNeeded()
         async let entitlement: Void = reconcileEntitlement()
-        _ = await (library, entitlement)
+        async let consent: Void = resolveAdConsent()
+        _ = await (library, entitlement, consent)
 
         hasCompletedInitialLoad = true
         isLaunching = false
+    }
+
+    /// Asks the user what the ad SDK may do, then starts it if the answer allows.
+    ///
+    /// Launch waits for this before showing a banner — not because the screen needs it, but
+    /// because `AdGate` reads `canRequestAds` and the honest value before this returns is
+    /// "not yet". A method rather than the call written inline above for the same reason as
+    /// `reconcileEntitlement()`: `any AdConsentProviding` is not `Sendable`.
+    private func resolveAdConsent() async {
+        await adConsent.requestConsentUpdate()
+        guard adConsent.canRequestAds else { return }
+        bannerAds.startRequestingAds()
     }
 
     /// `purchases.refreshEntitlement()`, reachable from a child task.

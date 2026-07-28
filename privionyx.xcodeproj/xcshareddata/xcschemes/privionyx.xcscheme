@@ -63,7 +63,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <StoreKitConfigurationFileReference
-         identifier = "../../../Privionyx.storekit">
+         identifier = "../../Privionyx.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

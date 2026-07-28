@@ -27,6 +27,7 @@ struct BannerAdSlot: View {
         if AdGate.showsBanner(
             entitlement: appState.purchases.entitlement,
             isConfigured: appState.bannerAds.isConfigured,
+            canRequestAds: appState.adConsent.canRequestAds,
             isLaunching: appState.isLaunching
         ), height > 0 {
             VStack(spacing: 0) {

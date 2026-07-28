@@ -15,7 +15,15 @@ struct LaunchLoadingTests {
     private func makeAppState(
         purchases: PurchaseStore = PurchaseFlowTests.FakePurchaseStore()
     ) -> PrivionyxAppState {
-        PrivionyxAppState(container: .preview, purchases: purchases, bannerAds: NoBannerAds())
+        // `NoAdConsent` explicitly rather than by default: the real one is UMP, and the
+        // default would put a network round trip — and, on a debug device Google considers
+        // European, a form waiting for a tap — inside `initializeIfNeeded()`.
+        PrivionyxAppState(
+            container: .preview,
+            purchases: purchases,
+            bannerAds: NoBannerAds(),
+            adConsent: NoAdConsent()
+        )
     }
 
     @Test("A state nobody has loaded yet reads as loading, not as empty")
@@ -61,6 +69,7 @@ struct LaunchLoadingTests {
         #expect(AdGate.showsBanner(
             entitlement: appState.purchases.entitlement,
             isConfigured: true,
+            canRequestAds: true,
             isLaunching: appState.isLaunching
         ) == false)
 

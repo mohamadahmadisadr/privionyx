@@ -25,6 +25,13 @@ protocol BannerAdProviding: AnyObject {
     /// no unit id, which is the state the app ships in until both are supplied.
     var isConfigured: Bool { get }
 
+    /// Starts the ad SDK, once consent says it may run.
+    ///
+    /// Split out of initialization because the two happen in the wrong order otherwise: the
+    /// provider is built when the app state is, which is before anything has asked the user
+    /// anything. Idempotent — the app state calls it on every launch that ends in consent.
+    func startRequestingAds()
+
     /// The height to give the slot before anything has loaded.
     ///
     /// Reserved rather than grown into, because the ad SDK refuses to load into a
@@ -45,6 +52,8 @@ protocol BannerAdProviding: AnyObject {
 final class NoBannerAds: BannerAdProviding {
     var isConfigured: Bool { false }
 
+    func startRequestingAds() {}
+
     func preferredHeight() -> CGFloat { 0 }
 
     func banner(placement: AdPlacement, onHeightChange: @escaping (CGFloat) -> Void) -> AnyView {
@@ -59,11 +68,20 @@ final class NoBannerAds: BannerAdProviding {
 /// rendering pass. Every one of them exists to answer a way an ad could be obnoxious or
 /// get the app rejected.
 enum AdGate {
-    static func showsBanner(entitlement: AdEntitlement, isConfigured: Bool, isLaunching: Bool) -> Bool {
+    static func showsBanner(
+        entitlement: AdEntitlement,
+        isConfigured: Bool,
+        canRequestAds: Bool,
+        isLaunching: Bool
+    ) -> Bool {
         // Paid for silence.
         guard entitlement.removesAds == false else { return false }
         // Nothing to show.
         guard isConfigured else { return false }
+        // Not asked yet, or asked and told no. Requesting anyway is a policy violation on
+        // Google's side and, in the regions where it applies, would come back unfilled in any
+        // case — see `AdConsentProviding`.
+        guard canRequestAds else { return false }
         // Not over the launch screen: an ad before the app has drawn its own content reads as
         // an interstitial, which is not what was agreed to and not what this is.
         guard isLaunching == false else { return false }

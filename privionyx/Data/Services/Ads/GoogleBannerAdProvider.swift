@@ -27,6 +27,11 @@ final class GoogleBannerAdProvider: BannerAdProviding {
 
     init(adUnitID: String = GoogleBannerAdProvider.defaultAdUnitID) {
         self.adUnitID = adUnitID
+    }
+
+    /// Starts the SDK. Called by the app state once consent allows it, never from `init` —
+    /// the provider is built before the user has been asked anything.
+    func startRequestingAds() {
         Self.startSDKIfNeeded()
     }
 
@@ -72,6 +77,12 @@ final class GoogleBannerAdProvider: BannerAdProviding {
 
     private func bannerView(for placement: AdPlacement) -> BannerView {
         if let existing = banners[placement] { return existing }
+
+        // Also here, not only from the app state. This is the one place a banner comes into
+        // existence, and it is reachable only through `AdGate`, which has already checked
+        // consent — so starting the SDK here makes the correct order true by construction
+        // rather than by everyone remembering to call the other one first.
+        Self.startSDKIfNeeded()
 
         let view = BannerView(adSize: Self.adSize(width: Self.availableWidth))
         view.adUnitID = adUnitID

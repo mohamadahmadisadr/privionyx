@@ -6,28 +6,49 @@ import Testing
 struct AdGateTests {
     @Test("A paid user never sees a banner, however everything else is configured")
     func paidUserSeesNothing() {
-        #expect(AdGate.showsBanner(entitlement: .adFree, isConfigured: true, isLaunching: false) == false)
+        #expect(AdGate.showsBanner(entitlement: .adFree, isConfigured: true, canRequestAds: true, isLaunching: false) == false)
     }
 
     @Test("No ad network configured means no slot at all")
     func unconfiguredShowsNothing() {
-        #expect(AdGate.showsBanner(entitlement: .none, isConfigured: false, isLaunching: false) == false)
+        #expect(AdGate.showsBanner(entitlement: .none, isConfigured: false, canRequestAds: true, isLaunching: false) == false)
     }
 
     @Test("Nothing is shown over the launch screen")
     func launchingShowsNothing() {
-        #expect(AdGate.showsBanner(entitlement: .none, isConfigured: true, isLaunching: true) == false)
+        #expect(AdGate.showsBanner(entitlement: .none, isConfigured: true, canRequestAds: true, isLaunching: true) == false)
     }
 
     @Test("A free user on a configured build, past launch, sees the banner")
     func freeUserSeesBanner() {
-        #expect(AdGate.showsBanner(entitlement: .none, isConfigured: true, isLaunching: false))
+        #expect(AdGate.showsBanner(entitlement: .none, isConfigured: true, canRequestAds: true, isLaunching: false))
+    }
+
+    @Test("Nothing is requested before the user has been asked for consent")
+    func withoutConsentShowsNothing() {
+        // The state every launch starts in, and the one a user in the EEA or UK who declined
+        // stays in. Requesting an ad here is the violation; it would also come back unfilled.
+        #expect(AdGate.showsBanner(
+            entitlement: .none,
+            isConfigured: true,
+            canRequestAds: false,
+            isLaunching: false
+        ) == false)
     }
 
     @Test("The shipped default is a build with no ads in it")
     func defaultProviderIsSilent() async {
         let provider = await NoBannerAds()
         #expect(await provider.isConfigured == false)
+    }
+
+    @Test("A build with no consent SDK does not also gate itself on consent")
+    func absentConsentProviderIsNotASecondGate() async {
+        // Two independent reasons to show nothing would make it ambiguous which one is
+        // actually in force. `NoBannerAds` is the one that says no in that build.
+        let consent = await NoAdConsent()
+        #expect(await consent.canRequestAds)
+        #expect(await consent.isPrivacyOptionsRequired == false)
     }
 }
 
@@ -91,11 +112,11 @@ struct PurchaseFlowTests {
     @Test("A successful purchase entitles the user and stops the ads")
     func purchaseRemovesAds() async {
         let store = FakePurchaseStore()
-        #expect(AdGate.showsBanner(entitlement: store.entitlement, isConfigured: true, isLaunching: false))
+        #expect(AdGate.showsBanner(entitlement: store.entitlement, isConfigured: true, canRequestAds: true, isLaunching: false))
 
         #expect(await store.purchaseAdFree())
         #expect(store.entitlement == .adFree)
-        #expect(AdGate.showsBanner(entitlement: store.entitlement, isConfigured: true, isLaunching: false) == false)
+        #expect(AdGate.showsBanner(entitlement: store.entitlement, isConfigured: true, canRequestAds: true, isLaunching: false) == false)
     }
 
     @Test("A failed purchase leaves the user unentitled and says so")

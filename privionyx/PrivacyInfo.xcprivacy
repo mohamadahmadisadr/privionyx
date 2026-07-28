@@ -2,14 +2,28 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Nothing leaves the device. Receipts are parsed on-device by Vision and the built-in
-	     extractors, and the assistant is either Apple's on-device model or Gemma running
-	     locally. The only outbound request the app makes is the model download, which is a
-	     GET for a public file and carries no user data. -->
+	<!-- No receipt data leaves the device. Receipts are parsed on-device by Vision and the
+	     built-in extractors, and the assistant is either Apple's on-device model or Gemma
+	     running locally. The app's own outbound requests are the model download — a GET for a
+	     public file, carrying no user data — and nothing else.
+
+	     False despite the app serving AdMob banners, and that is a claim this app can make
+	     only because of two deliberate choices: every request sets npa=1, and the IDFA is
+	     never read, so there is no App Tracking Transparency prompt and no identifier being
+	     joined to anything across apps. Change either one and this key has to become true. -->
 	<key>NSPrivacyTracking</key>
 	<false/>
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
+
+	<!-- Empty because this app's own code collects nothing. It is not a statement about the
+	     whole binary: the Google Mobile Ads and User Messaging Platform frameworks each ship
+	     their own manifest declaring what they collect, and Xcode aggregates all three into
+	     the privacy report generated from the archive.
+
+	     That report is what the App Store Connect answers must match, and those answers are
+	     not derived from this file — they are filled in by hand and are currently the one
+	     place the ad SDK's collection has to be declared. See RELEASE.md. -->
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>
 
