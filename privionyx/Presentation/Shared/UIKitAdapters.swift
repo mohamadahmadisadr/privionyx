@@ -13,11 +13,23 @@ struct ActivityViewController: UIViewControllerRepresentable {
     }
 }
 
-struct ZoomableScrollView<Content: View>: UIViewRepresentable {
-    let content: Content
+/// Pinch-to-zoom around arbitrary SwiftUI content, backed by a `UIScrollView`.
+///
+/// The content is erased to `AnyView` rather than carried as a generic parameter, which is a
+/// deliberate concession to the optimizer. As a generic, `Coordinator` was instantiated as
+/// `Coordinator<ModifiedContent<ModifiedContent<…Image…>>>` — the type of the one call site's
+/// view builder — and optimizing its compiler-generated `deinit` sent Swift 6.3's SIL
+/// performance inliner into unbounded recursion in its layout-constraint check, crashing
+/// `swift-frontend` outright. Only in Release: the pass does not run at `-Onone`, so Debug
+/// builds and tests were entirely clean while archiving was impossible.
+///
+/// Erasure costs the structural identity SwiftUI uses to diff, which is worth nothing here —
+/// the content is one static image, handed over once and replaced wholesale.
+struct ZoomableScrollView: UIViewRepresentable {
+    private let content: AnyView
 
-    init(@ViewBuilder content: () -> Content) {
-        self.content = content()
+    init<Content: View>(@ViewBuilder content: () -> Content) {
+        self.content = AnyView(content())
     }
 
     func makeCoordinator() -> Coordinator {
@@ -56,9 +68,9 @@ struct ZoomableScrollView<Content: View>: UIViewRepresentable {
     }
 
     final class Coordinator: NSObject, UIScrollViewDelegate {
-        let hostingController: UIHostingController<Content>
+        let hostingController: UIHostingController<AnyView>
 
-        init(hostingController: UIHostingController<Content>) {
+        init(hostingController: UIHostingController<AnyView>) {
             self.hostingController = hostingController
         }
 
