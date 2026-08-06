@@ -18,6 +18,9 @@ struct SettingsView: View {
     /// its own answer rather than borrowing the sheet's.
     @State private var restoreResult: String?
 
+    /// The same page linked from App Store Connect, served statically and without a login.
+    static let privacyPolicyURL = URL(string: "https://sadr.dev/privionyx-app/privacy/")!
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -35,9 +38,11 @@ struct SettingsView: View {
 
                         GlassEyebrow("Receipt Scanning")
                         extractionCard
+                        processingNote("Receipt photos are read on this device using Apple's Vision framework. Neither the image nor the text recognized from it is uploaded anywhere.")
 
                         GlassEyebrow("Assistant")
                         assistantCard
+                        processingNote("Every option runs on this device. Your receipts and your questions are not sent to Privionyx, Apple, Google, Hugging Face, or any other AI or cloud service.")
 
                         BannerAdSlot(placement: .settings)
 
@@ -60,6 +65,25 @@ struct SettingsView: View {
                 await loadAssistantAvailability()
             }
         }
+    }
+
+    /// A section footer that says where the work happens.
+    ///
+    /// Both of these sections offer to run a model over a user's receipts, and neither used to
+    /// say on the screen itself that the model runs locally — the guarantee lived in the row
+    /// subtitles and in the privacy policy. App Review read the gap the obvious way.
+    private func processingNote(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 7) {
+            Image(systemName: "lock.iphone")
+                .font(.system(size: 11, weight: .semibold))
+            Text(text)
+                .font(.system(size: 12))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+        .padding(.horizontal, 4)
+        .padding(.top, -4)
     }
 
     // MARK: - Receipt scanning
@@ -461,6 +485,19 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
             }
+            // App Review looks for this, and so does anyone who wants to know what the
+            // assistant does with their receipts before they trust it with them. Reachable
+            // without an account and without leaving Settings to find it.
+            GlassRowDivider()
+            Link(destination: Self.privacyPolicyURL) {
+                aboutRow(
+                    icon: "lock.shield.fill",
+                    label: "Privacy Policy",
+                    value: "",
+                    showsChevron: true
+                )
+            }
+            .buttonStyle(.plain)
             GlassRowDivider()
             NavigationLink {
                 AcknowledgementsView()

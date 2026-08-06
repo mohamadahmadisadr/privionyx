@@ -7,6 +7,10 @@ struct AssistantView: View {
     /// The receipt card the user tapped in the transcript, opened over the conversation so
     /// the chat is still there when it closes.
     @State private var selectedReceipt: ReceiptItem?
+    /// Whether the on-device disclosure is up. Raised automatically on the first visit and
+    /// by the header button after that.
+    @State private var isShowingPrivacyDisclosure = false
+    @AppStorage(AssistantPrivacyDisclosure.seenKey) private var hasSeenPrivacyDisclosure = false
 
     init(appState: PrivionyxAppState) {
         _viewModel = State(initialValue: AssistantViewModel(appState: appState))
@@ -20,6 +24,23 @@ struct AssistantView: View {
                 header
                     .padding(.horizontal, 20)
                     .padding(.bottom, 12)
+                    // Deliberately on the header rather than beside the receipt sheet at the
+                    // bottom of this body: two `.sheet` modifiers on the same view leave one
+                    // of them dead, and the one that died was this one. Presenting from the
+                    // subview that owns the button keeps both alive.
+                    //
+                    // Raised before the first conversation, not after it — the user should
+                    // know what the assistant reads, and where it runs, before typing into it.
+                    .onAppear {
+                        if hasSeenPrivacyDisclosure == false {
+                            isShowingPrivacyDisclosure = true
+                        }
+                    }
+                    .sheet(isPresented: $isShowingPrivacyDisclosure) {
+                        AssistantPrivacyDisclosure(backend: backend) {
+                            hasSeenPrivacyDisclosure = true
+                        }
+                    }
 
                 if let notice = viewModel.fallbackNotice {
                     noticeBanner(notice)
@@ -60,6 +81,12 @@ struct AssistantView: View {
 
     // MARK: - Header
 
+    /// The subtitle states where processing happens instead of what the assistant can do.
+    ///
+    /// It used to read "Understands every receipt you scan", which is true and was also the
+    /// sentence App Review read as an admission that receipts go to a cloud AI service. The
+    /// capability is evident from the screen; where the work happens is not, so that is what
+    /// the line spends its width on. The info button opens the full disclosure.
     private var header: some View {
         HStack(spacing: 10) {
             Image(systemName: "sparkles")
@@ -73,12 +100,26 @@ struct AssistantView: View {
                     .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(PrivionyxTheme.Colors.ink)
 
-                Text("Understands every receipt you scan")
+                Text(backend.processingSummary)
                     .font(.system(size: 11.5, weight: .medium))
                     .foregroundStyle(PrivionyxTheme.Colors.tertiaryInk)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.9)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
+
+            Button {
+                isShowingPrivacyDisclosure = true
+            } label: {
+                Image(systemName: "lock.iphone")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(PrivionyxTheme.Colors.accent)
+                    .frame(width: 34, height: 34)
+                    .privionyxGlass(cornerRadius: 17)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("How your receipt data is used")
         }
     }
 

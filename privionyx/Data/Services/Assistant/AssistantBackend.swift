@@ -40,6 +40,36 @@ enum AssistantBackend: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// One line, short enough for the Assistant header, naming where the work happens.
+    ///
+    /// This exists because App Review rejected 1.0 (9) under 5.1.1(i)/5.1.2(i) having read
+    /// the Assistant tab as shipping receipts to a cloud AI service. It never did — but the
+    /// tab said "AI Assistant / Understands every receipt you scan" and nothing else, so the
+    /// reading was fair. The claim now travels with the engine that backs it.
+    var processingSummary: String {
+        switch self {
+        case .rules:
+            "On-device · no AI service involved"
+        case .appleIntelligence:
+            "On-device with Apple Intelligence · nothing is sent"
+        case .localGemma:
+            "On-device with Gemma · nothing is sent"
+        }
+    }
+
+    /// Who does the processing, for the disclosure sheet. Named specifically: "on-device"
+    /// alone doesn't tell a user which piece of software is reading their receipts.
+    var processorDescription: String {
+        switch self {
+        case .rules:
+            "Privionyx itself, using ordinary arithmetic over the receipts already on your iPhone. No model of any kind is involved."
+        case .appleIntelligence:
+            "Apple Intelligence — Apple's foundation model, built into iOS and running on your iPhone's own hardware. Apple does not receive your receipts."
+        case .localGemma:
+            "Google's Gemma model, running on your iPhone via LiteRT-LM. The model file was downloaded once; answering your questions uses no network connection, and Google does not receive your receipts."
+        }
+    }
+
     var icon: String {
         switch self {
         case .rules:
